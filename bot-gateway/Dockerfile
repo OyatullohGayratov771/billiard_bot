@@ -1,9 +1,19 @@
-FROM golang:1.22-alpine AS build
-WORKDIR /app
-COPY . .
-RUN go build -o bot-gateway ./cmd
+FROM golang:1.22-alpine AS builder
 
-FROM alpine
 WORKDIR /app
-COPY --from=build /app/bot-gateway .
-CMD ["./bot-gateway"]
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN go build -o billiard_bot ./cmd
+
+# ---- Runtime ----
+FROM alpine:3.19
+
+RUN apk add --no-cache ca-certificates tzdata
+ENV TZ=Asia/Tashkent
+
+WORKDIR /app
+COPY --from=builder /app/billiard_bot .
+
+CMD ["./billiard_bot"]

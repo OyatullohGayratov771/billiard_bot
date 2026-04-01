@@ -1,88 +1,35 @@
 services:
-  redis:
-    image: redis:7
-    container_name: redis
-    ports:
-      - "6379:6379"
-
   postgres:
     image: postgres:15
-    container_name: user_postgres
+    container_name: billiard_postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: billiard_bot
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-billiard_bot}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 2s
-      timeout: 2s
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 3s
+      timeout: 3s
       retries: 10
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-
-  kafka:
-    image: confluentinc/cp-kafka:7.5.0
-    depends_on:
-      zookeeper:
-        condition: service_started
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  bot-gateway:
-  build: ./bot-gateway
-  environment:
-    TELEGRAM_TOKEN: 8498398060:AAHO2goYy-iQx4z7f4rlGN5u5mzZxiDkZgk
-    USER_GRPC_ADDR: user-service:8081
-  depends_on:
-    user-service:
-      condition: service_started
-
-
-  user-service:
+  bot:
     build:
-      context: ./user-service
+      context: ./bot-gateway
       dockerfile: Dockerfile
-    container_name: user_service
+    container_name: billiard_bot
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
+    env_file:
+      - .env
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: billiard_bot
-
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-
-      KAFKA_HOST: kafka
-      KAFKA_PORT: 9092
-      KAFKA_TOPIC: notifications
-
-      JWT_KEY: azamat
-    ports:
-      - "8081:8081"
-    command: ["./user-service"]
-
+      DATABASE_DSN: "host=postgres port=5432 user=${DB_USER:-postgres} password=${DB_PASSWORD:-postgres} dbname=${DB_NAME:-billiard_bot} sslmode=disable"
 
 volumes:
   pgdata:

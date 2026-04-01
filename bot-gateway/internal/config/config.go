@@ -3,48 +3,61 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Http struct {
-		Host string
-		Port string
-	}
-	
-
-
-	ApiKey    string
-	JwtSecret string
+	TelegramToken string
+	DatabaseDSN   string
+	APIKey        string
+	JwtSecret     string
+	// Telegram IDs of superadmins (comma-separated in env)
+	Superadmins []int64
 }
 
 var AppConfig Config
 
 func LoadConfig() {
-	// .env optional
 	_ = godotenv.Load()
 
 	AppConfig = Config{
-		Http: struct {
-			Host string
-			Port string
-		}{
-			Host: getEnv("HTTP_HOST", "0.0.0.0"),
-			Port: getEnv("HTTP_PORT", "8080"),
-		},
-
-		ApiKey: os.Getenv("API_KEY"),
-		JwtSecret: mustEnv("JWT_KEY"),
+		TelegramToken: mustEnv("TELEGRAM_TOKEN"),
+		DatabaseDSN:   mustEnv("DATABASE_DSN"),
+		APIKey:        getEnv("API_KEY", ""),
+		JwtSecret:     mustEnv("JWT_SECRET"),
+		Superadmins:   parseSuperadmins(getEnv("SUPERADMIN_IDS", "")),
 	}
 
-	log.Println("config loaded successfully")
+	log.Println("✅ Config yuklandi")
+}
+
+func parseSuperadmins(s string) []int64 {
+	var ids []int64
+	if s == "" {
+		return ids
+	}
+	for _, part := range strings.Split(s, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		id, err := strconv.ParseInt(part, 10, 64)
+		if err != nil {
+			log.Printf("⚠️  Noto'g'ri superadmin ID: %s", part)
+			continue
+		}
+		ids = append(ids, id)
+	}
+	return ids
 }
 
 func mustEnv(key string) string {
 	val := os.Getenv(key)
 	if val == "" {
-		log.Fatalf("missing required env: %s", key)
+		log.Fatalf("❌ Majburiy env topilmadi: %s", key)
 	}
 	return val
 }

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(protoc --version)",
+      "Bash(go version:*)",
+      "Bash(cmd.exe /c \"go version\")",
+      "Bash(cmd.exe /c \"protoc --version\")",
+      "Bash(cmd.exe /c \"set PATH\")",
+      "Bash(powershell.exe -Command \"go version; protoc --version\")",
+      "Bash(powershell.exe -Command \"if \\(Test-Path 'C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe'\\) { 'Found: C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe' } elseif \\(Test-Path 'C:\\\\Go\\\\bin\\\\go.exe'\\) { 'Found: C:\\\\Go\\\\bin\\\\go.exe' } else { 'Go not found in standard paths' }\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem -Path C:\\\\Users\\\\Oyatulloh -Recurse -Filter 'go.exe' -ErrorAction SilentlyContinue | Select-Object -First 5 FullName\")",
+      "Bash(powershell.exe -Command ':*)"
+    ]
+  }
+}
