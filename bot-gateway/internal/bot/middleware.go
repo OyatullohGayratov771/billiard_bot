@@ -4,15 +4,13 @@ import (
 	"log"
 
 	"bot-gateway/internal/models"
-	"bot-gateway/internal/repository"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-// authUser — har bir updateda foydalanuvchini DB dan oladi.
-// Agar foydalanuvchi topilmasa nil qaytaradi (yangi foydalanuvchi /start bosishi kerak).
+// authUser — har bir updateda foydalanuvchini user-service dan oladi.
 func (h *Handler) authUser(tgID int64) *models.User {
-	user, err := h.userRepo.GetByTelegramID(tgID)
+	user, err := h.userSvc.GetByTelegramID(tgID)
 	if err != nil {
 		return nil
 	}
@@ -44,15 +42,9 @@ func (h *Handler) requireStaff(bot *tgbotapi.BotAPI, chatID int64, user *models.
 		models.RoleSuperadmin, models.RoleAdmin, models.RoleOperator)
 }
 
-// logAction — audit log yozadi (goroutine'da, bloklash yo'q)
+// logAction — har bir servis o'z audit log ni yozadi, bot-gateway da no-op
 func (h *Handler) logAction(user *models.User, action, details string) {
-	go func() {
-		var uid *int64
-		if user != nil {
-			uid = &user.ID
-		}
-		h.auditRepo.Log(uid, action, details)
-	}()
+	log.Printf("audit: user=%v action=%s details=%s", user, action, details)
 }
 
 // rateLimiter — oddiy rate limiting (xotira ichida)
@@ -137,13 +129,8 @@ func editMessage(bot *tgbotapi.BotAPI, chatID int64, msgID int, text string, kb 
 	}
 }
 
-// userRepo shortcut for authUser
 func (h *Handler) getOrRegister(tgID int64, username, firstName, lastName string) (*models.User, error) {
-	user, err := h.userSvc.RegisterOrGet(tgID, username, firstName, lastName)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
+	return h.userSvc.RegisterOrGet(tgID, username, firstName, lastName)
 }
 
 // branchAccessOK — operator/admin o'z filialiga kirish huquqini tekshiradi
@@ -156,10 +143,3 @@ func branchAccessOK(user *models.User, branchID int64) bool {
 	}
 	return *user.BranchID == branchID
 }
-
-// isUserRepo helper for direct access
-type userRepoIface interface {
-	GetByTelegramID(tgID int64) (*models.User, error)
-}
-
-var _ userRepoIface = (*repository.UserRepo)(nil)

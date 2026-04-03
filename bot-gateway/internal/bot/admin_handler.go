@@ -2,12 +2,13 @@ package bot
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"bot-gateway/internal/models"
-	"bot-gateway/internal/repository"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -98,7 +99,7 @@ func (h *Handler) cbShowTables(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 
 func (h *Handler) cbShowTablesInline(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, branchIDStr string) {
 	branchID, _ := strconv.ParseInt(branchIDStr, 10, 64)
-	branch, _ := h.branchRepo.GetByID(branchID)
+	branch, _ := h.tableSvc.GetBranchByID(branchID)
 	tables, err := h.tableSvc.GetBranchTables(branchID)
 	if err != nil || len(tables) == 0 {
 		send(bot, chatID, "❌ Stollar topilmadi.")
@@ -302,27 +303,26 @@ func (h *Handler) cbShowReport(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 	}
 
 	branchID := mustParseInt64(branchIDStr)
-	branch, _ := h.branchRepo.GetByID(branchID)
+	branch, _ := h.tableSvc.GetBranchByID(branchID)
 	branchName := branchIDStr
 	if branch != nil {
 		branchName = branch.Name
 	}
 
-	sessionRepo := h.sessionRepo
 	var total int
 	var priceSom int64
 	var periodText string
 
 	switch period {
 	case "day":
-		t, p, err := sessionRepo.DailyReport(branchID)
+		t, p, err := h.tableSvc.DailyReport(branchID)
 		if err != nil {
 			send(bot, chatID, "❌ Xatolik.")
 			return
 		}
 		total, priceSom, periodText = t, p, "Bugun"
 	case "month":
-		t, p, err := sessionRepo.MonthlyReport(branchID)
+		t, p, err := h.tableSvc.MonthlyReport(branchID)
 		if err != nil {
 			send(bot, chatID, "❌ Xatolik.")
 			return
@@ -356,7 +356,7 @@ func (h *Handler) showTodaySessions(bot *tgbotapi.BotAPI, chatID int64, user *mo
 		return
 	}
 
-	total, priceSom, err := h.sessionRepo.DailyReport(branchID)
+	total, priceSom, err := h.tableSvc.DailyReport(branchID)
 	if err != nil {
 		send(bot, chatID, "❌ Xatolik.")
 		return
@@ -397,7 +397,7 @@ func (h *Handler) showPendingClips(bot *tgbotapi.BotAPI, chatID int64, user *mod
 		}
 		label := fmt.Sprintf("%s #%d — %s %d-stol %s",
 			statusIcon, c.ID, c.BranchName, c.TableNum,
-			c.RequestedTime.Format("02.01 15:04"))
+			c.StartTime.Format("02.01 15:04"))
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(label,
 				fmt.Sprintf("clip_detail:%d", c.ID)),
@@ -422,12 +422,13 @@ func (h *Handler) cbShowClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID int
 			"👤 Mijoz: %s\n"+
 			"🏢 Filial: %s\n"+
 			"🎱 Stol: %d\n"+
-			"🕐 Vaqt: %s\n"+
-			"⏱ Davomiylik: %d soniya\n"+
+			"🕐 Boshlanish: %s\n"+
+			"🕑 Tugash: %s\n"+
 			"📊 Holat: <b>%s</b>",
 		cr.ID, cr.ClientName, cr.BranchName, cr.TableNum,
-		cr.RequestedTime.Format("02.01.2006 15:04"),
-		cr.DurationSec, cr.Status,
+		cr.StartTime.Format("02.01.2006 15:04"),
+		cr.EndTime.Format("02.01.2006 15:04"),
+		cr.Status,
 	)
 
 	kb := clipRequestActionsKeyboard(cr.ID, cr.Status)
@@ -446,6 +447,88 @@ func (h *Handler) cbAdminConfirmPayment(bot *tgbotapi.BotAPI, chatID int64, msgI
 	h.logAction(user, "confirm_payment", fmt.Sprintf("clip:%d", clipID))
 	send(bot, chatID, fmt.Sprintf("✅ Klip #%d uchun to'lov tasdiqlandi.", clipID))
 	h.cbShowClipDetail(bot, chatID, msgID, user, clipIDStr)
+}
+
+// cbRecordClip — NVR dan klip yozishni boshlaydi va bot mijozga yuboradi
+func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, clipIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	clipID := mustParseInt64(clipIDStr)
+
+	cr, err := h.clipSvc.GetByID(clipID)
+	if err != nil {
+		send(bot, chatID, "❌ Buyurtma topilmadi.")
+		return
+	}
+
+	if err := h.clipSvc.TriggerRecording(clipID); err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		return
+	}
+
+	editMessage(bot, chatID, msgID,
+		fmt.Sprintf("⏳ <b>Klip #%d yozilmoqda...</b>\n\n%s — %s\nTayyor bo'lganda avtomatik yuboriladi.",
+			clipID, cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04")), nil)
+
+	// Fon goroutine — klip tayyor bo'lganda mijozga yuboradi
+	go func() {
+		for i := 0; i < 36; i++ { // max 6 daqiqa (36 * 10s)
+			time.Sleep(10 * time.Second)
+
+			cur, err := h.clipSvc.GetByID(clipID)
+			if err != nil {
+				return
+			}
+
+			if cur.Status == models.ClipStatusFailed {
+				send(bot, chatID, fmt.Sprintf("❌ Klip #%d yozishda xatolik. NVR sozlamalarini tekshiring.", clipID))
+				return
+			}
+
+			if cur.Status == models.ClipStatusDone {
+				send(bot, chatID, fmt.Sprintf("✅ Klip #%d tayyor! Mijozga yuborilmoqda...", clipID))
+
+				caption := fmt.Sprintf(
+					"🎬 <b>Sizning klipingiz tayyor!</b>\n\n📋 Buyurtma #%d\n🏢 %s | 🎱 %d-stol\n🕐 %s — %s",
+					cr.ID, cr.BranchName, cr.TableNum,
+					cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"),
+				)
+
+				// To'g'ridan shared volume dan o'qib stream qilish
+				f, err := os.Open(cur.ClipPath)
+				if err != nil {
+					send(bot, chatID, fmt.Sprintf("❌ Klip fayl ochilmadi: %v", err))
+					return
+				}
+
+				fileName := filepath.Base(cur.ClipPath)
+				videoMsg := tgbotapi.NewVideo(cur.ClientTgID,
+					tgbotapi.FileReader{Name: fileName, Reader: f})
+				videoMsg.Caption = caption
+				videoMsg.ParseMode = "HTML"
+				_, sendErr := bot.Send(videoMsg)
+				f.Close()
+
+				if sendErr != nil {
+					// Video bo'lmasa document sifatida qayta urinib ko'r
+					f2, err2 := os.Open(cur.ClipPath)
+					if err2 == nil {
+						docMsg := tgbotapi.NewDocument(cur.ClientTgID,
+							tgbotapi.FileReader{Name: fileName, Reader: f2})
+						docMsg.Caption = caption
+						docMsg.ParseMode = "HTML"
+						_, _ = bot.Send(docMsg)
+						f2.Close()
+					}
+				}
+
+				send(bot, chatID, fmt.Sprintf("✅ Klip #%d mijozga yuborildi!", clipID))
+				return
+			}
+		}
+		send(bot, chatID, fmt.Sprintf("⏰ Klip #%d yozish vaqti tugadi (6 daqiqa). Qayta urinib ko'ring.", clipID))
+	}()
 }
 
 func (h *Handler) cbAdminClipDone(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, clipIDStr string) {
@@ -538,7 +621,195 @@ func (h *Handler) showSettings(bot *tgbotapi.BotAPI, chatID int64, user *models.
 	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin) {
 		return
 	}
-	send(bot, chatID, "⚙️ <b>Sozlamalar</b>\n\nKelgusida qo'shiladi: NVR sozlamalari, narx o'zgartirish.")
+	branches, err := h.tableSvc.GetBranches()
+	if err != nil {
+		send(bot, chatID, "❌ Filiallar yuklanmadi.")
+		return
+	}
+
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for _, b := range branches {
+		nvrStatus := "❌"
+		if b.NVRHost != "" {
+			nvrStatus = fmt.Sprintf("✅ %s:%d", b.NVRHost, b.NVRPort)
+		}
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(
+				fmt.Sprintf("🔌 %s NVR — %s", b.Name, nvrStatus),
+				fmt.Sprintf("nvr_setup:%d", b.ID),
+			),
+		))
+	}
+	// Har bir filial uchun per-stol RTSP sozlash
+	for _, b := range branches {
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(
+				fmt.Sprintf("📹 %s — stol RTSP", b.Name),
+				fmt.Sprintf("rtsp_branch:%d", b.ID),
+			),
+		))
+	}
+	kb := tgbotapi.NewInlineKeyboardMarkup(rows...)
+	sendWithKeyboard(bot, chatID,
+		"⚙️ <b>Sozlamalar</b>\n\n"+
+			"🔌 <b>NVR</b> — branch darajasida (eski usul)\n"+
+			"📹 <b>Stol RTSP</b> — har bir stol uchun alohida URL", kb)
+}
+
+// cbRTSPBranch — RTSP sozlash uchun filial tanlanganda stollarni ko'rsatadi
+func (h *Handler) cbRTSPBranch(bot *tgbotapi.BotAPI, chatID int64, msgID int, branchIDStr string) {
+	branchID := mustParseInt64(branchIDStr)
+	tables, err := h.tableSvc.GetBranchTables(branchID)
+	if err != nil || len(tables) == 0 {
+		send(bot, chatID, "❌ Stollar topilmadi.")
+		return
+	}
+
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for _, t := range tables {
+		rtspIcon := "❌"
+		if t.RTSPUrl != "" {
+			rtspIcon = "✅"
+		}
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(
+				fmt.Sprintf("%s %d-stol", rtspIcon, t.TableNum),
+				fmt.Sprintf("rtsp_table:%d", t.ID),
+			),
+		))
+	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "settings_back"),
+	))
+	kb := tgbotapi.NewInlineKeyboardMarkup(rows...)
+	editMessage(bot, chatID, msgID, "📹 RTSP URL o'rnatish uchun stol tanlang:\n\n✅ — URL belgilangan\n❌ — URL yo'q", &kb)
+}
+
+// cbRTSPTable — stol tanlanganda RTSP URL kiritishni so'raydi
+func (h *Handler) cbRTSPTable(bot *tgbotapi.BotAPI, chatID int64, tgID int64, tableIDStr string) {
+	tableID := mustParseInt64(tableIDStr)
+	table, err := h.tableSvc.GetTable(tableID)
+	if err != nil {
+		send(bot, chatID, "❌ Stol topilmadi.")
+		return
+	}
+
+	h.states.Set(tgID, StateTableRTSP)
+	h.states.SetData(tgID, "table_id", tableID)
+
+	current := "Belgilanmagan"
+	if table.RTSPUrl != "" {
+		current = table.RTSPUrl
+	}
+
+	send(bot, chatID, fmt.Sprintf(
+		"📹 <b>%s — %d-stol RTSP URL</b>\n\n"+
+			"Hozirgi: <code>%s</code>\n\n"+
+			"Yangi RTSP URL ni kiriting:\n"+
+			"<i>Misol: rtsp://admin:parol@192.168.1.100:554/Streaming/Channels/101</i>",
+		table.BranchName, table.TableNum, current,
+	))
+}
+
+// cbNVRSetup — NVR sozlash oqimini boshlaydi
+func (h *Handler) cbNVRSetup(bot *tgbotapi.BotAPI, chatID int64, tgID int64, branchIDStr string) {
+	branchID := mustParseInt64(branchIDStr)
+	branch, err := h.tableSvc.GetBranchByID(branchID)
+	if err != nil {
+		send(bot, chatID, "❌ Filial topilmadi.")
+		return
+	}
+
+	h.states.Set(tgID, StateNVRIP)
+	h.states.SetData(tgID, "branch_id", branchID)
+
+	current := "Hozircha yo'q"
+	if branch.NVRHost != "" {
+		current = fmt.Sprintf("%s:%d (user: %s)", branch.NVRHost, branch.NVRPort, branch.NVRUser)
+	}
+
+	send(bot, chatID, fmt.Sprintf(
+		"📷 <b>%s — NVR sozlash</b>\n\n"+
+			"Hozirgi: <code>%s</code>\n\n"+
+			"NVR ning IP manzilini kiriting:\n<i>Misol: 192.168.1.100</i>",
+		branch.Name, current,
+	))
+}
+
+// handleNVRInput — NVR sozlash FSM qadamlari
+func (h *Handler) handleNVRInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, state *UserState) {
+	tgID := msg.From.ID
+	chatID := msg.Chat.ID
+	text := strings.TrimSpace(msg.Text)
+
+	switch state.State {
+	case StateNVRIP:
+		h.states.SetData(tgID, "nvr_ip", text)
+		h.states.Set(tgID, StateNVRPort)
+		send(bot, chatID, "🔌 NVR portini kiriting:\n<i>Odatda: 554 (RTSP)</i>")
+
+	case StateNVRPort:
+		port := 554
+		if p, err := strconv.Atoi(text); err == nil && p > 0 {
+			port = p
+		}
+		h.states.SetData(tgID, "nvr_port", port)
+		h.states.Set(tgID, StateNVRUser)
+		send(bot, chatID, "👤 NVR login (username) ni kiriting:\n<i>Misol: admin</i>")
+
+	case StateNVRUser:
+		h.states.SetData(tgID, "nvr_user", text)
+		h.states.Set(tgID, StateNVRPass)
+		send(bot, chatID, "🔑 NVR parolini kiriting:")
+
+	case StateNVRPass:
+		branchID, _ := h.states.GetInt64(tgID, "branch_id")
+		ip, _ := h.states.GetString(tgID, "nvr_ip")
+		portVal, _ := h.states.GetData(tgID, "nvr_port")
+		user, _ := h.states.GetString(tgID, "nvr_user")
+		port := 554
+		if p, ok := portVal.(int); ok {
+			port = p
+		}
+
+		h.states.Clear(tgID)
+
+		if err := h.tableSvc.UpdateBranchNVR(branchID, ip, port, user, text); err != nil {
+			send(bot, chatID, fmt.Sprintf("❌ Saqlashda xatolik: %v", err))
+			return
+		}
+
+		send(bot, chatID, fmt.Sprintf(
+			"✅ <b>NVR sozlandi!</b>\n\n"+
+				"🌐 IP: <code>%s</code>\n"+
+				"🔌 Port: <code>%d</code>\n"+
+				"👤 Login: <code>%s</code>\n\n"+
+				"📷 Kamera test qilish uchun klip so'rovi orqali yoki admin paneldan foydalaning.",
+			ip, port, user,
+		))
+	}
+}
+
+// handleTableRTSPInput — stol RTSP URL kiritish
+func (h *Handler) handleTableRTSPInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, state *UserState) {
+	tgID := msg.From.ID
+	chatID := msg.Chat.ID
+	rtspURL := strings.TrimSpace(msg.Text)
+
+	tableID, _ := h.states.GetInt64(tgID, "table_id")
+	h.states.Clear(tgID)
+
+	if err := h.tableSvc.SetTableRTSP(tableID, rtspURL); err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ Saqlashda xatolik: %v", err))
+		return
+	}
+
+	send(bot, chatID, fmt.Sprintf(
+		"✅ <b>RTSP URL saqlandi!</b>\n\n"+
+			"🎱 Stol #%d\n"+
+			"<code>%s</code>",
+		tableID, rtspURL,
+	))
 }
 
 // ===================== HELPERS =====================

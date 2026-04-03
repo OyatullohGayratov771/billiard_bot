@@ -5,8 +5,10 @@ import (
 	"errors"
 	"time"
 
-	"bot-gateway/internal/models"
+	"clip-service/internal/models"
 )
+
+var ErrNotFound = errors.New("topilmadi")
 
 type ClipRepo struct {
 	db *sql.DB
@@ -58,10 +60,7 @@ func (r *ClipRepo) GetByID(id int64) (*models.ClipRequest, error) {
 }
 
 func (r *ClipRepo) SetStatus(id int64, status string) error {
-	_, err := r.db.Exec(
-		`UPDATE clip_requests SET status = $1 WHERE id = $2`,
-		status, id,
-	)
+	_, err := r.db.Exec(`UPDATE clip_requests SET status = $1 WHERE id = $2`, status, id)
 	return err
 }
 
@@ -109,6 +108,11 @@ func (r *ClipRepo) CreatePayment(clipRequestID int64, screenshotID string) error
 		INSERT INTO payments (clip_request_id, amount, method, status, screenshot_id, paid_at)
 		VALUES ($1, $2, 'manual', 'pending', $3, NULL)
 	`, clipRequestID, models.ClipPrice, screenshotID)
+	return err
+}
+
+func (r *ClipRepo) SetClipPath(id int64, path string) error {
+	_, err := r.db.Exec(`UPDATE clip_requests SET clip_path = $1 WHERE id = $2`, path, id)
 	return err
 }
 

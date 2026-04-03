@@ -44,8 +44,10 @@ func (s *ClipService) CreateRequest(in models.ClipRequestInput) (*models.ClipReq
 	}
 
 	s.audit.Log(nil, "clip_request_created",
-		fmt.Sprintf("client:%d branch:%d table:%d time:%s",
-			in.ClientTgID, in.BranchID, in.TableID, in.RequestedTime.Format("2006-01-02 15:04")))
+		fmt.Sprintf("client:%d branch:%d table:%d start:%s end:%s",
+			in.ClientTgID, in.BranchID, in.TableID,
+			in.StartTime.Format("2006-01-02 15:04"),
+			in.EndTime.Format("2006-01-02 15:04")))
 
 	return cr, nil
 }

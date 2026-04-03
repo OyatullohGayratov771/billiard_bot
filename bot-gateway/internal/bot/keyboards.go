@@ -201,12 +201,22 @@ func clipRequestActionsKeyboard(clipID int64, status string) tgbotapi.InlineKeyb
 	}
 	if status == models.ClipStatusPaid {
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("📹 NVR dan yozish",
+				fmt.Sprintf("clip_record:%d", clipID)),
+		))
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("✅ Klip yuborildi (Done)",
 				fmt.Sprintf("admin_clip_done:%d", clipID)),
 		))
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("❌ Muvaffaqiyatsiz",
 				fmt.Sprintf("admin_clip_fail:%d", clipID)),
+		))
+	}
+	if status == models.ClipStatusProcessing {
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔄 Holat yangilash",
+				fmt.Sprintf("clip_detail:%d", clipID)),
 		))
 	}
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(

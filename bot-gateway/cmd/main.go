@@ -4,54 +4,23 @@ import (
 	"log"
 
 	"bot-gateway/internal/bot"
+	"bot-gateway/internal/client"
 	"bot-gateway/internal/config"
-	"bot-gateway/internal/db"
-	"bot-gateway/internal/repository"
-	"bot-gateway/internal/service"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func main() {
-	// Config yuklash
 	config.LoadConfig()
 	cfg := config.AppConfig
 
-	// PostgreSQL ulanish
-	database, err := db.New(cfg.DatabaseDSN)
-	if err != nil {
-		log.Fatalf("❌ DB ulanmadi: %v", err)
-	}
-	defer database.Close()
-
-	// Migration
-	if err := db.Migrate(database); err != nil {
-		log.Fatalf("❌ Migration xatosi: %v", err)
-	}
-
-	// Filiallar va stollarni seed qilish
-	if err := db.SeedBranches(database); err != nil {
-		log.Printf("⚠️  Seed xatosi: %v", err)
-	}
-
-	// Repository'lar
-	userRepo := repository.NewUserRepo(database)
-	branchRepo := repository.NewBranchRepo(database)
-	tableRepo := repository.NewTableRepo(database)
-	sessionRepo := repository.NewSessionRepo(database)
-	clipRepo := repository.NewClipRepo(database)
-	auditRepo := repository.NewAuditRepo(database)
-
-	// Service'lar
-	userSvc := service.NewUserService(userRepo, auditRepo, cfg.Superadmins)
-	tableSvc := service.NewTableService(tableRepo, branchRepo, sessionRepo, auditRepo)
-	clipSvc := service.NewClipService(clipRepo, branchRepo, tableRepo, auditRepo)
+	// HTTP klientlar orqali mikroservislar bilan ulanish
+	userClient := client.NewUserClient(cfg.UserServiceURL)
+	tableClient := client.NewTableClient(cfg.TableServiceURL)
+	clipClient := client.NewClipClient(cfg.ClipServiceURL)
 
 	// Handler
-	handler := bot.NewHandler(
-		userRepo, branchRepo, tableRepo, sessionRepo, clipRepo, auditRepo,
-		userSvc, tableSvc, clipSvc,
-	)
+	handler := bot.NewHandler(userClient, tableClient, clipClient)
 
 	// Telegram bot
 	tg, err := tgbotapi.NewBotAPI(cfg.TelegramToken)

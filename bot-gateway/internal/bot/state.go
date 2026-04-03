@@ -9,16 +9,24 @@ const (
 	// Klip so'rash oqimi
 	StateClipBranch   = "clip:branch"
 	StateClipTable    = "clip:table"
-	StateClipDate     = "clip:date"
-	StateClipTime     = "clip:time"
-	StateClipDuration = "clip:duration"
-	StateClipPayment  = "clip:payment" // screenshot kutilmoqda
+	StateClipStartTime = "clip:start_time"
+	StateClipEndTime   = "clip:end_time"
+	StateClipPayment   = "clip:payment" // screenshot kutilmoqda
 
 	// Admin: sessiya boshlash
 	StateSessionClientName = "session:client_name"
 
 	// Admin: xodim qo'shish
 	StateAddStaffID = "staff:add_id"
+
+	// Admin: NVR sozlamalari (branch)
+	StateNVRIP   = "nvr:ip"
+	StateNVRPort = "nvr:port"
+	StateNVRUser = "nvr:user"
+	StateNVRPass = "nvr:pass"
+
+	// Admin: stol RTSP URL
+	StateTableRTSP = "table:rtsp"
 )
 
 // UserState — bitta foydalanuvchining joriy holati

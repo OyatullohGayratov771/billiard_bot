@@ -10,12 +10,13 @@ import (
 )
 
 type Config struct {
-	TelegramToken string
-	DatabaseDSN   string
-	APIKey        string
-	JwtSecret     string
-	// Telegram IDs of superadmins (comma-separated in env)
-	Superadmins []int64
+	TelegramToken   string
+	APIKey          string
+	JwtSecret       string
+	Superadmins     []int64
+	UserServiceURL  string
+	TableServiceURL string
+	ClipServiceURL  string
 }
 
 var AppConfig Config
@@ -24,11 +25,13 @@ func LoadConfig() {
 	_ = godotenv.Load()
 
 	AppConfig = Config{
-		TelegramToken: mustEnv("TELEGRAM_TOKEN"),
-		DatabaseDSN:   mustEnv("DATABASE_DSN"),
-		APIKey:        getEnv("API_KEY", ""),
-		JwtSecret:     mustEnv("JWT_SECRET"),
-		Superadmins:   parseSuperadmins(getEnv("SUPERADMIN_IDS", "")),
+		TelegramToken:   mustEnv("TELEGRAM_TOKEN"),
+		APIKey:          getEnv("API_KEY", ""),
+		JwtSecret:       mustEnv("JWT_SECRET"),
+		Superadmins:     parseSuperadmins(getEnv("SUPERADMIN_IDS", "")),
+		UserServiceURL:  getEnv("USER_SERVICE_URL", "http://user-service:8081"),
+		TableServiceURL: getEnv("TABLE_SERVICE_URL", "http://table-service:8082"),
+		ClipServiceURL:  getEnv("CLIP_SERVICE_URL", "http://clip-service:8083"),
 	}
 
 	log.Println("✅ Config yuklandi")

@@ -58,13 +58,14 @@ type Branch struct {
 }
 
 type Table struct {
-	ID             int64
-	BranchID       int64
-	TableNum       int
-	CameraChannel  int
-	Status         string
-	PricePerHour   int64  // tiyin
-	CreatedAt      time.Time
+	ID            int64
+	BranchID      int64
+	TableNum      int
+	CameraChannel int
+	RTSPUrl       string
+	Status        string
+	PricePerHour  int64 // tiyin
+	CreatedAt     time.Time
 
 	// join fields
 	BranchName string
@@ -122,17 +123,17 @@ func (s *Session) PriceSom() int64 {
 }
 
 type ClipRequest struct {
-	ID            int64
-	ClientTgID    int64
-	ClientName    string
-	BranchID      int64
-	TableID       int64
-	RequestedTime time.Time
-	DurationSec   int
-	Status        string
-	ClipPath      string
-	Notes         string
-	CreatedAt     time.Time
+	ID         int64
+	ClientTgID int64
+	ClientName string
+	BranchID   int64
+	TableID    int64
+	StartTime  time.Time
+	EndTime    time.Time
+	Status     string
+	ClipPath   string
+	Notes      string
+	CreatedAt  time.Time
 
 	// join fields
 	BranchName string
@@ -168,12 +169,12 @@ type StartSessionInput struct {
 }
 
 type ClipRequestInput struct {
-	ClientTgID    int64
-	ClientName    string
-	BranchID      int64
-	TableID       int64
-	RequestedTime time.Time
-	DurationSec   int
+	ClientTgID int64
+	ClientName string
+	BranchID   int64
+	TableID    int64
+	StartTime  time.Time
+	EndTime    time.Time
 }
 
 // PricePerHourSom — stolning soatlik narxini so'mda qaytaradi
