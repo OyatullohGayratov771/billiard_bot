@@ -44,42 +44,6 @@ func (c *TableClient) GetTable(id int64) (*models.Table, error) {
 	return &table, nil
 }
 
-func (c *TableClient) StartSession(operator *models.User, tableID int64, clientName string) (*models.Session, error) {
-	body, _ := json.Marshal(map[string]any{
-		"table_id":           tableID,
-		"client_name":        clientName,
-		"operator_id":        operator.ID,
-		"operator_role":      operator.Role,
-		"operator_branch_id": operator.BranchID,
-	})
-	var session models.Session
-	if err := c.post("/sessions", body, &session); err != nil {
-		return nil, err
-	}
-	return &session, nil
-}
-
-func (c *TableClient) EndSession(operator *models.User, tableID int64) (*models.Session, error) {
-	body, _ := json.Marshal(map[string]any{
-		"operator_id":        operator.ID,
-		"operator_role":      operator.Role,
-		"operator_branch_id": operator.BranchID,
-	})
-	var session models.Session
-	if err := c.putWithBody(fmt.Sprintf("/tables/%d/end", tableID), body, &session); err != nil {
-		return nil, err
-	}
-	return &session, nil
-}
-
-func (c *TableClient) ActiveSession(tableID int64) (*models.Session, error) {
-	var session models.Session
-	if err := c.get(fmt.Sprintf("/tables/%d/session", tableID), &session); err != nil {
-		return nil, err
-	}
-	return &session, nil
-}
-
 func (c *TableClient) UpdateBranchNVR(id int64, ip string, port int, user, pass string) error {
 	body, _ := json.Marshal(map[string]any{"ip": ip, "port": port, "user": user, "pass": pass})
 	return c.putNoResponse(fmt.Sprintf("/branches/%d/nvr", id), body)
@@ -107,28 +71,6 @@ func (c *TableClient) putNoResponse(path string, body []byte) error {
 		return fmt.Errorf("table-service: %s", e["error"])
 	}
 	return nil
-}
-
-func (c *TableClient) DailyReport(branchID int64) (int, int64, error) {
-	var result struct {
-		Sessions int   `json:"sessions"`
-		PriceSom int64 `json:"price_som"`
-	}
-	if err := c.get(fmt.Sprintf("/branches/%d/report/daily", branchID), &result); err != nil {
-		return 0, 0, err
-	}
-	return result.Sessions, result.PriceSom, nil
-}
-
-func (c *TableClient) MonthlyReport(branchID int64) (int, int64, error) {
-	var result struct {
-		Sessions int   `json:"sessions"`
-		PriceSom int64 `json:"price_som"`
-	}
-	if err := c.get(fmt.Sprintf("/branches/%d/report/monthly", branchID), &result); err != nil {
-		return 0, 0, err
-	}
-	return result.Sessions, result.PriceSom, nil
 }
 
 func (c *TableClient) get(path string, out any) error {
@@ -159,21 +101,3 @@ func (c *TableClient) post(path string, body []byte, out any) error {
 	return json.NewDecoder(resp.Body).Decode(out)
 }
 
-func (c *TableClient) putWithBody(path string, body []byte, out any) error {
-	req, err := http.NewRequest(http.MethodPut, c.baseURL+path, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		var e map[string]string
-		_ = json.NewDecoder(resp.Body).Decode(&e)
-		return fmt.Errorf("table-service: %s", e["error"])
-	}
-	return json.NewDecoder(resp.Body).Decode(out)
-}

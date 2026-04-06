@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"time"
 
 	"bot-gateway/internal/models"
 
@@ -16,19 +17,12 @@ func mainMenuKeyboard(user *models.User) tgbotapi.ReplyKeyboardMarkup {
 	switch user.Role {
 	case models.RoleSuperadmin:
 		rows = [][]tgbotapi.KeyboardButton{
-			{btn("🏢 Filiallar"), btn("👥 Xodimlar")},
-			{btn("🎬 Klip so'rovlar"), btn("📊 Hisobot")},
+			{btn("🎬 Klip so'rovlar"), btn("👥 Xodimlar")},
 			{btn("⚙️ Sozlamalar")},
 		}
-	case models.RoleAdmin:
+	case models.RoleAdmin, models.RoleOperator:
 		rows = [][]tgbotapi.KeyboardButton{
-			{btn("🎱 Stollar"), btn("📊 Hisobot")},
 			{btn("🎬 Klip so'rovlar")},
-		}
-	case models.RoleOperator:
-		rows = [][]tgbotapi.KeyboardButton{
-			{btn("🎱 Stollar")},
-			{btn("📋 Bugungi sessiyalar")},
 		}
 	default:
 		rows = [][]tgbotapi.KeyboardButton{
@@ -43,84 +37,6 @@ func btn(text string) tgbotapi.KeyboardButton {
 	return tgbotapi.NewKeyboardButton(text)
 }
 
-// ===================== BRANCH SELECTION =====================
-
-func branchesKeyboard(branches []*models.Branch) tgbotapi.InlineKeyboardMarkup {
-	var rows [][]tgbotapi.InlineKeyboardButton
-	for _, b := range branches {
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(
-				fmt.Sprintf("🏢 %s", b.Name),
-				fmt.Sprintf("branch:%d", b.ID),
-			),
-		))
-	}
-	return tgbotapi.NewInlineKeyboardMarkup(rows...)
-}
-
-// ===================== TABLES =====================
-
-func tablesKeyboard(tables []*models.Table) tgbotapi.InlineKeyboardMarkup {
-	var rows [][]tgbotapi.InlineKeyboardButton
-	row := []tgbotapi.InlineKeyboardButton{}
-
-	for i, t := range tables {
-		icon := "🟢"
-		if t.Status == models.TableStatusBusy {
-			icon = "🔴"
-		}
-		label := fmt.Sprintf("%s %d", icon, t.TableNum)
-		cb := fmt.Sprintf("table:%d", t.ID)
-		row = append(row, tgbotapi.NewInlineKeyboardButtonData(label, cb))
-
-		// 3 ta stoldan keyin yangi qator
-		if (i+1)%3 == 0 || i == len(tables)-1 {
-			rows = append(rows, row)
-			row = []tgbotapi.InlineKeyboardButton{}
-		}
-	}
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "back:branches"),
-	))
-	return tgbotapi.NewInlineKeyboardMarkup(rows...)
-}
-
-// ===================== TABLE ACTIONS =====================
-
-func tableActionsKeyboard(table *models.Table) tgbotapi.InlineKeyboardMarkup {
-	var rows [][]tgbotapi.InlineKeyboardButton
-
-	if table.Status == models.TableStatusFree {
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(
-				"▶️ Sessiya boshlash",
-				fmt.Sprintf("start_session:%d", table.ID),
-			),
-		))
-	} else {
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(
-				"⏹ Sessiya yakunlash",
-				fmt.Sprintf("end_session:%d", table.ID),
-			),
-		))
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(
-				"⏱ Vaqtni ko'rish",
-				fmt.Sprintf("view_session:%d", table.ID),
-			),
-		))
-	}
-
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData(
-			"🔙 Orqaga",
-			fmt.Sprintf("back:tables:%d", table.BranchID),
-		),
-	))
-	return tgbotapi.NewInlineKeyboardMarkup(rows...)
-}
-
 // ===================== CONFIRM / CANCEL =====================
 
 func confirmKeyboard(confirmCB, cancelCB string) tgbotapi.InlineKeyboardMarkup {
@@ -130,6 +46,115 @@ func confirmKeyboard(confirmCB, cancelCB string) tgbotapi.InlineKeyboardMarkup {
 			tgbotapi.NewInlineKeyboardButtonData("❌ Yo'q", cancelCB),
 		),
 	)
+}
+
+// ===================== CLIP REQUEST — KALENDAR =====================
+
+// clipDateKeyboard — oxirgi 7 kunni tugma sifatida ko'rsatadi
+func clipDateKeyboard() tgbotapi.InlineKeyboardMarkup {
+	now := time.Now()
+	var rows [][]tgbotapi.InlineKeyboardButton
+	row := []tgbotapi.InlineKeyboardButton{}
+
+	for i := 0; i < 7; i++ {
+		day := now.AddDate(0, 0, -i)
+		label := day.Format("02.01 Mon")
+		switch i {
+		case 0:
+			label = "📅 Bugun " + day.Format("02.01")
+		case 1:
+			label = "📅 Kecha " + day.Format("02.01")
+		default:
+			label = "📅 " + day.Format("02.01")
+		}
+		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+			label, fmt.Sprintf("clip_date:%s", day.Format("02.01.2006")),
+		))
+		if len(row) == 2 || i == 6 {
+			rows = append(rows, row)
+			row = []tgbotapi.InlineKeyboardButton{}
+		}
+	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:table"),
+		tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", "clip_cancel"),
+	))
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+// clipHourKeyboard — soat tanlash (00-23, barcha soatlar)
+func clipHourKeyboard() tgbotapi.InlineKeyboardMarkup {
+	var rows [][]tgbotapi.InlineKeyboardButton
+	row := []tgbotapi.InlineKeyboardButton{}
+
+	for h := 0; h <= 23; h++ {
+		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+			fmt.Sprintf("%02d:__", h),
+			fmt.Sprintf("clip_hour:%d", h),
+		))
+		if len(row) == 6 {
+			rows = append(rows, row)
+			row = []tgbotapi.InlineKeyboardButton{}
+		}
+	}
+	if len(row) > 0 {
+		rows = append(rows, row)
+	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:date"),
+		tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", "clip_cancel"),
+	))
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+// clipMinuteKeyboard — daqiqa tanlash (0-55, har 5 daqiqada)
+func clipMinuteKeyboard(hour int) tgbotapi.InlineKeyboardMarkup {
+	var rows [][]tgbotapi.InlineKeyboardButton
+	row := []tgbotapi.InlineKeyboardButton{}
+
+	for m := 0; m < 60; m += 5 {
+		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+			fmt.Sprintf("%02d:%02d", hour, m),
+			fmt.Sprintf("clip_min:%d", m),
+		))
+		if len(row) == 4 {
+			rows = append(rows, row)
+			row = []tgbotapi.InlineKeyboardButton{}
+		}
+	}
+	if len(row) > 0 {
+		rows = append(rows, row)
+	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:hour"),
+		tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", "clip_cancel"),
+	))
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+// clipDurationKeyboard — davomiylik tanlash (1-10 daqiqa)
+func clipDurationKeyboard() tgbotapi.InlineKeyboardMarkup {
+	var rows [][]tgbotapi.InlineKeyboardButton
+	row := []tgbotapi.InlineKeyboardButton{}
+
+	for d := 1; d <= 10; d++ {
+		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+			fmt.Sprintf("%d daq", d),
+			fmt.Sprintf("clip_dur:%d", d),
+		))
+		if len(row) == 5 {
+			rows = append(rows, row)
+			row = []tgbotapi.InlineKeyboardButton{}
+		}
+	}
+	if len(row) > 0 {
+		rows = append(rows, row)
+	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:minute"),
+		tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", "clip_cancel"),
+	))
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
 // ===================== CLIP REQUEST =====================
@@ -171,23 +196,6 @@ func clipTablesKeyboard(tables []*models.Table, branchID int64) tgbotapi.InlineK
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-func clipDurationKeyboard() tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("30 soniya", "clip_dur:30"),
-			tgbotapi.NewInlineKeyboardButtonData("1 daqiqa", "clip_dur:60"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("2 daqiqa", "clip_dur:120"),
-			tgbotapi.NewInlineKeyboardButtonData("3 daqiqa", "clip_dur:180"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:table"),
-			tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", "clip_cancel"),
-		),
-	)
-}
-
 // ===================== ADMIN: CLIP REQUESTS =====================
 
 func clipRequestActionsKeyboard(clipID int64, status string) tgbotapi.InlineKeyboardMarkup {
@@ -227,19 +235,6 @@ func clipRequestActionsKeyboard(clipID int64, status string) tgbotapi.InlineKeyb
 		tgbotapi.NewInlineKeyboardButtonData("🔙 Ro'yxat", "admin_clips_list"),
 	))
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
-}
-
-// ===================== REPORT =====================
-
-func reportKeyboard(branchID int64) tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("📅 Bugun",
-				fmt.Sprintf("report:day:%d", branchID)),
-			tgbotapi.NewInlineKeyboardButtonData("📆 Oy",
-				fmt.Sprintf("report:month:%d", branchID)),
-		),
-	)
 }
 
 // ===================== STAFF MANAGEMENT =====================

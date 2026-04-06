@@ -64,8 +64,6 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 		switch msg.Command() {
 		case "start":
 			h.cmdStart(bot, msg, user)
-		case "admin":
-			h.cmdAdmin(bot, msg, user)
 		case "cancel":
 			h.states.Clear(tgID)
 			sendWithKeyboard(bot, chatID, "✅ Bekor qilindi.", mainMenuKeyboard(user))
@@ -76,20 +74,12 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 	}
 
 	switch msg.Text {
-	case "🎱 Stollar":
-		h.showBranchesForStaff(bot, chatID, user)
-	case "🏢 Filiallar":
-		h.showBranchesForStaff(bot, chatID, user)
-	case "📊 Hisobot":
-		h.showReportBranches(bot, chatID, user)
 	case "🎬 Klip so'rovlar":
 		h.showPendingClips(bot, chatID, user)
 	case "🎬 Klip so'rash":
 		h.startClipRequest(bot, chatID, tgID)
 	case "📋 Mening buyurtmalarim":
 		h.showMyClips(bot, chatID, tgID)
-	case "📋 Bugungi sessiyalar":
-		h.showTodaySessions(bot, chatID, user)
 	case "👥 Xodimlar":
 		h.showStaffList(bot, chatID, user)
 	case "⚙️ Sozlamalar":
@@ -125,27 +115,18 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 	}
 
 	switch action {
-	case "branch":
-		h.cbShowTables(bot, chatID, msgID, user, arg1)
-	case "table":
-		h.cbShowTableActions(bot, chatID, msgID, user, arg1)
-	case "start_session":
-		h.cbStartSessionPrompt(bot, chatID, tgID, arg1)
-	case "end_session":
-		h.cbEndSession(bot, chatID, msgID, user, arg1)
-	case "view_session":
-		h.cbViewSession(bot, chatID, msgID, user, arg1)
-	case "back":
-		switch arg1 {
-		case "branches":
-			h.showBranchesForStaff(bot, chatID, user)
-		case "tables":
-			h.cbShowTablesInline(bot, chatID, msgID, user, arg2)
-		}
 	case "clip_branch":
 		h.cbClipSelectBranch(bot, chatID, msgID, tgID, arg1)
 	case "clip_table":
 		h.cbClipSelectTable(bot, chatID, msgID, tgID, arg1)
+	case "clip_date":
+		h.cbClipSelectDate(bot, chatID, msgID, tgID, arg1)
+	case "clip_hour":
+		h.cbClipSelectHour(bot, chatID, msgID, tgID, arg1)
+	case "clip_min":
+		h.cbClipSelectMinute(bot, chatID, msgID, tgID, arg1)
+	case "clip_dur":
+		h.cbClipSelectDuration(bot, chatID, msgID, tgID, arg1)
 	case "clip_back":
 		h.cbClipBack(bot, chatID, msgID, tgID, arg1)
 	case "clip_pay_confirm":
@@ -163,8 +144,6 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbAdminRefund(bot, chatID, msgID, user, arg1)
 	case "admin_clips_list":
 		h.showPendingClips(bot, chatID, user)
-	case "report":
-		h.cbShowReport(bot, chatID, msgID, user, arg1, arg2)
 	case "set_role":
 		h.cbSetRole(bot, chatID, msgID, user, arg1, arg2)
 	case "admin_staff_list":

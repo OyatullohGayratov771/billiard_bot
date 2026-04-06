@@ -6,15 +6,10 @@ import "sync"
 const (
 	StateIdle = ""
 
-	// Klip so'rash oqimi
-	StateClipBranch   = "clip:branch"
-	StateClipTable    = "clip:table"
-	StateClipStartTime = "clip:start_time"
-	StateClipEndTime   = "clip:end_time"
-	StateClipPayment   = "clip:payment" // screenshot kutilmoqda
-
-	// Admin: sessiya boshlash
-	StateSessionClientName = "session:client_name"
+	// Klip so'rash oqimi (vaqt tanlash faqat tugmalar orqali)
+	StateClipBranch  = "clip:branch"
+	StateClipTable   = "clip:table"
+	StateClipPayment = "clip:payment" // screenshot kutilmoqda
 
 	// Admin: xodim qo'shish
 	StateAddStaffID = "staff:add_id"

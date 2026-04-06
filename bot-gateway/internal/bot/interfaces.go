@@ -17,11 +17,6 @@ type TableService interface {
 	GetBranchByID(id int64) (*models.Branch, error)
 	GetBranchTables(branchID int64) ([]*models.Table, error)
 	GetTable(id int64) (*models.Table, error)
-	StartSession(operator *models.User, tableID int64, clientName string) (*models.Session, error)
-	EndSession(operator *models.User, tableID int64) (*models.Session, error)
-	ActiveSession(tableID int64) (*models.Session, error)
-	DailyReport(branchID int64) (int, int64, error)
-	MonthlyReport(branchID int64) (int, int64, error)
 	UpdateBranchNVR(id int64, ip string, port int, user, pass string) error
 	SetTableRTSP(tableID int64, rtspURL string) error
 }

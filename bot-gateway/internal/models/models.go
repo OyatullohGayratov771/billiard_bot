@@ -100,28 +100,6 @@ func (u *User) IsStaff() bool {
 	return u.Role == RoleSuperadmin || u.Role == RoleAdmin || u.Role == RoleOperator
 }
 
-type Session struct {
-	ID         int64
-	TableID    int64
-	OperatorID int64
-	ClientName string
-	StartedAt  time.Time
-	EndedAt    *time.Time
-	TotalMin   int
-	TotalPrice int64
-	CreatedAt  time.Time
-
-	// join fields
-	TableNum   int
-	BranchName string
-}
-
-func (s *Session) IsActive() bool { return s.EndedAt == nil }
-
-func (s *Session) PriceSom() int64 {
-	return s.TotalPrice / 100
-}
-
 type ClipRequest struct {
 	ID         int64
 	ClientTgID int64
@@ -161,12 +139,6 @@ type AuditLog struct {
 }
 
 // ===================== DTO lar =====================
-
-type StartSessionInput struct {
-	TableID    int64
-	OperatorID int64
-	ClientName string
-}
 
 type ClipRequestInput struct {
 	ClientTgID int64
