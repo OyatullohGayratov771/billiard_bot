@@ -22,6 +22,9 @@ const (
 
 	// Admin: stol RTSP URL
 	StateTableRTSP = "table:rtsp"
+
+	// Admin: ruchnoy video yuborish
+	StateAdminUploadClip = "admin:upload_clip"
 )
 
 // UserState — bitta foydalanuvchining joriy holati

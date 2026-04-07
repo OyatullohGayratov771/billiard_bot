@@ -213,6 +213,10 @@ func clipRequestActionsKeyboard(clipID int64, status string) tgbotapi.InlineKeyb
 				fmt.Sprintf("clip_record:%d", clipID)),
 		))
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("📤 Video yuborish (ruchnoy)",
+				fmt.Sprintf("clip_upload:%d", clipID)),
+		))
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("✅ Klip yuborildi (Done)",
 				fmt.Sprintf("admin_clip_done:%d", clipID)),
 		))

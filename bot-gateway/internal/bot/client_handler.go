@@ -284,6 +284,10 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 		sendWithKeyboard(bot, chatID,
 			fmt.Sprintf("👤 ID <code>%d</code> uchun rol tanlang:", targetID), kb)
 
+	// --- Admin: ruchnoy video yuborish ---
+	case StateAdminUploadClip:
+		h.handleAdminUploadInput(bot, msg, user)
+
 	// --- NVR sozlash qadamlari ---
 	case StateNVRIP, StateNVRPort, StateNVRUser, StateNVRPass:
 		h.handleNVRInput(bot, msg, state)

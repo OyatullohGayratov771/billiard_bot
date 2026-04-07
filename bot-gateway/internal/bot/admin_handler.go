@@ -482,6 +482,98 @@ func (h *Handler) handleTableRTSPInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Messa
 	))
 }
 
+// cbAdminManualUpload — adminga video yuborishni so'raydi
+func (h *Handler) cbAdminManualUpload(bot *tgbotapi.BotAPI, chatID int64, tgID int64, user *models.User, clipIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	clipID := mustParseInt64(clipIDStr)
+	cr, err := h.clipSvc.GetByID(clipID)
+	if err != nil {
+		send(bot, chatID, "❌ Buyurtma topilmadi.")
+		return
+	}
+
+	h.states.Set(tgID, StateAdminUploadClip)
+	h.states.SetData(tgID, "clip_id", clipID)
+	h.states.SetData(tgID, "client_tg_id", cr.ClientTgID)
+
+	send(bot, chatID, fmt.Sprintf(
+		"📤 <b>Klip #%d uchun video yuborish</b>\n\n"+
+			"👤 Mijoz: %s\n"+
+			"🕐 %s — %s\n\n"+
+			"📹 Endi video faylni yuboring:",
+		cr.ID, cr.ClientName,
+		cr.StartTime.Format("02.01.2006 15:04"),
+		cr.EndTime.Format("15:04"),
+	))
+}
+
+// handleAdminUploadInput — admin yuborgan videoni mijozga jo'natadi
+func (h *Handler) handleAdminUploadInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
+	tgID := msg.From.ID
+	chatID := msg.Chat.ID
+
+	clipIDVal, _ := h.states.GetData(tgID, "clip_id")
+	clientTgIDVal, _ := h.states.GetData(tgID, "client_tg_id")
+	h.states.Clear(tgID)
+
+	clipID, _ := clipIDVal.(int64)
+	clientTgID, _ := clientTgIDVal.(int64)
+
+	if clipID == 0 || clientTgID == 0 {
+		send(bot, chatID, "❌ Xatolik: buyurtma ma'lumotlari topilmadi.")
+		return
+	}
+
+	cr, err := h.clipSvc.GetByID(clipID)
+	if err != nil {
+		send(bot, chatID, "❌ Buyurtma topilmadi.")
+		return
+	}
+
+	caption := fmt.Sprintf(
+		"🎬 <b>Sizning klipingiz tayyor!</b>\n\n"+
+			"📋 Buyurtma #%d\n"+
+			"🏢 %s | 🎱 %d-stol\n"+
+			"🕐 %s — %s",
+		cr.ID, cr.BranchName, cr.TableNum,
+		cr.StartTime.Format("02.01.2006 15:04"),
+		cr.EndTime.Format("15:04"),
+	)
+
+	var sendErr error
+
+	if msg.Video != nil {
+		videoMsg := tgbotapi.NewVideo(clientTgID, tgbotapi.FileID(msg.Video.FileID))
+		videoMsg.Caption = caption
+		videoMsg.ParseMode = "HTML"
+		_, sendErr = bot.Send(videoMsg)
+	} else if msg.Document != nil {
+		docMsg := tgbotapi.NewDocument(clientTgID, tgbotapi.FileID(msg.Document.FileID))
+		docMsg.Caption = caption
+		docMsg.ParseMode = "HTML"
+		_, sendErr = bot.Send(docMsg)
+	} else {
+		send(bot, chatID, "⚠️ Video yoki fayl yuborish kerak edi. Qayta urinib ko'ring.")
+		h.states.Set(tgID, StateAdminUploadClip)
+		h.states.SetData(tgID, "clip_id", clipID)
+		h.states.SetData(tgID, "client_tg_id", clientTgID)
+		return
+	}
+
+	if sendErr != nil {
+		send(bot, chatID, fmt.Sprintf("❌ Mijozga yuborishda xatolik: %v", sendErr))
+		return
+	}
+
+	// Klipni done qilish
+	_ = h.clipSvc.SetStatus(user.ID, clipID, models.ClipStatusDone)
+
+	send(bot, chatID, fmt.Sprintf("✅ Klip #%d mijozga muvaffaqiyatli yuborildi!", clipID))
+	h.logAction(user, "manual_upload", fmt.Sprintf("clip:%d -> client:%d", clipID, clientTgID))
+}
+
 // ===================== HELPERS =====================
 
 func mustParseInt64(s string) int64 {
