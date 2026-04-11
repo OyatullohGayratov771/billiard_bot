@@ -82,12 +82,16 @@ func clipDateKeyboard() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-// clipHourKeyboard — soat tanlash (00-23, barcha soatlar)
-func clipHourKeyboard() tgbotapi.InlineKeyboardMarkup {
+// clipHourKeyboard — soat tanlash; isToday=true bo'lsa kelajak soatlar chiqarilmaydi
+func clipHourKeyboard(isToday bool) tgbotapi.InlineKeyboardMarkup {
 	var rows [][]tgbotapi.InlineKeyboardButton
 	row := []tgbotapi.InlineKeyboardButton{}
+	maxHour := 23
+	if isToday {
+		maxHour = time.Now().Hour()
+	}
 
-	for h := 0; h <= 23; h++ {
+	for h := 0; h <= maxHour; h++ {
 		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
 			fmt.Sprintf("%02d:__", h),
 			fmt.Sprintf("clip_hour:%d", h),
@@ -107,12 +111,20 @@ func clipHourKeyboard() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-// clipMinuteKeyboard — daqiqa tanlash (0-55, har 5 daqiqada)
-func clipMinuteKeyboard(hour int) tgbotapi.InlineKeyboardMarkup {
+// clipMinuteKeyboard — daqiqa tanlash; isCurrentHour=true bo'lsa kelajak daqiqalar chiqarilmaydi
+func clipMinuteKeyboard(hour int, isCurrentHour bool) tgbotapi.InlineKeyboardMarkup {
 	var rows [][]tgbotapi.InlineKeyboardButton
 	row := []tgbotapi.InlineKeyboardButton{}
+	maxMin := 55
+	if isCurrentHour {
+		// Hozirgi daqiqadan 5 daqiqa ortga
+		maxMin = (time.Now().Minute()/5)*5 - 5
+		if maxMin < 0 {
+			maxMin = 0
+		}
+	}
 
-	for m := 0; m < 60; m += 5 {
+	for m := 0; m <= maxMin; m += 5 {
 		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
 			fmt.Sprintf("%02d:%02d", hour, m),
 			fmt.Sprintf("clip_min:%d", m),

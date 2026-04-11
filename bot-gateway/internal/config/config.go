@@ -17,6 +17,8 @@ type Config struct {
 	UserServiceURL  string
 	TableServiceURL string
 	ClipServiceURL  string
+	PaymentCard     string
+	PaymentPhone    string
 }
 
 var AppConfig Config
@@ -32,6 +34,8 @@ func LoadConfig() {
 		UserServiceURL:  getEnv("USER_SERVICE_URL", "http://user-service:8081"),
 		TableServiceURL: getEnv("TABLE_SERVICE_URL", "http://table-service:8082"),
 		ClipServiceURL:  getEnv("CLIP_SERVICE_URL", "http://clip-service:8083"),
+		PaymentCard:     getEnv("PAYMENT_CARD", ""),
+		PaymentPhone:    getEnv("PAYMENT_PHONE", ""),
 	}
 
 	log.Println("✅ Config yuklandi")

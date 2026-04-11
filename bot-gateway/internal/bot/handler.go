@@ -15,7 +15,8 @@ type Handler struct {
 	tableSvc TableService
 	clipSvc  ClipService
 
-	states *StateManager
+	states    *StateManager
+	userCache *UserCache
 }
 
 func NewHandler(
@@ -24,10 +25,11 @@ func NewHandler(
 	clipSvc ClipService,
 ) *Handler {
 	return &Handler{
-		userSvc:  userSvc,
-		tableSvc: tableSvc,
-		clipSvc:  clipSvc,
-		states:   NewStateManager(),
+		userSvc:   userSvc,
+		tableSvc:  tableSvc,
+		clipSvc:   clipSvc,
+		states:    NewStateManager(),
+		userCache: newUserCache(),
 	}
 }
 
@@ -54,6 +56,17 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 		return
 	}
 
+	// Kontakt ulashganda telefon raqamini saqlash
+	if msg.Contact != nil && msg.Contact.UserID == tgID {
+		phone := msg.Contact.PhoneNumber
+		if err := h.userSvc.SavePhone(tgID, phone); err == nil {
+			user.Phone = phone
+			h.userCache.Invalidate(tgID) // cacheni yangilash uchun
+		}
+		h.showMainMenu(bot, chatID, user)
+		return
+	}
+
 	state := h.states.Get(tgID)
 	if state.State != StateIdle {
 		h.handleStateInput(bot, msg, user, state)
@@ -67,8 +80,10 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 		case "cancel":
 			h.states.Clear(tgID)
 			sendWithKeyboard(bot, chatID, "✅ Bekor qilindi.", mainMenuKeyboard(user))
+		case "help":
+			h.cmdHelp(bot, msg, user)
 		default:
-			send(bot, chatID, "❓ Noma'lum buyruq. /start bosing.")
+			send(bot, chatID, "❓ Noma'lum buyruq. /help bosing.")
 		}
 		return
 	}
@@ -139,11 +154,15 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 	case "admin_clip_done":
 		h.cbAdminClipDone(bot, chatID, msgID, user, arg1)
 	case "admin_clip_fail":
-		h.cbAdminClipFail(bot, chatID, msgID, user, arg1)
+		h.cbAdminClipFail(bot, chatID, tgID, user, arg1)
 	case "admin_refund":
-		h.cbAdminRefund(bot, chatID, msgID, user, arg1)
+		h.cbAdminRefund(bot, chatID, tgID, user, arg1)
 	case "admin_clips_list":
 		h.showPendingClips(bot, chatID, user)
+	case "my_clip_detail":
+		h.cbShowMyClipDetail(bot, chatID, msgID, tgID, arg1)
+	case "my_clips_back":
+		h.showMyClips(bot, chatID, tgID)
 	case "set_role":
 		h.cbSetRole(bot, chatID, msgID, user, arg1, arg2)
 	case "admin_staff_list":

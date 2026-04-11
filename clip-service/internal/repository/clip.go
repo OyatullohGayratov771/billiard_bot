@@ -59,7 +59,13 @@ func (r *ClipRepo) GetByID(id int64) (*models.ClipRequest, error) {
 	return cr, err
 }
 
-func (r *ClipRepo) SetStatus(id int64, status string) error {
+func (r *ClipRepo) SetStatus(id int64, status, note string) error {
+	if note != "" {
+		_, err := r.db.Exec(
+			`UPDATE clip_requests SET status = $1, notes = $2 WHERE id = $3`,
+			status, note, id)
+		return err
+	}
 	_, err := r.db.Exec(`UPDATE clip_requests SET status = $1 WHERE id = $2`, status, id)
 	return err
 }
@@ -93,7 +99,7 @@ func (r *ClipRepo) ListPending() ([]*models.ClipRequest, error) {
 		FROM clip_requests cr
 		JOIN branches b ON b.id = cr.branch_id
 		JOIN tables t ON t.id = cr.table_id
-		WHERE cr.status IN ('pending','paid')
+		WHERE cr.status IN ('pending','paid','processing')
 		ORDER BY cr.created_at DESC
 	`)
 	if err != nil {

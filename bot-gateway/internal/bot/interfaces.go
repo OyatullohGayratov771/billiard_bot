@@ -9,6 +9,7 @@ type UserService interface {
 	ListByRole(role string) ([]*models.User, error)
 	ListStaff() ([]*models.User, error)
 	SetRole(adminTgID, targetTgID int64, role string, branchID *int64) error
+	SavePhone(tgID int64, phone string) error
 }
 
 // TableService — table-service bilan ishlash interfeysi
@@ -26,7 +27,7 @@ type ClipService interface {
 	CreateRequest(in models.ClipRequestInput) (*models.ClipRequest, error)
 	CreatePayment(clipID int64, screenshotFileID string) error
 	ConfirmPayment(adminID, clipID int64) error
-	SetStatus(adminID, clipID int64, status string) error
+	SetStatus(adminID, clipID int64, status, note string) error
 	GetByID(id int64) (*models.ClipRequest, error)
 	ListByClient(tgID int64) ([]*models.ClipRequest, error)
 	ListPending() ([]*models.ClipRequest, error)

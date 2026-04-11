@@ -14,8 +14,8 @@ type UserClient struct {
 	http    *http.Client
 }
 
-func NewUserClient(baseURL string) *UserClient {
-	return &UserClient{baseURL: baseURL, http: &http.Client{}}
+func NewUserClient(baseURL string, httpClient *http.Client) *UserClient {
+	return &UserClient{baseURL: baseURL, http: httpClient}
 }
 
 func (c *UserClient) RegisterOrGet(tgID int64, username, firstName, lastName string) (*models.User, error) {
@@ -54,6 +54,11 @@ func (c *UserClient) ListStaff() ([]*models.User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (c *UserClient) SavePhone(tgID int64, phone string) error {
+	body, _ := json.Marshal(map[string]any{"phone": phone})
+	return c.putNoResponse(fmt.Sprintf("/users/tg/%d/phone", tgID), body)
 }
 
 func (c *UserClient) SetRole(adminTgID, targetTgID int64, role string, branchID *int64) error {

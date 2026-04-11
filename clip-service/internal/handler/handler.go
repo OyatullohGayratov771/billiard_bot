@@ -182,12 +182,13 @@ func (h *Handler) setStatus(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		AdminID int64  `json:"admin_id"`
 		Status  string `json:"status"`
+		Note    string `json:"note"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request")
 		return
 	}
-	if err := h.clipSvc.SetStatus(req.AdminID, id, req.Status); err != nil {
+	if err := h.clipSvc.SetStatus(req.AdminID, id, req.Status, req.Note); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

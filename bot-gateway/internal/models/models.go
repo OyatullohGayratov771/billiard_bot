@@ -77,6 +77,7 @@ type User struct {
 	Username   string
 	FirstName  string
 	LastName   string
+	Phone      string
 	Role       string
 	BranchID   *int64
 	IsActive   bool

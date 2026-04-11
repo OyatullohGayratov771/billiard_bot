@@ -25,6 +25,10 @@ const (
 
 	// Admin: ruchnoy video yuborish
 	StateAdminUploadClip = "admin:upload_clip"
+
+	// Admin: rad etish / qaytarish izoh
+	StateAdminRejectNote = "admin:reject_note"
+	StateAdminRefundNote = "admin:refund_note"
 )
 
 // UserState — bitta foydalanuvchining joriy holati

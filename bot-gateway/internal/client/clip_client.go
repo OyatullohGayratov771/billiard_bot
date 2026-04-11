@@ -15,8 +15,8 @@ type ClipClient struct {
 	http    *http.Client
 }
 
-func NewClipClient(baseURL string) *ClipClient {
-	return &ClipClient{baseURL: baseURL, http: &http.Client{}}
+func NewClipClient(baseURL string, httpClient *http.Client) *ClipClient {
+	return &ClipClient{baseURL: baseURL, http: httpClient}
 }
 
 func (c *ClipClient) CreateRequest(in models.ClipRequestInput) (*models.ClipRequest, error) {
@@ -45,8 +45,8 @@ func (c *ClipClient) ConfirmPayment(adminID, clipID int64) error {
 	return c.putNoResponse(fmt.Sprintf("/clips/%d/confirm", clipID), body)
 }
 
-func (c *ClipClient) SetStatus(adminID, clipID int64, status string) error {
-	body, _ := json.Marshal(map[string]any{"admin_id": adminID, "status": status})
+func (c *ClipClient) SetStatus(adminID, clipID int64, status, note string) error {
+	body, _ := json.Marshal(map[string]any{"admin_id": adminID, "status": status, "note": note})
 	return c.putNoResponse(fmt.Sprintf("/clips/%d/status", clipID), body)
 }
 

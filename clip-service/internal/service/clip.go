@@ -71,12 +71,12 @@ func (s *ClipService) ConfirmPayment(adminID, clipID int64) error {
 	return nil
 }
 
-func (s *ClipService) SetStatus(adminID, clipID int64, status string) error {
-	if err := s.clipRepo.SetStatus(clipID, status); err != nil {
+func (s *ClipService) SetStatus(adminID, clipID int64, status, note string) error {
+	if err := s.clipRepo.SetStatus(clipID, status, note); err != nil {
 		return err
 	}
 	s.audit.Log(&adminID, "clip_status_changed",
-		fmt.Sprintf("clip:%d status:%s", clipID, status))
+		fmt.Sprintf("clip:%d status:%s note:%s", clipID, status, note))
 	return nil
 }
 
@@ -104,22 +104,22 @@ func (s *ClipService) RecordClip(clipID int64) error {
 	} else {
 		branch, err := s.branchRepo.GetByID(cr.BranchID)
 		if err != nil {
-			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed)
+			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
 			return fmt.Errorf("filial topilmadi")
 		}
 		if branch.NVRHost == "" {
-			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed)
+			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
 			return fmt.Errorf("bu stolga kamera ulanmagan (RTSP URL yoki NVR sozlanmagan)")
 		}
 		if table.CameraChannel == 0 {
-			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed)
+			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
 			return fmt.Errorf("bu stolning kamera kanali sozlanmagan")
 		}
 		liveURL = recorder.HikvisionRTSP(branch.NVRUser, branch.NVRPass, branch.NVRHost, branch.NVRPort, table.CameraChannel)
 	}
 
 	// Status ni "processing" ga o'zgartir
-	_ = s.clipRepo.SetStatus(clipID, models.ClipStatusProcessing)
+	_ = s.clipRepo.SetStatus(clipID, models.ClipStatusProcessing, "")
 
 	// NVR arxividan olish: Hikvision playback RTSP URL
 	rtspURL := recorder.PlaybackRTSP(liveURL, cr.StartTime, cr.EndTime)
@@ -132,13 +132,13 @@ func (s *ClipService) RecordClip(clipID int64) error {
 		outPath, err := s.recorder.Record(clipID, rtspURL)
 		if err != nil {
 			log.Printf("❌ Klip #%d yozishda xatolik: %v", clipID, err)
-			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed)
+			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
 			_ = s.clipRepo.SetClipPath(clipID, "")
 			return
 		}
 
 		_ = s.clipRepo.SetClipPath(clipID, outPath)
-		_ = s.clipRepo.SetStatus(clipID, models.ClipStatusDone)
+		_ = s.clipRepo.SetStatus(clipID, models.ClipStatusDone, "")
 		log.Printf("✅ Klip #%d tayyor: %s", clipID, outPath)
 	}()
 

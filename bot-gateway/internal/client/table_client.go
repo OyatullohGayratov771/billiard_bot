@@ -14,8 +14,8 @@ type TableClient struct {
 	http    *http.Client
 }
 
-func NewTableClient(baseURL string) *TableClient {
-	return &TableClient{baseURL: baseURL, http: &http.Client{}}
+func NewTableClient(baseURL string, httpClient *http.Client) *TableClient {
+	return &TableClient{baseURL: baseURL, http: httpClient}
 }
 
 func (c *TableClient) GetBranches() ([]*models.Branch, error) {

@@ -16,6 +16,24 @@ import (
 // ===================== START =====================
 
 func (h *Handler) cmdStart(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
+	// Telefon raqami yo'q bo'lsa — oldin so'raymiz
+	if user.Phone == "" {
+		kb := tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButtonContact("📱 Telefon raqamni ulashish"),
+			),
+		)
+		kb.ResizeKeyboard = true
+		kb.OneTimeKeyboard = true
+		sendWithKeyboard(bot, msg.Chat.ID,
+			"👋 Xush kelibsiz!\n\n📱 Davom etish uchun telefon raqamingizni ulashing:", kb)
+		return
+	}
+
+	h.showMainMenu(bot, msg.Chat.ID, user)
+}
+
+func (h *Handler) showMainMenu(bot *tgbotapi.BotAPI, chatID int64, user *models.User) {
 	name := user.DisplayName()
 	var roleText string
 	switch user.Role {
@@ -37,8 +55,7 @@ func (h *Handler) cmdStart(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *mo
 		name, roleText,
 	)
 
-	h.logAction(user, "start", "")
-	sendWithKeyboard(bot, msg.Chat.ID, text, mainMenuKeyboard(user))
+	sendWithKeyboard(bot, chatID, text, mainMenuKeyboard(user))
 }
 
 // ===================== KLIP SO'ROVLAR (ADMIN) =====================
@@ -61,12 +78,15 @@ func (h *Handler) showPendingClips(bot *tgbotapi.BotAPI, chatID int64, user *mod
 
 	var rows [][]tgbotapi.InlineKeyboardButton
 	for _, c := range clips {
-		statusIcon := "⏳"
-		if c.Status == models.ClipStatusPaid {
-			statusIcon = "💰"
+		icon := "⏳"
+		switch c.Status {
+		case models.ClipStatusPaid:
+			icon = "💰"
+		case models.ClipStatusProcessing:
+			icon = "⚙️"
 		}
-		label := fmt.Sprintf("%s #%d — %s %d-stol %s",
-			statusIcon, c.ID, c.BranchName, c.TableNum,
+		label := fmt.Sprintf("%s #%d — %s %d-stol  %s",
+			icon, c.ID, c.BranchName, c.TableNum,
 			c.StartTime.Format("02.01 15:04"))
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(label,
@@ -75,7 +95,7 @@ func (h *Handler) showPendingClips(bot *tgbotapi.BotAPI, chatID int64, user *mod
 	}
 	kb := tgbotapi.NewInlineKeyboardMarkup(rows...)
 	sendWithKeyboard(bot, chatID,
-		fmt.Sprintf("🎬 <b>Klip so'rovlar</b> (%d ta):", len(clips)), kb)
+		fmt.Sprintf("🎬 <b>Klip so'rovlar</b> (%d ta)\n\n⏳ Kutilmoqda   💰 To'langan   ⚙️ Jarayonda", len(clips)), kb)
 }
 
 // Klip detail ko'rsatish uchun alohida callback ham qo'shish kerak
@@ -87,18 +107,27 @@ func (h *Handler) cbShowClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID int
 		return
 	}
 
+	clientPhone := "—"
+	if cu, err := h.userSvc.GetByTelegramID(cr.ClientTgID); err == nil && cu.Phone != "" {
+		clientPhone = cu.Phone
+	}
+	noteStr := ""
+	if cr.Notes != "" {
+		noteStr = fmt.Sprintf("\n📝 Izoh: <i>%s</i>", cr.Notes)
+	}
 	text := fmt.Sprintf(
 		"🎬 <b>Klip #%d</b>\n\n"+
 			"👤 Mijoz: %s\n"+
+			"📱 Telefon: %s\n"+
 			"🏢 Filial: %s\n"+
 			"🎱 Stol: %d\n"+
 			"🕐 Boshlanish: %s\n"+
 			"🕑 Tugash: %s\n"+
-			"📊 Holat: <b>%s</b>",
-		cr.ID, cr.ClientName, cr.BranchName, cr.TableNum,
+			"📊 Holat: <b>%s</b>%s",
+		cr.ID, cr.ClientName, clientPhone, cr.BranchName, cr.TableNum,
 		cr.StartTime.Format("02.01.2006 15:04"),
 		cr.EndTime.Format("02.01.2006 15:04"),
-		cr.Status,
+		statusText(cr.Status), noteStr,
 	)
 
 	kb := clipRequestActionsKeyboard(cr.ID, cr.Status)
@@ -116,6 +145,21 @@ func (h *Handler) cbAdminConfirmPayment(bot *tgbotapi.BotAPI, chatID int64, msgI
 	}
 	h.logAction(user, "confirm_payment", fmt.Sprintf("clip:%d", clipID))
 	send(bot, chatID, fmt.Sprintf("✅ Klip #%d uchun to'lov tasdiqlandi.", clipID))
+
+	// Mijozga xabar
+	if cr, err := h.clipSvc.GetByID(clipID); err == nil {
+		send(bot, cr.ClientTgID, fmt.Sprintf(
+			"✅ <b>To'lovingiz tasdiqlandi!</b>\n\n"+
+				"📋 Buyurtma #%d\n"+
+				"🏢 %s | 🎱 %d-stol\n"+
+				"🕐 %s — %s\n\n"+
+				"⏳ Klipingiz tayyorlanmoqda...",
+			cr.ID, cr.BranchName, cr.TableNum,
+			cr.StartTime.Format("02.01.2006 15:04"),
+			cr.EndTime.Format("15:04"),
+		))
+	}
+
 	h.cbShowClipDetail(bot, chatID, msgID, user, clipIDStr)
 }
 
@@ -193,6 +237,9 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 					}
 				}
 
+				// Yuborilgandan keyin diskdan o'chirish
+				os.Remove(cur.ClipPath)
+
 				send(bot, chatID, fmt.Sprintf("✅ Klip #%d mijozga yuborildi!", clipID))
 				return
 			}
@@ -203,29 +250,100 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 
 func (h *Handler) cbAdminClipDone(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, clipIDStr string) {
 	clipID := mustParseInt64(clipIDStr)
-	if err := h.clipSvc.SetStatus(user.ID, clipID, models.ClipStatusDone); err != nil {
+	if err := h.clipSvc.SetStatus(user.ID, clipID, models.ClipStatusDone, ""); err != nil {
 		send(bot, chatID, fmt.Sprintf("❌ %v", err))
 		return
 	}
 	editMessage(bot, chatID, msgID, fmt.Sprintf("✅ Klip #%d yuborildi deb belgilandi.", clipID), nil)
 }
 
-func (h *Handler) cbAdminClipFail(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, clipIDStr string) {
-	clipID := mustParseInt64(clipIDStr)
-	if err := h.clipSvc.SetStatus(user.ID, clipID, models.ClipStatusFailed); err != nil {
-		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+// cbAdminClipFail — adminga izoh yozishni so'raydi, keyin rad etadi
+func (h *Handler) cbAdminClipFail(bot *tgbotapi.BotAPI, chatID int64, tgID int64, user *models.User, clipIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
 		return
 	}
-	editMessage(bot, chatID, msgID, fmt.Sprintf("❌ Klip #%d muvaffaqiyatsiz deb belgilandi.", clipID), nil)
+	clipID := mustParseInt64(clipIDStr)
+	h.states.Set(tgID, StateAdminRejectNote)
+	h.states.SetData(tgID, "clip_id", clipID)
+	send(bot, chatID, fmt.Sprintf(
+		"❌ Klip #%d rad etilmoqda.\n\n✏️ Mijozga yuboriladigan <b>izoh</b> yozing:\n<i>(Masalan: NVR da yozuv topilmadi, kamera ishlamagan, boshqa sabab)</i>",
+		clipID))
 }
 
-func (h *Handler) cbAdminRefund(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, clipIDStr string) {
-	clipID := mustParseInt64(clipIDStr)
-	if err := h.clipSvc.SetStatus(user.ID, clipID, models.ClipStatusRefunded); err != nil {
-		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+// cbAdminRefund — adminga izoh yozishni so'raydi, keyin qaytaradi
+func (h *Handler) cbAdminRefund(bot *tgbotapi.BotAPI, chatID int64, tgID int64, user *models.User, clipIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
 		return
 	}
-	editMessage(bot, chatID, msgID, fmt.Sprintf("↩️ Klip #%d qaytarildi deb belgilandi.", clipID), nil)
+	clipID := mustParseInt64(clipIDStr)
+	h.states.Set(tgID, StateAdminRefundNote)
+	h.states.SetData(tgID, "clip_id", clipID)
+	send(bot, chatID, fmt.Sprintf(
+		"↩️ Klip #%d qaytarilmoqda.\n\n✏️ Mijozga yuboriladigan <b>izoh</b> yozing:\n<i>(Masalan: to'lov tasdiqlanmadi, texnik muammo)</i>",
+		clipID))
+}
+
+// handleAdminNoteInput — admin izoh yozganda status o'rnatib foydalanuvchiga xabar yuboradi
+func (h *Handler) handleAdminNoteInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User, isRefund bool) {
+	tgID := msg.From.ID
+	chatID := msg.Chat.ID
+	note := strings.TrimSpace(msg.Text)
+
+	clipIDVal, _ := h.states.GetData(tgID, "clip_id")
+	h.states.Clear(tgID)
+
+	clipID, _ := clipIDVal.(int64)
+	if clipID == 0 {
+		send(bot, chatID, "❌ Xatolik: buyurtma ID topilmadi.")
+		return
+	}
+
+	cr, err := h.clipSvc.GetByID(clipID)
+	if err != nil {
+		send(bot, chatID, "❌ Buyurtma topilmadi.")
+		return
+	}
+
+	var newStatus string
+	var adminMsg, clientMsg string
+	if isRefund {
+		newStatus = models.ClipStatusRefunded
+		adminMsg = fmt.Sprintf("↩️ Klip #%d qaytarildi.", clipID)
+		clientMsg = fmt.Sprintf(
+			"↩️ <b>Klip #%d qaytarildi</b>\n\n"+
+				"🏢 %s | 🎱 %d-stol\n"+
+				"🕐 %s — %s\n\n"+
+				"📝 <b>Sabab:</b> %s\n\n"+
+				"Savollar bo'lsa admin bilan bog'laning.",
+			cr.ID, cr.BranchName, cr.TableNum,
+			cr.StartTime.Format("02.01.2006 15:04"),
+			cr.EndTime.Format("15:04"),
+			note,
+		)
+	} else {
+		newStatus = models.ClipStatusFailed
+		adminMsg = fmt.Sprintf("❌ Klip #%d rad etildi.", clipID)
+		clientMsg = fmt.Sprintf(
+			"❌ <b>Klip #%d rad etildi</b>\n\n"+
+				"🏢 %s | 🎱 %d-stol\n"+
+				"🕐 %s — %s\n\n"+
+				"📝 <b>Sabab:</b> %s\n\n"+
+				"Yangi so'rov yuborishingiz mumkin.",
+			cr.ID, cr.BranchName, cr.TableNum,
+			cr.StartTime.Format("02.01.2006 15:04"),
+			cr.EndTime.Format("15:04"),
+			note,
+		)
+	}
+
+	if err := h.clipSvc.SetStatus(user.ID, clipID, newStatus, note); err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ Saqlashda xatolik: %v", err))
+		return
+	}
+
+	send(bot, chatID, adminMsg)
+	send(bot, cr.ClientTgID, clientMsg)
+	h.logAction(user, "clip_"+newStatus, fmt.Sprintf("clip:%d note:%s", clipID, note))
 }
 
 // ===================== XODIMLAR =====================
@@ -259,8 +377,12 @@ func (h *Handler) showStaffList(bot *tgbotapi.BotAPI, chatID int64, user *models
 		if !u.IsActive {
 			active = "❌"
 		}
-		sb.WriteString(fmt.Sprintf("%s %s %s | ID: <code>%d</code>\n",
-			active, roleIcon, u.DisplayName(), u.TelegramID))
+		phone := u.Phone
+		if phone == "" {
+			phone = "—"
+		}
+		sb.WriteString(fmt.Sprintf("%s %s %s | 📱 %s | ID: <code>%d</code>\n",
+			active, roleIcon, u.DisplayName(), phone, u.TelegramID))
 	}
 
 	var rows [][]tgbotapi.InlineKeyboardButton
@@ -282,6 +404,7 @@ func (h *Handler) cbSetRole(bot *tgbotapi.BotAPI, chatID int64, msgID int, user 
 		return
 	}
 
+	h.userCache.Invalidate(targetTgID)
 	editMessage(bot, chatID, msgID,
 		fmt.Sprintf("✅ ID %d uchun rol <b>%s</b> ga o'zgartirildi.", targetTgID, role), nil)
 	h.logAction(user, "set_role", fmt.Sprintf("target:%d role:%s", targetTgID, role))
@@ -568,10 +691,41 @@ func (h *Handler) handleAdminUploadInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mes
 	}
 
 	// Klipni done qilish
-	_ = h.clipSvc.SetStatus(user.ID, clipID, models.ClipStatusDone)
+	_ = h.clipSvc.SetStatus(user.ID, clipID, models.ClipStatusDone, "")
 
 	send(bot, chatID, fmt.Sprintf("✅ Klip #%d mijozga muvaffaqiyatli yuborildi!", clipID))
 	h.logAction(user, "manual_upload", fmt.Sprintf("clip:%d -> client:%d", clipID, clientTgID))
+}
+
+// ===================== HELP =====================
+
+func (h *Handler) cmdHelp(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
+	var text string
+	if user.IsStaff() {
+		text = "ℹ️ <b>Yordam — Xodim</b>\n\n" +
+			"🎬 <b>Klip so'rovlar</b> — Mijozlardan kelgan so'rovlar\n" +
+			"   └ Ro'yxatdan so'rovni bosing → tafsilot\n" +
+			"   └ ✅ To'lovni tasdiqlash → klip yozing yoki yuklang\n" +
+			"   └ ❌ Rad etish / ↩️ Qaytarish → izoh yozing\n\n" +
+			"👥 <b>Xodimlar</b> — Xodim qo'shish, rol berish\n\n" +
+			"⚙️ <b>Sozlamalar</b> — NVR IP/port/login va stol RTSP URL\n\n" +
+			"📌 <b>Buyruqlar:</b>\n" +
+			"/start — Bosh menyu\n" +
+			"/cancel — Joriy amaliyotni bekor qilish\n" +
+			"/help — Ushbu yordam"
+	} else {
+		text = "ℹ️ <b>Yordam</b>\n\n" +
+			"🎬 <b>Klip so'rash</b>\n" +
+			"   └ Filial → Stol → Sana → Vaqt → Davomiylik tanlang\n" +
+			"   └ Tasdiqlang → 10,000 so'm to'lab screenshot yuboring\n" +
+			"   └ Admin tasdiqlasa klipingiz yuboriladi\n\n" +
+			"📋 <b>Mening buyurtmalarim</b> — So'rovlaringiz holati\n\n" +
+			"📌 <b>Buyruqlar:</b>\n" +
+			"/start — Bosh menyu\n" +
+			"/cancel — Joriy amaliyotni bekor qilish\n" +
+			"/help — Ushbu yordam"
+	}
+	send(bot, msg.Chat.ID, text)
 }
 
 // ===================== HELPERS =====================

@@ -8,8 +8,11 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-// authUser — har bir updateda foydalanuvchini user-service dan oladi.
+// authUser — foydalanuvchini cache dan yoki user-service dan oladi.
 func (h *Handler) authUser(tgID int64) *models.User {
+	if u, ok := h.userCache.get(tgID); ok {
+		return u
+	}
 	user, err := h.userSvc.GetByTelegramID(tgID)
 	if err != nil {
 		return nil
@@ -17,6 +20,7 @@ func (h *Handler) authUser(tgID int64) *models.User {
 	if !user.IsActive {
 		return nil
 	}
+	h.userCache.set(tgID, user)
 	return user
 }
 
@@ -130,7 +134,35 @@ func editMessage(bot *tgbotapi.BotAPI, chatID int64, msgID int, text string, kb 
 }
 
 func (h *Handler) getOrRegister(tgID int64, username, firstName, lastName string) (*models.User, error) {
-	return h.userSvc.RegisterOrGet(tgID, username, firstName, lastName)
+	if u, ok := h.userCache.get(tgID); ok {
+		return u, nil
+	}
+	user, err := h.userSvc.RegisterOrGet(tgID, username, firstName, lastName)
+	if err != nil {
+		return nil, err
+	}
+	h.userCache.set(tgID, user)
+	return user, nil
+}
+
+// statusText — klip holat kodini Uzbekcha icon+matn sifatida qaytaradi
+func statusText(status string) string {
+	switch status {
+	case models.ClipStatusPending:
+		return "⏳ Kutilmoqda"
+	case models.ClipStatusPaid:
+		return "💰 To'langan"
+	case models.ClipStatusProcessing:
+		return "⚙️ Jarayonda"
+	case models.ClipStatusDone:
+		return "✅ Tayyor"
+	case models.ClipStatusFailed:
+		return "❌ Rad etildi"
+	case models.ClipStatusRefunded:
+		return "↩️ Qaytarildi"
+	default:
+		return status
+	}
 }
 
 // branchAccessOK — operator/admin o'z filialiga kirish huquqini tekshiradi
