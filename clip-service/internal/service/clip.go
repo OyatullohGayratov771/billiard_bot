@@ -95,43 +95,59 @@ func (s *ClipService) RecordClip(clipID int64) error {
 		return fmt.Errorf("stol topilmadi")
 	}
 
-	// RTSP live URL ni aniqlash:
-	// 1. Stolga to'g'ridan-to'g'ri RTSP URL berilgan bo'lsa — ishlat
-	// 2. Aks holda — filial NVR + stol kanali orqali yasash
-	var liveURL string
-	if table.RTSPUrl != "" {
-		liveURL = table.RTSPUrl
-	} else {
-		branch, err := s.branchRepo.GetByID(cr.BranchID)
-		if err != nil {
-			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
-			return fmt.Errorf("filial topilmadi")
-		}
+	branch, err := s.branchRepo.GetByID(cr.BranchID)
+	if err != nil {
+		_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
+		return fmt.Errorf("filial topilmadi")
+	}
+
+	// Kanal va NVR tekshirish
+	useISAPI := branch.NVRHost != "" && table.CameraChannel > 0
+	useRTSP := table.RTSPUrl != ""
+
+	if !useISAPI && !useRTSP {
+		_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
 		if branch.NVRHost == "" {
-			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
-			return fmt.Errorf("bu stolga kamera ulanmagan (RTSP URL yoki NVR sozlanmagan)")
+			return fmt.Errorf("filial NVR sozlanmagan (NVR IP kiriting)")
 		}
-		if table.CameraChannel == 0 {
-			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
-			return fmt.Errorf("bu stolning kamera kanali sozlanmagan")
-		}
-		liveURL = recorder.HikvisionRTSP(branch.NVRUser, branch.NVRPass, branch.NVRHost, branch.NVRPort, table.CameraChannel)
+		return fmt.Errorf("stol kamera kanali sozlanmagan")
 	}
 
 	// Status ni "processing" ga o'zgartir
 	_ = s.clipRepo.SetStatus(clipID, models.ClipStatusProcessing, "")
 
-	// NVR arxividan olish: Hikvision playback RTSP URL
-	rtspURL := recorder.PlaybackRTSP(liveURL, cr.StartTime, cr.EndTime)
-
-	// Async yozish
 	go func() {
-		log.Printf("📹 Klip #%d yozilmoqda: stol=%d [%s-%s]", clipID, cr.TableID,
+		log.Printf("📥 Klip #%d yuklanmoqda (ISAPI=%v): stol=%d [%s-%s]",
+			clipID, useISAPI, cr.TableID,
 			cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"))
 
-		outPath, err := s.recorder.Record(clipID, rtspURL)
-		if err != nil {
-			log.Printf("❌ Klip #%d yozishda xatolik: %v", clipID, err)
+		var outPath string
+		var recErr error
+
+		if useISAPI {
+			// Birlamchi: ISAPI HTTP (ishonchli, RTSP 401/500 xatolarisiz)
+			outPath, recErr = s.recorder.ISAPIDownloadClip(
+				clipID,
+				branch.NVRHost, branch.NVRUser, branch.NVRPass,
+				table.CameraChannel,
+				cr.StartTime, cr.EndTime,
+			)
+			if recErr != nil {
+				log.Printf("⚠️ ISAPI xatosi, RTSP ga o'tilmoqda: %v", recErr)
+				// RTSP fallback (agar stol RTSP URL bor bo'lsa)
+				if useRTSP {
+					rtspURL := recorder.PlaybackRTSP(table.RTSPUrl, cr.StartTime, cr.EndTime)
+					outPath, recErr = s.recorder.Record(clipID, rtspURL)
+				}
+			}
+		} else {
+			// Faqat RTSP URL bor — to'g'ridan ishlatish
+			rtspURL := recorder.PlaybackRTSP(table.RTSPUrl, cr.StartTime, cr.EndTime)
+			outPath, recErr = s.recorder.Record(clipID, rtspURL)
+		}
+
+		if recErr != nil {
+			log.Printf("❌ Klip #%d xatolik: %v", clipID, recErr)
 			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
 			_ = s.clipRepo.SetClipPath(clipID, "")
 			return
