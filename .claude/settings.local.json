@@ -11,7 +11,8 @@
       "Bash(powershell.exe -Command \"Get-ChildItem -Path C:\\\\Users\\\\Oyatulloh -Recurse -Filter 'go.exe' -ErrorAction SilentlyContinue | Select-Object -First 5 FullName\")",
       "Bash(powershell.exe -Command ':*)",
       "Bash(go build:*)",
-      "Bash(bash -c \"cd bot-gateway && go build ./... 2>&1; echo '---'; cd ../clip-service && go build ./... 2>&1\")"
+      "Bash(bash -c \"cd bot-gateway && go build ./... 2>&1; echo '---'; cd ../clip-service && go build ./... 2>&1\")",
+      "Bash(go get:*)"
     ]
   }
 }
