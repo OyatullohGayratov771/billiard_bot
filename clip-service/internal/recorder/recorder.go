@@ -135,11 +135,13 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 	var stderr bytes.Buffer
 	cmd := exec.CommandContext(ctx, "ffmpeg",
 		"-loglevel", "warning",
+		"-use_wallclock_as_timestamps", "1", // NVR timestamp yo'q bo'lsa real vaqt ishlatiladi — -t to'g'ri ishlaydi
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-c:v", "copy",
 		"-an",
+		"-avoid_negative_ts", "make_zero",
 		"-y",
 		outPath,
 	)
