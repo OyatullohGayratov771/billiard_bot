@@ -136,12 +136,11 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 	var stderr bytes.Buffer
 	cmd := exec.CommandContext(ctx, "ffmpeg",
 		"-loglevel", "warning",
+		"-fflags", "+genpts", // timestamp yo'q bo'lsa avtomatik generatsiya — video toza, re-encode yo'q
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
-		"-c:v", "libx264", // re-encode: timestamp muammosini hal qiladi, video toza chiqadi
-		"-preset", "veryfast",
-		"-crf", "23",
+		"-c:v", "copy", // original sifat saqlanadi
 		"-an",
 		"-y",
 		outPath,
