@@ -67,6 +67,7 @@ services:
       dockerfile: Dockerfile
     container_name: billiard_clip_service
     restart: unless-stopped
+    network_mode: host
     depends_on:
       table-service:
         condition: service_healthy
