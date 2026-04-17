@@ -133,6 +133,12 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
 	defer cancel()
 
+	// Telegram 50MB limitiga sig'adigan max bitrate (45MB target)
+	maxBitrateKbps := 45 * 1024 * 8 / durationSec
+	if maxBitrateKbps > 4000 {
+		maxBitrateKbps = 4000
+	}
+
 	var stderr bytes.Buffer
 	cmd := exec.CommandContext(ctx, "ffmpeg",
 		"-loglevel", "warning",
@@ -140,10 +146,12 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
-		"-vf", "yadif=0:-1:0", // interlace kadrlarni progressive ga aylantiradi — vijir yo'qoladi
+		"-vf", "yadif=0:-1:0",
 		"-c:v", "libx264",
 		"-preset", "fast",
-		"-crf", "20",
+		"-crf", "23",
+		"-maxrate", fmt.Sprintf("%dk", maxBitrateKbps),
+		"-bufsize", fmt.Sprintf("%dk", maxBitrateKbps*2),
 		"-an",
 		"-y",
 		outPath,
