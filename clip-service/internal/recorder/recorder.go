@@ -127,21 +127,22 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 		startTime.Format("15:04:05"), endTime.Format("15:04:05"),
 		durationSec, nvrHost)
 
-	// 3-qadam: ffmpeg — timeout = davomiylik + 60 soniya bufer
-	timeoutSec := durationSec + 60
+	// 3-qadam: ffmpeg
+	// timeout = davomiylik + 3 daqiqa (re-encode + network overhead uchun)
+	timeoutSec := durationSec + 180
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
 	defer cancel()
 
 	var stderr bytes.Buffer
 	cmd := exec.CommandContext(ctx, "ffmpeg",
 		"-loglevel", "warning",
-		"-use_wallclock_as_timestamps", "1", // NVR timestamp yo'q bo'lsa real vaqt ishlatiladi — -t to'g'ri ishlaydi
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
-		"-c:v", "copy",
+		"-c:v", "libx264", // re-encode: timestamp muammosini hal qiladi, video toza chiqadi
+		"-preset", "veryfast",
+		"-crf", "23",
 		"-an",
-		"-avoid_negative_ts", "make_zero",
 		"-y",
 		outPath,
 	)
