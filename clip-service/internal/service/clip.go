@@ -131,7 +131,7 @@ func (s *ClipService) RecordClip(clipID int64) error {
 			outPath, recErr = s.recorder.RecordFromNVR(
 				clipID,
 				branch.NVRHost, branch.NVRUser, branch.NVRPass,
-				table.CameraChannel,
+				branch.NVRPort, table.CameraChannel,
 				cr.StartTime, cr.EndTime,
 			)
 		} else {

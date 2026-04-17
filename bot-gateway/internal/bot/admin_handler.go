@@ -187,7 +187,14 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 
 	// Fon goroutine — klip tayyor bo'lganda mijozga yuboradi
 	go func() {
-		for i := 0; i < 36; i++ { // max 6 daqiqa (36 * 10s)
+		// Max kutish = klip davomiyligi + 15 daqiqa bufer
+		durationSec := int(cr.EndTime.Sub(cr.StartTime).Seconds())
+		maxPolls := durationSec/10 + 90 // 90 * 10s = 15 daqiqa bufer
+		if maxPolls < 90 {
+			maxPolls = 90
+		}
+
+		for i := 0; i < maxPolls; i++ {
 			time.Sleep(10 * time.Second)
 
 			cur, err := h.clipSvc.GetByID(clipID)
@@ -209,7 +216,6 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 					cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"),
 				)
 
-				// To'g'ridan shared volume dan o'qib stream qilish
 				f, err := os.Open(cur.ClipPath)
 				if err != nil {
 					send(bot, chatID, fmt.Sprintf("❌ Klip fayl ochilmadi: %v", err))
@@ -224,27 +230,21 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 				_, sendErr := bot.Send(videoMsg)
 				f.Close()
 
-				if sendErr != nil {
-					// Video bo'lmasa document sifatida qayta urinib ko'r
-					f2, err2 := os.Open(cur.ClipPath)
-					if err2 == nil {
-						docMsg := tgbotapi.NewDocument(cur.ClientTgID,
-							tgbotapi.FileReader{Name: fileName, Reader: f2})
-						docMsg.Caption = caption
-						docMsg.ParseMode = "HTML"
-						_, _ = bot.Send(docMsg)
-						f2.Close()
-					}
-				}
-
-				// Yuborilgandan keyin diskdan o'chirish
 				os.Remove(cur.ClipPath)
+
+				if sendErr != nil {
+					send(bot, chatID, fmt.Sprintf(
+						"❌ Klip #%d Telegramga yuborishda xatolik: %v\n\n"+
+							"Sababi: fayl hajmi juda katta (50MB dan oshib ketgan) bo'lishi mumkin.",
+						clipID, sendErr))
+					return
+				}
 
 				send(bot, chatID, fmt.Sprintf("✅ Klip #%d mijozga yuborildi!", clipID))
 				return
 			}
 		}
-		send(bot, chatID, fmt.Sprintf("⏰ Klip #%d yozish vaqti tugadi (6 daqiqa). Qayta urinib ko'ring.", clipID))
+		send(bot, chatID, fmt.Sprintf("⏰ Klip #%d yozish vaqti tugadi. Qayta urinib ko'ring.", clipID))
 	}()
 }
 

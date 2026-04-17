@@ -1,9 +1,11 @@
 package recorder
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -26,10 +28,13 @@ func (r *Recorder) ClipPath(clipID int64) string {
 }
 
 // HikvisionPlaybackRTSP — NVR arxiv RTSP URL yasaydi (starttime/endtime bilan)
-func HikvisionPlaybackRTSP(user, pass, host string, channel int, startTime, endTime time.Time) string {
+func HikvisionPlaybackRTSP(user, pass, host string, port, channel int, startTime, endTime time.Time) string {
+	if port == 0 {
+		port = 554
+	}
 	return fmt.Sprintf(
-		"rtsp://%s:%s@%s/Streaming/tracks/%d01?starttime=%sZ&endtime=%sZ",
-		user, pass, host,
+		"rtsp://%s:%s@%s:%d/Streaming/tracks/%d01?starttime=%sZ&endtime=%sZ",
+		user, pass, host, port,
 		channel,
 		startTime.UTC().Format("20060102T150405"),
 		endTime.UTC().Format("20060102T150405"),
@@ -100,34 +105,43 @@ func searchWarmup(nvrHost, nvrUser, nvrPass string, channel int, startTime, endT
 
 // RecordFromNVR — NVR arxividan klip yozib oladi:
 //  1. ISAPI search orqali NVR keshini yuklaydi
-//  2. RTSP + ffmpeg bilan aniq davomiylikda kesib oladi
-func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string, channel int, startTime, endTime time.Time) (string, error) {
+//  2. RTSP + ffmpeg bilan yozadi (NVR o'zi endtime da stream ni to'xtatadi)
+func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string, nvrPort, channel int, startTime, endTime time.Time) (string, error) {
 	outPath := r.ClipPath(clipID)
 
-	// 1-qadam: NVR keshini yuklash (search)
-	searchWarmup(nvrHost, nvrUser, nvrPass, channel, startTime, endTime)
-
-	// 2-qadam: RTSP URL yasash
-	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, channel, startTime, endTime)
-
-	// 3-qadam: ffmpeg bilan aniq davomiylikda yozish
 	durationSec := int(endTime.Sub(startTime).Seconds())
 	if durationSec <= 0 {
 		return "", fmt.Errorf("noto'g'ri vaqt oralig'i")
 	}
 
-	cmd := exec.Command("ffmpeg",
+	// 1-qadam: NVR keshini yuklash (search)
+	searchWarmup(nvrHost, nvrUser, nvrPass, channel, startTime, endTime)
+
+	// 2-qadam: RTSP URL yasash (starttime/endtime NVR ga beriladi — u o'zi to'g'ri vaqtda to'xtatadi)
+	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
+
+	// 3-qadam: ffmpeg bilan yozish.
+	// -t: NVR stream ni o'zi yopмайди — shu bilan aniq davomiylikda to'xtatamiz.
+	// context: ffmpeg o'zi osilib qolsa — durationSec + 30 soniyada o'ldiriladi.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(durationSec+30)*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "ffmpeg",
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
-		"-c:v", "copy", // video codec'ni o'zgartirsiz ko'chirish
-		"-an",          // pcm_mulaw audio MP4 da ishlamaydi — o'chirib tashlash
+		"-c:v", "copy", // video formatini o'zgartirmasdan nusxa olish
+		"-an",          // pcm_mulaw audio MP4 da ishlamaydi
 		"-y",
 		outPath,
 	)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		os.Remove(outPath) // to'liq yozilмаган faylni o'chirish
+		if ctx.Err() != nil {
+			return "", fmt.Errorf("ffmpeg timeout: NVR stream %d sekunddan keyin ham tugamadi", durationSec+120)
+		}
 		return "", fmt.Errorf("ffmpeg xatosi: %v\n%s", err, string(output))
 	}
 
