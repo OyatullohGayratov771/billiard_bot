@@ -1,9 +1,11 @@
 package recorder
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -105,7 +107,7 @@ func searchWarmup(nvrHost, nvrUser, nvrPass string, channel int, startTime, endT
 
 // RecordFromNVR — NVR arxividan klip yozib oladi:
 //  1. ISAPI search orqali NVR keshini yuklaydi
-//  2. RTSP + ffmpeg bilan yozadi (NVR o'zi endtime da stream ni to'xtatadi)
+//  2. RTSP + ffmpeg bilan yozadi
 func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string, nvrPort, channel int, startTime, endTime time.Time) (string, error) {
 	outPath := r.ClipPath(clipID)
 
@@ -114,37 +116,49 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 		return "", fmt.Errorf("noto'g'ri vaqt oralig'i")
 	}
 
-	// 1-qadam: NVR keshini yuklash (search)
+	// 1-qadam: NVR keshini yuklash
 	searchWarmup(nvrHost, nvrUser, nvrPass, channel, startTime, endTime)
 
-	// 2-qadam: RTSP URL yasash (starttime/endtime NVR ga beriladi — u o'zi to'g'ri vaqtda to'xtatadi)
+	// 2-qadam: RTSP URL yasash
 	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
 
-	// 3-qadam: ffmpeg bilan yozish.
-	// -t: NVR stream ni o'zi yopмайди — shu bilan aniq davomiylikda to'xtatamiz.
-	// context: ffmpeg o'zi osilib qolsa — durationSec + 30 soniyada o'ldiriladi.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(durationSec+30)*time.Second)
+	log.Printf("🎥 ffmpeg start: klip#%d kanal=%d %s→%s (%ds) host=%s",
+		clipID, channel,
+		startTime.Format("15:04:05"), endTime.Format("15:04:05"),
+		durationSec, nvrHost)
+
+	// 3-qadam: ffmpeg — timeout = davomiylik + 60 soniya bufer
+	timeoutSec := durationSec + 60
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
 	defer cancel()
 
+	var stderr bytes.Buffer
 	cmd := exec.CommandContext(ctx, "ffmpeg",
+		"-loglevel", "warning",
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
-		"-c:v", "copy", // video formatini o'zgartirmasdan nusxa olish
-		"-an",          // pcm_mulaw audio MP4 da ishlamaydi
+		"-c:v", "copy",
+		"-an",
 		"-y",
 		outPath,
 	)
+	cmd.Stderr = &stderr
 
-	output, err := cmd.CombinedOutput()
+	err := cmd.Run()
+	ffmpegOut := strings.TrimSpace(stderr.String())
+
 	if err != nil {
-		os.Remove(outPath) // to'liq yozilмаган faylni o'chirish
+		os.Remove(outPath)
 		if ctx.Err() != nil {
-			return "", fmt.Errorf("ffmpeg timeout: NVR stream %d sekunddan keyin ham tugamadi", durationSec+120)
+			log.Printf("⏰ ffmpeg timeout klip#%d (%ds): %s", clipID, timeoutSec, ffmpegOut)
+			return "", fmt.Errorf("ffmpeg timeout: %ds ichida NVR javob bermadi. NVR log: %s", timeoutSec, ffmpegOut)
 		}
-		return "", fmt.Errorf("ffmpeg xatosi: %v\n%s", err, string(output))
+		log.Printf("❌ ffmpeg xato klip#%d: %v | %s", clipID, err, ffmpegOut)
+		return "", fmt.Errorf("ffmpeg xatosi: %v | %s", err, ffmpegOut)
 	}
 
+	log.Printf("✅ ffmpeg done: klip#%d → %s", clipID, outPath)
 	return outPath, nil
 }
 
