@@ -136,11 +136,14 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 	var stderr bytes.Buffer
 	cmd := exec.CommandContext(ctx, "ffmpeg",
 		"-loglevel", "warning",
-		"-fflags", "+genpts", // timestamp yo'q bo'lsa avtomatik generatsiya — video toza, re-encode yo'q
+		"-fflags", "+genpts",
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
-		"-c:v", "copy", // original sifat saqlanadi
+		"-vf", "yadif=0:-1:0", // interlace kadrlarni progressive ga aylantiradi — vijir yo'qoladi
+		"-c:v", "libx264",
+		"-preset", "fast",
+		"-crf", "20",
 		"-an",
 		"-y",
 		outPath,
