@@ -117,13 +117,11 @@ func searchWarmup(nvrHost, nvrUser, nvrPass string, channel int, startTime, endT
 //   - H.265 decode qilinmaydi — raw stream saqlaydi
 //   - RTSP port muammosi yo'q
 func isapiDownload(client *http.Client, nvrHost string, channel int, startTime, endTime time.Time, destPath string) error {
-	// NVR parser & va &amp; ni "tag" sifatida sanaydi → faqat starttime, endtime yo'q
-	// ffmpeg -t bilan kerakli vaqtda to'xtatiladi
+	// faqat starttime — & belgisi XML da muammo yaratadi, ffmpeg -t bilan to'xtatiladi
 	playbackURI := fmt.Sprintf(
-    "rtsp://%s/Streaming/tracks/%d01?starttime=%sZ&amp;endtime=%sZ",
-    nvrHost, channel,
-    startTime.UTC().Format("20060102T150405"),
-    endTime.UTC().Format("20060102T150405"),
+		"rtsp://%s/Streaming/tracks/%d01?starttime=%sZ",
+		nvrHost, channel,
+		startTime.UTC().Format("20060102T150405"),
 	)
 
 	xmlBody := `<?xml version="1.0" encoding="UTF-8"?>` +
