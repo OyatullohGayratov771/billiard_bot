@@ -97,7 +97,7 @@ func (s *ClipService) RecordClip(clipID int64) error {
 
 	branch, err := s.branchRepo.GetByID(cr.BranchID)
 	if err != nil {
-		_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
+		_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "filial topilmadi")
 		return fmt.Errorf("filial topilmadi")
 	}
 
@@ -142,7 +142,7 @@ func (s *ClipService) RecordClip(clipID int64) error {
 
 		if recErr != nil {
 			log.Printf("❌ Klip #%d xatolik: %v", clipID, recErr)
-			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, "")
+			_ = s.clipRepo.SetStatus(clipID, models.ClipStatusFailed, recErr.Error())
 			_ = s.clipRepo.SetClipPath(clipID, "")
 			return
 		}

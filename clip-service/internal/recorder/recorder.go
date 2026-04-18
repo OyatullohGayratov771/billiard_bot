@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"os/exec"
@@ -28,6 +30,7 @@ func (r *Recorder) ClipPath(clipID int64) string {
 	return filepath.Join(r.clipsDir, fmt.Sprintf("clip_%d.mp4", clipID))
 }
 
+// HikvisionPlaybackRTSP — NVR arxiv RTSP URL (RTSP fallback uchun).
 func HikvisionPlaybackRTSP(user, pass, host string, port, channel int, startTime, endTime time.Time) string {
 	if port == 0 {
 		port = 554
@@ -40,6 +43,7 @@ func HikvisionPlaybackRTSP(user, pass, host string, port, channel int, startTime
 	)
 }
 
+// PlaybackRTSP — mavjud live RTSP URL dan playback URL yasaydi (RTSPUrl stollar uchun).
 func PlaybackRTSP(liveURL string, startTime, endTime time.Time) string {
 	playback := strings.Replace(liveURL, "/Streaming/Channels/", "/Streaming/tracks/", 1)
 	return fmt.Sprintf("%s?starttime=%sZ&endtime=%sZ",
@@ -49,6 +53,7 @@ func PlaybackRTSP(liveURL string, startTime, endTime time.Time) string {
 	)
 }
 
+// HikvisionRTSP — live RTSP URL (TestCamera uchun).
 func HikvisionRTSP(user, pass, host string, port, channel int) string {
 	if port == 0 {
 		port = 554
@@ -57,7 +62,20 @@ func HikvisionRTSP(user, pass, host string, port, channel int) string {
 		user, pass, host, port, channel)
 }
 
-// searchWarmup — NVR ISAPI search orqali arxiv keshini yuklaydi (Digest auth).
+func newDigestClient(user, pass string, timeout time.Duration) *http.Client {
+	return &http.Client{
+		Transport: &digest.Transport{Username: user, Password: pass},
+		Timeout:   timeout,
+	}
+}
+
+// nvrHTTPBase — NVR HTTP base URL.
+// host ga port qo'shish kerak bo'lsa (port 80 emas), host ni "ip:port" formatida bering.
+func nvrHTTPBase(host string) string {
+	return "http://" + host
+}
+
+// searchWarmup — NVR ISAPI search orqali arxiv keshini yuklaydi (download dan oldin kerak).
 func searchWarmup(nvrHost, nvrUser, nvrPass string, channel int, startTime, endTime time.Time) {
 	xmlBody := fmt.Sprintf(
 		`<?xml version="1.0" encoding="UTF-8"?>`+
@@ -75,13 +93,9 @@ func searchWarmup(nvrHost, nvrUser, nvrPass string, channel int, startTime, endT
 		startTime.UTC().Format("2006-01-02T15:04:05Z"),
 		endTime.UTC().Format("2006-01-02T15:04:05Z"),
 	)
-
-	client := &http.Client{
-		Transport: &digest.Transport{Username: nvrUser, Password: nvrPass},
-		Timeout:   30 * time.Second,
-	}
+	client := newDigestClient(nvrUser, nvrPass, 30*time.Second)
 	req, err := http.NewRequest(http.MethodPost,
-		fmt.Sprintf("http://%s/ISAPI/ContentMgmt/search", nvrHost),
+		nvrHTTPBase(nvrHost)+"/ISAPI/ContentMgmt/search",
 		strings.NewReader(xmlBody))
 	if err != nil {
 		return
@@ -89,13 +103,85 @@ func searchWarmup(nvrHost, nvrUser, nvrPass string, channel int, startTime, endT
 	req.Header.Set("Content-Type", "application/xml")
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Printf("[NVR search] %s: %v", nvrHost, err)
 		return
 	}
 	defer resp.Body.Close()
 	_, _ = io.Copy(io.Discard, resp.Body)
 }
 
-// runFFmpeg — ffmpeg ni timeout bilan ishga tushiradi, xato bo'lsa outPath o'chiriladi.
+// isapiDownload — NVR dan ISAPI HTTP orqali segment yuklab oladi.
+//
+// RTSP ga qaraganda afzalliklari:
+//   - Real-time kutilmaydi — tarmoq tezligida yuklanadi
+//   - H.265 decode qilinmaydi — raw stream saqlaydi
+//   - RTSP port muammosi yo'q
+func isapiDownload(client *http.Client, nvrHost string, channel int, startTime, endTime time.Time, destPath string) error {
+	// NVR ISAPI download uchun playbackURI (RTSP format, lekin HTTP orqali yuklanadi)
+	playbackURI := fmt.Sprintf(
+		"rtsp://%s/Streaming/tracks/%d01?starttime=%sZ&endtime=%sZ",
+		nvrHost, channel,
+		startTime.UTC().Format("20060102T150405"),
+		endTime.UTC().Format("20060102T150405"),
+	)
+
+	xmlBody := `<?xml version="1.0" encoding="UTF-8"?>` +
+		`<CMDownloadDescription><playbackURI>` + playbackURI + `</playbackURI></CMDownloadDescription>`
+
+	req, err := http.NewRequest(http.MethodPost,
+		nvrHTTPBase(nvrHost)+"/ISAPI/ContentMgmt/download",
+		strings.NewReader(xmlBody))
+	if err != nil {
+		return fmt.Errorf("request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/xml")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("connect: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return fmt.Errorf("HTTP %s: %s", resp.Status, string(body))
+	}
+
+	f, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("file create: %v", err)
+	}
+	defer f.Close()
+
+	ct := resp.Header.Get("Content-Type")
+	mediaType, params, _ := mime.ParseMediaType(ct)
+
+	// Ba'zi NVR lar multipart/mixed qaytaradi — video qismini ajratib olamiz
+	if strings.HasPrefix(mediaType, "multipart/") {
+		mr := multipart.NewReader(resp.Body, params["boundary"])
+		for {
+			part, partErr := mr.NextPart()
+			if partErr == io.EOF {
+				break
+			}
+			if partErr != nil {
+				return fmt.Errorf("multipart: %v", partErr)
+			}
+			partCT := part.Header.Get("Content-Type")
+			if strings.Contains(partCT, "video") || strings.Contains(partCT, "octet-stream") || partCT == "" {
+				_, err = io.Copy(f, part)
+				return err
+			}
+			_, _ = io.Copy(io.Discard, part)
+		}
+		return fmt.Errorf("video part topilmadi multipart response da")
+	}
+
+	_, err = io.Copy(f, resp.Body)
+	return err
+}
+
+// runFFmpeg — ffmpeg ni timeout bilan ishga tushiradi.
 func runFFmpeg(outPath string, timeout time.Duration, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -110,7 +196,7 @@ func runFFmpeg(outPath string, timeout time.Duration, args []string) error {
 		if ctx.Err() != nil {
 			return fmt.Errorf("timeout(%v): %s", timeout, out)
 		}
-		return fmt.Errorf("exit: %v | %s", err, out)
+		return fmt.Errorf("%v | %s", err, out)
 	}
 	return nil
 }
@@ -123,9 +209,14 @@ func logDone(clipID int64, durationSec int, outPath string) {
 	log.Printf("[klip#%d] done: %.1fMB, %ds → %s", clipID, sizeMB, durationSec, outPath)
 }
 
-// RecordFromNVR — NVR arxividan klip yozib oladi.
-// 1-urinish: decode + yadif (eng yaxshi sifat, interlace yo'q).
-// 2-urinish: copy mode — agar HEVC stream buzilgan bo'lsa (CABAC/qp_delta xatolar).
+// RecordFromNVR — ISAPI HTTP download orqali klip yozib oladi (asosiy usul).
+//
+// Jarayon:
+//  1. ISAPI search  — NVR keshini yuklaydi
+//  2. ISAPI download — HTTP orqali raw video yuklab oladi (H.265 decode yo'q)
+//  3. ffmpeg -c copy  — faqat kesish (decode yo'q, juda tez)
+//
+// Fallback: ISAPI ishlamasa → RTSP -c copy (ham decode yo'q).
 func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string, nvrPort, channel int, startTime, endTime time.Time) (string, error) {
 	outPath := r.ClipPath(clipID)
 
@@ -134,73 +225,76 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 		return "", fmt.Errorf("noto'g'ri vaqt oralig'i")
 	}
 
-	searchWarmup(nvrHost, nvrUser, nvrPass, channel, startTime, endTime)
-	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
-
 	log.Printf("[klip#%d] start: kanal=%d %s→%s (%ds)",
 		clipID, channel, startTime.Format("15:04:05"), endTime.Format("15:04:05"), durationSec)
 
-	// Telegram 50MB limitiga sig'adigan dinamik max bitrate (45MB target)
-	maxBitrateKbps := 45 * 1024 * 8 / durationSec
-	if maxBitrateKbps > 4000 {
-		maxBitrateKbps = 4000
-	}
-	maxrateArg := fmt.Sprintf("%dk", maxBitrateKbps)
+	// ── 1-qadam: ISAPI search (NVR keshini yuklash) ──
+	searchWarmup(nvrHost, nvrUser, nvrPass, channel, startTime, endTime)
 
-	// 1-urinish: decode + deinterlace (sifatli, lekin buzilgan HEVC da stall bo'lishi mumkin)
-	decodeArgs := []string{
-		"-loglevel", "warning",
-		"-err_detect", "ignore_err",
-		"-fflags", "+discardcorrupt+genpts",
-		"-rtsp_transport", "tcp",
-		"-i", rtspURL,
-		"-t", fmt.Sprintf("%d", durationSec),
-		"-vf", "yadif=0:-1:0",
-		"-c:v", "libx264",
-		"-preset", "fast",
-		"-crf", "20",
-		"-maxrate", maxrateArg,
-		"-bufsize", fmt.Sprintf("%dk", maxBitrateKbps*2),
-		"-movflags", "+faststart",
-		"-an", "-y", outPath,
-	}
-	decodeTimeout := time.Duration(durationSec+60) * time.Second
-	if err := runFFmpeg(outPath, decodeTimeout, decodeArgs); err == nil {
-		logDone(clipID, durationSec, outPath)
-		return outPath, nil
-	} else {
-		log.Printf("[klip#%d] decode xato (%v), copy mode bilan qayta urinish...", clipID, err)
-	}
+	// ── 2-qadam: ISAPI HTTP download ──
+	tmpPath := outPath + ".raw"
+	dlClient := newDigestClient(nvrUser, nvrPass, time.Duration(durationSec+120)*time.Second)
 
-	// 2-urinish: copy mode — HEVC decode qilinmaydi, stream to'g'ridan-to'g'ri yoziladi.
-	// HEVC CABAC xatolar bu rejimda muammo qilmaydi.
-	copyArgs := []string{
+	dlErr := isapiDownload(dlClient, nvrHost, channel, startTime, endTime, tmpPath)
+	if dlErr != nil {
+		log.Printf("[klip#%d] ISAPI xato: %v → RTSP fallback", clipID, dlErr)
+		os.Remove(tmpPath)
+		return r.recordRTSP(clipID, nvrHost, nvrUser, nvrPass, nvrPort, channel, startTime, endTime, durationSec, outPath, dlErr)
+	}
+	defer os.Remove(tmpPath)
+
+	// ── 3-qadam: ffmpeg — faqat kesish, decode yo'q ──
+	// -c:v copy: H.265/H.264 ni decode qilmasdan MP4 ga kesadi
+	trimErr := runFFmpeg(outPath, 2*time.Minute, []string{
 		"-loglevel", "warning",
 		"-fflags", "+genpts",
-		"-rtsp_transport", "tcp",
-		"-i", rtspURL,
+		"-i", tmpPath,
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-c:v", "copy",
-		"-an", "-y", outPath,
-	}
-	copyTimeout := time.Duration(durationSec+30) * time.Second
-	if err := runFFmpeg(outPath, copyTimeout, copyArgs); err != nil {
-		log.Printf("[klip#%d] copy xato: %v", clipID, err)
-		return "", fmt.Errorf("klip yozib bo'lmadi: %v", err)
+		"-an",
+		"-movflags", "+faststart",
+		"-y", outPath,
+	})
+	if trimErr != nil {
+		log.Printf("[klip#%d] ffmpeg kesish xato: %v → RTSP fallback", clipID, trimErr)
+		return r.recordRTSP(clipID, nvrHost, nvrUser, nvrPass, nvrPort, channel, startTime, endTime, durationSec, outPath, trimErr)
 	}
 
 	logDone(clipID, durationSec, outPath)
 	return outPath, nil
 }
 
-// Record — fallback: RTSPUrl bilan stollar uchun.
+// recordRTSP — RTSP -c copy orqali yozadi (ISAPI ishlamagan holda fallback).
+// H.265 decode qilinmaydi — copy mode ishlaydi.
+func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nvrPort, channel int, startTime, endTime time.Time, durationSec int, outPath string, prevErr error) (string, error) {
+	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
+	log.Printf("[klip#%d] RTSP copy mode: %s", clipID, rtspURL)
+
+	err := runFFmpeg(outPath, time.Duration(durationSec+60)*time.Second, []string{
+		"-loglevel", "warning",
+		"-fflags", "+genpts",
+		"-rtsp_transport", "tcp",
+		"-i", rtspURL,
+		"-t", fmt.Sprintf("%d", durationSec),
+		"-c:v", "copy",
+		"-an",
+		"-movflags", "+faststart",
+		"-y", outPath,
+	})
+	if err != nil {
+		return "", fmt.Errorf("ISAPI: %v | RTSP: %v", prevErr, err)
+	}
+
+	logDone(clipID, durationSec, outPath)
+	return outPath, nil
+}
+
+// Record — fallback: RTSPUrl bilan stollar uchun (-c copy, H.265 decode yo'q).
 func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string, error) {
 	outPath := r.ClipPath(clipID)
-
 	args := []string{
 		"-loglevel", "warning",
-		"-err_detect", "ignore_err",
-		"-fflags", "+discardcorrupt+genpts",
+		"-fflags", "+genpts",
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 	}
@@ -208,25 +302,22 @@ func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string
 		args = append(args, "-t", fmt.Sprintf("%d", durationSec))
 	}
 	args = append(args,
-		"-vf", "yadif=0:-1:0",
-		"-c:v", "libx264",
-		"-preset", "fast",
-		"-crf", "20",
+		"-c:v", "copy",
+		"-an",
 		"-movflags", "+faststart",
-		"-an", "-y", outPath,
+		"-y", outPath,
 	)
-
 	timeout := time.Duration(durationSec+60) * time.Second
 	if err := runFFmpeg(outPath, timeout, args); err != nil {
 		return "", err
 	}
+	logDone(clipID, durationSec, outPath)
 	return outPath, nil
 }
 
 // Screenshot — RTSP streamdan 1 ta kadr oladi (NVR test uchun).
 func (r *Recorder) Screenshot(clipID int64, rtspURL string) (string, error) {
 	outPath := filepath.Join(r.clipsDir, fmt.Sprintf("test_%d.jpg", clipID))
-
 	args := []string{
 		"-loglevel", "warning",
 		"-rtsp_transport", "tcp",
@@ -234,8 +325,7 @@ func (r *Recorder) Screenshot(clipID int64, rtspURL string) (string, error) {
 		"-frames:v", "1",
 		"-y", outPath,
 	}
-	timeout := 30 * time.Second
-	if err := runFFmpeg(outPath, timeout, args); err != nil {
+	if err := runFFmpeg(outPath, 30*time.Second, args); err != nil {
 		return "", err
 	}
 	return outPath, nil

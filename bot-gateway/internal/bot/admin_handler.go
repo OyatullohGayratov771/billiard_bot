@@ -203,7 +203,13 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 			}
 
 			if cur.Status == models.ClipStatusFailed {
-				send(bot, chatID, fmt.Sprintf("❌ Klip #%d yozishda xatolik. NVR sozlamalarini tekshiring.", clipID))
+				errDetail := cur.Notes
+				if errDetail == "" {
+					errDetail = "NVR sozlamalarini tekshiring."
+				}
+				send(bot, chatID, fmt.Sprintf(
+					"❌ <b>Klip #%d yozishda xatolik!</b>\n\n<code>%s</code>",
+					clipID, errDetail))
 				return
 			}
 
