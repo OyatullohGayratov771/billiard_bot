@@ -13,7 +13,10 @@
       "Bash(go build:*)",
       "Bash(bash -c \"cd bot-gateway && go build ./... 2>&1; echo '---'; cd ../clip-service && go build ./... 2>&1\")",
       "Bash(go get:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
