@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"html"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -209,7 +210,7 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 				}
 				send(bot, chatID, fmt.Sprintf(
 					"❌ <b>Klip #%d yozishda xatolik!</b>\n\n<code>%s</code>",
-					clipID, errDetail))
+					clipID, html.EscapeString(errDetail)))
 				return
 			}
 

@@ -125,8 +125,11 @@ func isapiDownload(client *http.Client, nvrHost string, channel int, startTime, 
 		endTime.UTC().Format("20060102T150405"),
 	)
 
+	escapedURI := strings.ReplaceAll(playbackURI, "&", "&amp;")
 	xmlBody := `<?xml version="1.0" encoding="UTF-8"?>` +
-		`<CMDownloadDescription><playbackURI>` + playbackURI + `</playbackURI></CMDownloadDescription>`
+		`<CMDownloadDescription xmlns="http://www.hikvision.com/ver20/XMLSchema">` +
+		`<playbackURI>` + escapedURI + `</playbackURI>` +
+		`</CMDownloadDescription>`
 
 	req, err := http.NewRequest(http.MethodPost,
 		nvrHTTPBase(nvrHost)+"/ISAPI/ContentMgmt/download",
