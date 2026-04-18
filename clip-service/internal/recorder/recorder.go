@@ -153,7 +153,7 @@ func compressIfNeeded(clipID int64, path string, durationSec int) error {
 	}
 	log.Printf("[klip#%d] hajm %.1fMB > 45MB → siqilmoqda (%d kbps)", clipID, sizeMB, targetKbps)
 
-	tmpPath := path + ".cmp"
+	tmpPath := path + ".tmp.mp4"
 	err = runFFmpeg(tmpPath, time.Duration(durationSec*3+120)*time.Second, []string{
 		"-loglevel", "warning",
 		"-i", path,
