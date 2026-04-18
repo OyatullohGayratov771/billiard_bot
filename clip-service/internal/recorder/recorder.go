@@ -126,9 +126,12 @@ func isapiDownload(client *http.Client, nvrHost string, channel int, startTime, 
 	)
 
 	escapedURI := strings.ReplaceAll(playbackURI, "&", "&amp;")
-	xmlBody := `<CMDownloadDescription>` +
+	xmlBody := `<?xml version="1.0" encoding="UTF-8"?>` +
+		`<CMDownloadDescription>` +
 		`<playbackURI>` + escapedURI + `</playbackURI>` +
 		`</CMDownloadDescription>`
+
+	log.Printf("[ISAPI] POST %s  body: %s", nvrHTTPBase(nvrHost)+"/ISAPI/ContentMgmt/download", xmlBody)
 
 	req, err := http.NewRequest(http.MethodPost,
 		nvrHTTPBase(nvrHost)+"/ISAPI/ContentMgmt/download",
@@ -272,10 +275,13 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
 	log.Printf("[klip#%d] RTSP copy mode: %s", clipID, rtspURL)
 
-	err := runFFmpeg(outPath, time.Duration(durationSec+60)*time.Second, []string{
+	// NVR arxiv stream'ni boshlashga vaqt kerak (seek + 125ms latency) → timeout = duration*2+120
+	rtspTimeout := time.Duration(durationSec*2+120) * time.Second
+	err := runFFmpeg(outPath, rtspTimeout, []string{
 		"-loglevel", "warning",
-		"-fflags", "+genpts",
+		"-fflags", "+genpts+igndts",
 		"-rtsp_transport", "tcp",
+		"-allowed_extensions", "ALL",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-c:v", "copy",
