@@ -125,9 +125,10 @@ func isapiDownload(client *http.Client, nvrHost string, channel int, startTime, 
 		startTime.UTC().Format("20060102T150405"),
 	)
 
-	xmlBody := `<CMDownloadDescription>` +
+	xmlBody := `<?xml version="1.0" encoding="UTF-8"?>` +
+		`<downloadRequest>` +
 		`<playbackURI>` + playbackURI + `</playbackURI>` +
-		`</CMDownloadDescription>`
+		`</downloadRequest>`
 
 	log.Printf("[ISAPI] POST %s  body: %s", nvrHTTPBase(nvrHost)+"/ISAPI/ContentMgmt/download", xmlBody)
 
