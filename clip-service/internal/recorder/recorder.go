@@ -126,8 +126,7 @@ func isapiDownload(client *http.Client, nvrHost string, channel int, startTime, 
 	)
 
 	escapedURI := strings.ReplaceAll(playbackURI, "&", "&amp;")
-	xmlBody := `<?xml version="1.0" encoding="UTF-8"?>` +
-		`<CMDownloadDescription xmlns="http://www.hikvision.com/ver20/XMLSchema">` +
+	xmlBody := `<CMDownloadDescription>` +
 		`<playbackURI>` + escapedURI + `</playbackURI>` +
 		`</CMDownloadDescription>`
 
