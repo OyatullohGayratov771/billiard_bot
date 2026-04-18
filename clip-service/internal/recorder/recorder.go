@@ -162,7 +162,8 @@ func compressIfNeeded(clipID int64, path string, durationSec int) error {
 		"-maxrate", fmt.Sprintf("%dk", targetKbps*2),
 		"-bufsize", fmt.Sprintf("%dk", targetKbps*4),
 		"-preset", "fast",
-		"-an",
+		"-c:a", "aac",
+		"-b:a", "64k",
 		"-movflags", "+faststart",
 		"-y", tmpPath,
 	})
@@ -218,7 +219,7 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-c:v", "copy",
-		"-an",
+		"-c:a", "copy",
 		"-movflags", "+faststart",
 		"-y", outPath,
 	})
@@ -244,7 +245,7 @@ func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string
 	}
 	args = append(args,
 		"-c:v", "copy",
-		"-an",
+		"-c:a", "copy",
 		"-movflags", "+faststart",
 		"-y", outPath,
 	)
