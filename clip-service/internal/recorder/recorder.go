@@ -136,6 +136,52 @@ func logDone(clipID int64, durationSec int, outPath string) {
 	log.Printf("[klip#%d] done: %.1fMB, %ds → %s", clipID, sizeMB, durationSec, outPath)
 }
 
+const telegramMaxBytes = 45 * 1024 * 1024 // 45MB (Telegram 50MB limitidan xavfsiz chegarasi)
+
+// compressIfNeeded — 45MB dan katta bo'lsa H.264 ga siqadi, kichik bo'lsa tegmaydi.
+func compressIfNeeded(clipID int64, path string, durationSec int) error {
+	info, err := os.Stat(path)
+	if err != nil || info.Size() <= telegramMaxBytes {
+		return nil
+	}
+
+	sizeMB := float64(info.Size()) / 1024 / 1024
+	// target 44MB: 44*1024*8 kbit / durationSec = kbps
+	targetKbps := 44 * 1024 * 8 / durationSec
+	if targetKbps < 300 {
+		targetKbps = 300
+	}
+	log.Printf("[klip#%d] hajm %.1fMB > 45MB → siqilmoqda (%d kbps)", clipID, sizeMB, targetKbps)
+
+	tmpPath := path + ".cmp"
+	err = runFFmpeg(tmpPath, time.Duration(durationSec*3+120)*time.Second, []string{
+		"-loglevel", "warning",
+		"-i", path,
+		"-c:v", "libx264",
+		"-b:v", fmt.Sprintf("%dk", targetKbps),
+		"-maxrate", fmt.Sprintf("%dk", targetKbps*2),
+		"-bufsize", fmt.Sprintf("%dk", targetKbps*4),
+		"-preset", "fast",
+		"-an",
+		"-movflags", "+faststart",
+		"-y", tmpPath,
+	})
+	if err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("compress: %v", err)
+	}
+
+	os.Remove(path)
+	if renErr := os.Rename(tmpPath, path); renErr != nil {
+		return fmt.Errorf("rename: %v", renErr)
+	}
+
+	if info2, err2 := os.Stat(path); err2 == nil {
+		log.Printf("[klip#%d] siqildi: %.1fMB → %.1fMB", clipID, sizeMB, float64(info2.Size())/1024/1024)
+	}
+	return nil
+}
+
 // RecordFromNVR — NVR arxividan RTSP orqali klip yozib oladi.
 // Jarayon: ISAPI search (kesh) → RTSP -c copy (original sifat, decode yo'q)
 func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string, nvrPort, channel int, startTime, endTime time.Time) (string, error) {
@@ -149,7 +195,14 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 		clipID, channel, startTime.Format("15:04:05"), endTime.Format("15:04:05"), durationSec)
 
 	searchWarmup(nvrHost, nvrUser, nvrPass, channel, startTime, endTime)
-	return r.recordRTSP(clipID, nvrHost, nvrUser, nvrPass, nvrPort, channel, startTime, endTime, durationSec, outPath)
+	path, err := r.recordRTSP(clipID, nvrHost, nvrUser, nvrPass, nvrPort, channel, startTime, endTime, durationSec, outPath)
+	if err != nil {
+		return "", err
+	}
+	if cErr := compressIfNeeded(clipID, path, durationSec); cErr != nil {
+		log.Printf("[klip#%d] compress xato (original yuboriladi): %v", clipID, cErr)
+	}
+	return path, nil
 }
 
 // recordRTSP — RTSP -c copy orqali yozadi (ISAPI ishlamagan holda fallback).
@@ -177,7 +230,7 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 	return outPath, nil
 }
 
-// Record — fallback: RTSPUrl bilan stollar uchun (-c copy, H.265 decode yo'q).
+// Record — RTSPUrl bilan stollar uchun (-c copy, H.265 decode yo'q).
 func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string, error) {
 	outPath := r.ClipPath(clipID)
 	args := []string{
@@ -200,6 +253,9 @@ func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string
 		return "", err
 	}
 	logDone(clipID, durationSec, outPath)
+	if cErr := compressIfNeeded(clipID, outPath, durationSec); cErr != nil {
+		log.Printf("[klip#%d] compress xato (original yuboriladi): %v", clipID, cErr)
+	}
 	return outPath, nil
 }
 
