@@ -125,10 +125,9 @@ func isapiDownload(client *http.Client, nvrHost string, channel int, startTime, 
 		endTime.UTC().Format("20060102T150405"),
 	)
 
-	escapedURI := strings.ReplaceAll(playbackURI, "&", "&amp;")
-	xmlBody := `<?xml version="1.0" encoding="UTF-8"?>` +
-		`<CMDownloadDescription>` +
-		`<playbackURI>` + escapedURI + `</playbackURI>` +
+	// NVR parser &amp; ni "tag" sifatida sanaydi → raw & ishlatamiz, declaration yo'q
+	xmlBody := `<CMDownloadDescription>` +
+		`<playbackURI>` + playbackURI + `</playbackURI>` +
 		`</CMDownloadDescription>`
 
 	log.Printf("[ISAPI] POST %s  body: %s", nvrHTTPBase(nvrHost)+"/ISAPI/ContentMgmt/download", xmlBody)
@@ -281,7 +280,6 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 		"-loglevel", "warning",
 		"-fflags", "+genpts+igndts",
 		"-rtsp_transport", "tcp",
-		"-allowed_extensions", "ALL",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-c:v", "copy",
