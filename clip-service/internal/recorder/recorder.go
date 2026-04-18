@@ -120,9 +120,10 @@ func isapiDownload(client *http.Client, nvrHost string, channel int, startTime, 
 	// NVR parser & va &amp; ni "tag" sifatida sanaydi → faqat starttime, endtime yo'q
 	// ffmpeg -t bilan kerakli vaqtda to'xtatiladi
 	playbackURI := fmt.Sprintf(
-		"rtsp://%s/Streaming/tracks/%d01?starttime=%sZ",
-		nvrHost, channel,
-		startTime.UTC().Format("20060102T150405"),
+    "rtsp://%s/Streaming/tracks/%d01?starttime=%sZ&amp;endtime=%sZ",
+    nvrHost, channel,
+    startTime.UTC().Format("20060102T150405"),
+    endTime.UTC().Format("20060102T150405"),
 	)
 
 	xmlBody := `<?xml version="1.0" encoding="UTF-8"?>` +
