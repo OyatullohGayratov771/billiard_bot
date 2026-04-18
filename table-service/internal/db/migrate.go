@@ -122,21 +122,41 @@ func Migrate(db *sql.DB) error {
 }
 
 func SeedBranches(db *sql.DB) error {
-	branches := []struct {
-		name    string
-		address string
-		tables  int
-	}{
-		{"Filial 1", "Toshkent, Chilonzor", 9},
-		{"Filial 2", "Toshkent, Yunusobod", 9},
+	type branchSeed struct {
+		name     string
+		address  string
+		nvrIP    string
+		nvrPort  int
+		nvrUser  string
+		nvrPass  string
+		channels []int // table_num 1..N → camera_channel
+	}
+
+	branches := []branchSeed{
+		{
+			name:    "Filial 1",
+			address: "Toshkent, Chilonzor",
+			nvrIP:   "192.168.68.107",
+			nvrPort: 554,
+			nvrUser: "admin",
+			nvrPass: "QWERTY12",
+			// table 1→14, 2→12, 3→13, 4→7, 5→9, 6→16, 7→15, 8→10, 9→8
+			channels: []int{14, 12, 13, 7, 9, 16, 15, 10, 8},
+		},
+		{
+			name:     "Filial 2",
+			address:  "Toshkent, Yunusobod",
+			channels: []int{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		},
 	}
 
 	for _, b := range branches {
 		var id int
 		err := db.QueryRow(
-			`INSERT INTO branches (name, address) VALUES ($1, $2)
+			`INSERT INTO branches (name, address, nvr_ip, nvr_port, nvr_user, nvr_pass)
+			 VALUES ($1, $2, $3, $4, $5, $6)
 			 ON CONFLICT DO NOTHING RETURNING id`,
-			b.name, b.address,
+			b.name, b.address, b.nvrIP, b.nvrPort, b.nvrUser, b.nvrPass,
 		).Scan(&id)
 
 		if err == sql.ErrNoRows {
@@ -146,18 +166,19 @@ func SeedBranches(db *sql.DB) error {
 			return err
 		}
 
-		for i := 1; i <= b.tables; i++ {
+		for i, ch := range b.channels {
+			tableNum := i + 1
 			_, err := db.Exec(
 				`INSERT INTO tables (branch_id, table_num, camera_channel, price_per_hour)
 				 VALUES ($1, $2, $3, 2000000)
 				 ON CONFLICT DO NOTHING`,
-				id, i, i,
+				id, tableNum, ch,
 			)
 			if err != nil {
 				return err
 			}
 		}
-		log.Printf("✅ %s: %d ta stol yaratildi", b.name, b.tables)
+		log.Printf("✅ %s: %d ta stol yaratildi", b.name, len(b.channels))
 	}
 	return nil
 }
