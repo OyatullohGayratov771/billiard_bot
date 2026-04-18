@@ -30,14 +30,12 @@ func (r *Recorder) ClipPath(clipID int64) string {
 	return filepath.Join(r.clipsDir, fmt.Sprintf("clip_%d.mp4", clipID))
 }
 
-// HikvisionPlaybackRTSP — NVR arxiv RTSP URL (RTSP fallback uchun).
+// HikvisionPlaybackRTSP — NVR arxiv RTSP URL.
+// Format ishchi misol asosida: tracks/CHANNEL01/?starttime=...Z&endtime=...Z (trailing slash, port yo'q)
 func HikvisionPlaybackRTSP(user, pass, host string, port, channel int, startTime, endTime time.Time) string {
-	if port == 0 {
-		port = 554
-	}
 	return fmt.Sprintf(
-		"rtsp://%s:%s@%s:%d/Streaming/tracks/%d01?starttime=%sZ&endtime=%sZ",
-		user, pass, host, port, channel,
+		"rtsp://%s:%s@%s/Streaming/tracks/%d01/?starttime=%sZ&endtime=%sZ",
+		user, pass, host, channel,
 		startTime.UTC().Format("20060102T150405"),
 		endTime.UTC().Format("20060102T150405"),
 	)
