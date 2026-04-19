@@ -82,52 +82,29 @@ func clipDateKeyboard() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-// clipHourKeyboard — soat tanlash; isToday=true bo'lsa kelajak soatlar chiqarilmaydi
-func clipHourKeyboard(isToday bool) tgbotapi.InlineKeyboardMarkup {
-	var rows [][]tgbotapi.InlineKeyboardButton
-	row := []tgbotapi.InlineKeyboardButton{}
-	maxHour := 23
+// clipTimeSlotKeyboard — sana uchun 30 daqiqali vaqt slotlarini ko'rsatadi
+func clipTimeSlotKeyboard(dateStr string, isToday bool) tgbotapi.InlineKeyboardMarkup {
+	day, _ := time.Parse("02.01.2006", dateStr)
+
+	startH, startM := 10, 0
+	endT := time.Date(day.Year(), day.Month(), day.Day(), 23, 30, 0, 0, time.Local)
 	if isToday {
-		maxHour = time.Now().Hour()
+		now := time.Now().Add(-5 * time.Minute)
+		endT = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), (now.Minute()/30)*30, 0, 0, time.Local)
 	}
 
-	for h := 0; h <= maxHour; h++ {
-		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
-			fmt.Sprintf("%02d:__", h),
-			fmt.Sprintf("clip_hour:%d", h),
-		))
-		if len(row) == 6 {
-			rows = append(rows, row)
-			row = []tgbotapi.InlineKeyboardButton{}
-		}
+	var slots []time.Time
+	for t := time.Date(day.Year(), day.Month(), day.Day(), startH, startM, 0, 0, time.Local); !t.After(endT); t = t.Add(30 * time.Minute) {
+		slots = append(slots, t)
 	}
-	if len(row) > 0 {
-		rows = append(rows, row)
-	}
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:date"),
-		tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", "clip_cancel"),
-	))
-	return tgbotapi.NewInlineKeyboardMarkup(rows...)
-}
 
-// clipMinuteKeyboard — daqiqa tanlash; isCurrentHour=true bo'lsa kelajak daqiqalar chiqarilmaydi
-func clipMinuteKeyboard(hour int, isCurrentHour bool) tgbotapi.InlineKeyboardMarkup {
 	var rows [][]tgbotapi.InlineKeyboardButton
 	row := []tgbotapi.InlineKeyboardButton{}
-	maxMin := 55
-	if isCurrentHour {
-		// Hozirgi daqiqadan 5 daqiqa ortga
-		maxMin = (time.Now().Minute()/5)*5 - 5
-		if maxMin < 0 {
-			maxMin = 0
-		}
-	}
-
-	for m := 0; m <= maxMin; m += 5 {
+	for i := len(slots) - 1; i >= 0; i-- {
+		t := slots[i]
 		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
-			fmt.Sprintf("%02d:%02d", hour, m),
-			fmt.Sprintf("clip_min:%d", m),
+			t.Format("15:04"),
+			fmt.Sprintf("clip_time:%02d:%02d", t.Hour(), t.Minute()),
 		))
 		if len(row) == 4 {
 			rows = append(rows, row)
@@ -137,36 +114,34 @@ func clipMinuteKeyboard(hour int, isCurrentHour bool) tgbotapi.InlineKeyboardMar
 	if len(row) > 0 {
 		rows = append(rows, row)
 	}
+	if len(rows) == 0 {
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("⚠️ Bugun hali vaqt yo'q", "clip_cancel"),
+		))
+	}
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:hour"),
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:date"),
 		tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", "clip_cancel"),
 	))
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-// clipDurationKeyboard — davomiylik tanlash (1-10 daqiqa)
+// clipDurationKeyboard — davomiylik tanlash (1-5 daqiqa)
 func clipDurationKeyboard() tgbotapi.InlineKeyboardMarkup {
-	var rows [][]tgbotapi.InlineKeyboardButton
 	row := []tgbotapi.InlineKeyboardButton{}
-
-	for d := 1; d <= 10; d++ {
+	for d := 1; d <= 5; d++ {
 		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
 			fmt.Sprintf("%d daq", d),
 			fmt.Sprintf("clip_dur:%d", d),
 		))
-		if len(row) == 5 {
-			rows = append(rows, row)
-			row = []tgbotapi.InlineKeyboardButton{}
-		}
 	}
-	if len(row) > 0 {
-		rows = append(rows, row)
-	}
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:minute"),
-		tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", "clip_cancel"),
-	))
-	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+	return tgbotapi.NewInlineKeyboardMarkup(
+		row,
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:time"),
+			tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", "clip_cancel"),
+		),
+	)
 }
 
 // ===================== CLIP REQUEST =====================
@@ -174,11 +149,12 @@ func clipDurationKeyboard() tgbotapi.InlineKeyboardMarkup {
 func clipBranchKeyboard(branches []*models.Branch) tgbotapi.InlineKeyboardMarkup {
 	var rows [][]tgbotapi.InlineKeyboardButton
 	for _, b := range branches {
+		label := fmt.Sprintf("🏢 %s", b.Name)
+		if b.NVRHost == "" {
+			label = fmt.Sprintf("🚧 %s (tez orada)", b.Name)
+		}
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(
-				fmt.Sprintf("🏢 %s", b.Name),
-				fmt.Sprintf("clip_branch:%d", b.ID),
-			),
+			tgbotapi.NewInlineKeyboardButtonData(label, fmt.Sprintf("clip_branch:%d", b.ID)),
 		))
 	}
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(

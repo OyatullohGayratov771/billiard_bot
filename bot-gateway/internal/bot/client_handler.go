@@ -83,7 +83,7 @@ func (h *Handler) cbClipSelectTable(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		"🎬 <b>Klip So'rash</b>\n"+clipProgress(3)+"\n\n📅 Klip olmoqchi bo'lgan kunni tanlang:", &kb)
 }
 
-// cbClipSelectDate — kun tanlangandan keyin soat ko'rsatadi
+// cbClipSelectDate — kun tanlangandan keyin vaqt slotlarini ko'rsatadi
 func (h *Handler) cbClipSelectDate(bot *tgbotapi.BotAPI, chatID int64, msgID int, tgID int64, dateStr string) {
 	day, err := time.Parse("02.01.2006", dateStr)
 	if err != nil || day.Before(time.Now().Add(-6*24*time.Hour)) {
@@ -93,50 +93,30 @@ func (h *Handler) cbClipSelectDate(bot *tgbotapi.BotAPI, chatID int64, msgID int
 	h.states.SetData(tgID, "date", dateStr)
 
 	isToday := day.Format("02.01.2006") == time.Now().Format("02.01.2006")
-	kb := clipHourKeyboard(isToday)
+	kb := clipTimeSlotKeyboard(dateStr, isToday)
 	editMessage(bot, chatID, msgID,
 		"🎬 <b>Klip So'rash</b>\n"+clipProgress(4)+"\n\n"+
-			fmt.Sprintf("📅 <b>%s</b>\n🕐 Soatni tanlang:", dateStr), &kb)
+			fmt.Sprintf("📅 <b>%s</b>\n🕐 Klip boshlanish vaqtini tanlang:", dateStr), &kb)
 }
 
-// cbClipSelectHour — soat tanlangandan keyin daqiqa ko'rsatadi
-func (h *Handler) cbClipSelectHour(bot *tgbotapi.BotAPI, chatID int64, msgID int, tgID int64, hourStr string) {
-	hour, err := strconv.Atoi(hourStr)
-	if err != nil {
+// cbClipSelectTimeSlot — vaqt sloti tanlangandan keyin davomiylik ko'rsatadi
+func (h *Handler) cbClipSelectTimeSlot(bot *tgbotapi.BotAPI, chatID int64, msgID int, tgID int64, hourStr, minStr string) {
+	hour, err1 := strconv.Atoi(hourStr)
+	minute, err2 := strconv.Atoi(minStr)
+	if err1 != nil || err2 != nil {
 		return
 	}
+
 	h.states.SetData(tgID, "hour", hour)
-
-	dateStr, _ := h.states.GetString(tgID, "date")
-	day, _ := time.Parse("02.01.2006", dateStr)
-	isToday := day.Format("02.01.2006") == time.Now().Format("02.01.2006")
-	isCurrentHour := isToday && hour == time.Now().Hour()
-	kb := clipMinuteKeyboard(hour, isCurrentHour)
-	editMessage(bot, chatID, msgID,
-		"🎬 <b>Klip So'rash</b>\n"+clipProgress(4)+"\n\n"+
-			fmt.Sprintf("📅 <b>%s</b>  🕐 <b>%02d:__</b>\n⏱ Daqiqani tanlang:", dateStr, hour), &kb)
-}
-
-// cbClipSelectMinute — daqiqa tanlangandan keyin davomiylik ko'rsatadi
-func (h *Handler) cbClipSelectMinute(bot *tgbotapi.BotAPI, chatID int64, msgID int, tgID int64, minStr string) {
-	minute, err := strconv.Atoi(minStr)
-	if err != nil {
-		return
-	}
 	h.states.SetData(tgID, "minute", minute)
 
 	dateStr, _ := h.states.GetString(tgID, "date")
-	hourVal, _ := h.states.GetData(tgID, "hour")
-	hour, _ := hourVal.(int)
-
-	// Kelajak vaqt tekshirish
 	startTime, _ := time.ParseInLocation("02.01.2006 15:04",
 		fmt.Sprintf("%s %02d:%02d", dateStr, hour, minute), time.Local)
 	if startTime.After(time.Now()) {
 		dateKb := clipDateKeyboard()
 		editMessage(bot, chatID, msgID,
-			"⚠️ Kelajak vaqtni tanlab bo'lmaydi. Iltimos boshqa vaqt tanlang.\n\n📅 Kunni qaytadan tanlang:",
-			&dateKb)
+			"⚠️ Kelajak vaqtni tanlab bo'lmaydi. Kunni qaytadan tanlang:", &dateKb)
 		h.states.SetData(tgID, "date", "")
 		return
 	}
@@ -144,7 +124,7 @@ func (h *Handler) cbClipSelectMinute(bot *tgbotapi.BotAPI, chatID int64, msgID i
 	kb := clipDurationKeyboard()
 	editMessage(bot, chatID, msgID,
 		"🎬 <b>Klip So'rash</b>\n"+clipProgress(5)+"\n\n"+
-			fmt.Sprintf("📅 <b>%s</b>  🕐 <b>%02d:%02d</b>\n⏳ Klip davomiyligini tanlang:", dateStr, hour, minute), &kb)
+			fmt.Sprintf("📅 <b>%s</b>  🕐 <b>%02d:%02d</b>\n⏳ Klip davomiyligini tanlang (max 5 daqiqa):", dateStr, hour, minute), &kb)
 }
 
 // cbClipPayConfirm — mijoz tasdiqladi, endi screenshot so'raymiz
@@ -241,22 +221,14 @@ func (h *Handler) cbClipBack(bot *tgbotapi.BotAPI, chatID int64, msgID int, tgID
 	case "date":
 		kb := clipDateKeyboard()
 		editMessage(bot, chatID, msgID, "📅 <b>Qaysi kuni?</b>", &kb)
-	case "hour":
+	case "time":
 		dateStr, _ := h.states.GetString(tgID, "date")
 		day, _ := time.Parse("02.01.2006", dateStr)
 		isToday := day.Format("02.01.2006") == time.Now().Format("02.01.2006")
-		kb := clipHourKeyboard(isToday)
-		editMessage(bot, chatID, msgID, fmt.Sprintf("📅 %s\n\n🕐 <b>Soatni tanlang:</b>", dateStr), &kb)
-	case "minute":
-		dateStr, _ := h.states.GetString(tgID, "date")
-		hourVal, _ := h.states.GetData(tgID, "hour")
-		hour, _ := hourVal.(int)
-		day, _ := time.Parse("02.01.2006", dateStr)
-		isToday := day.Format("02.01.2006") == time.Now().Format("02.01.2006")
-		isCurrentHour := isToday && hour == time.Now().Hour()
-		kb := clipMinuteKeyboard(hour, isCurrentHour)
+		kb := clipTimeSlotKeyboard(dateStr, isToday)
 		editMessage(bot, chatID, msgID,
-			fmt.Sprintf("📅 %s  🕐 %02d:__\n\n⏱ <b>Daqiqani tanlang:</b>", dateStr, hour), &kb)
+			"🎬 <b>Klip So'rash</b>\n"+clipProgress(4)+"\n\n"+
+				fmt.Sprintf("📅 <b>%s</b>\n🕐 Klip boshlanish vaqtini tanlang:", dateStr), &kb)
 	}
 }
 

@@ -147,14 +147,17 @@ func (h *Handler) cbAdminConfirmPayment(bot *tgbotapi.BotAPI, chatID int64, msgI
 	h.logAction(user, "confirm_payment", fmt.Sprintf("clip:%d", clipID))
 	send(bot, chatID, fmt.Sprintf("✅ Klip #%d uchun to'lov tasdiqlandi.", clipID))
 
-	// Mijozga xabar
+	// Mijozga marketing xabar
 	if cr, err := h.clipSvc.GetByID(clipID); err == nil {
 		send(bot, cr.ClientTgID, fmt.Sprintf(
-			"✅ <b>To'lovingiz tasdiqlandi!</b>\n\n"+
+			"🎬 <b>Zo'r! Klipingiz tayyorlanmoqda!</b>\n\n"+
 				"📋 Buyurtma #%d\n"+
-				"🏢 %s | 🎱 %d-stol\n"+
+				"🏢 %s  •  🎱 %d-stol\n"+
 				"🕐 %s — %s\n\n"+
-				"⏳ Klipingiz tayyorlanmoqda...",
+				"━━━━━━━━━━━━━━━━━\n"+
+				"⏳ <b>10-15 daqiqa</b> ichida klipingiz yuboriladi!\n"+
+				"🎯 O'yiningizning eng ajoyib lahzalari saqlanmoqda...\n\n"+
+				"🎱 <i>Billiard Club — har bir zarbda g'alaba! 🏆</i>",
 			cr.ID, cr.BranchName, cr.TableNum,
 			cr.StartTime.Format("02.01.2006 15:04"),
 			cr.EndTime.Format("15:04"),
@@ -188,12 +191,7 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 
 	// Fon goroutine — klip tayyor bo'lganda mijozga yuboradi
 	go func() {
-		// Max kutish = klip davomiyligi + 15 daqiqa bufer
-		durationSec := int(cr.EndTime.Sub(cr.StartTime).Seconds())
-		maxPolls := durationSec/10 + 90 // 90 * 10s = 15 daqiqa bufer
-		if maxPolls < 90 {
-			maxPolls = 90
-		}
+		maxPolls := 90 // 90 × 10s = 15 daqiqa
 
 		for i := 0; i < maxPolls; i++ {
 			time.Sleep(10 * time.Second)

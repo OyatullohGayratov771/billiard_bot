@@ -134,17 +134,16 @@ func SeedBranches(db *sql.DB) error {
 
 	branches := []branchSeed{
 		{
-			name:    "Filial 1",
-			address: "Toshkent, Chilonzor",
-			nvrIP:   "192.168.68.107",
-			nvrPort: 554,
-			nvrUser: "admin",
-			nvrPass: "QWERTY12",
-			// table 1→14, 2→12, 3→13, 4→7, 5→9, 6→16, 7→15, 8→10, 9→8
+			name:     "Kokcha",
+			address:  "Toshkent, Chilonzor",
+			nvrIP:    "192.168.68.107",
+			nvrPort:  554,
+			nvrUser:  "admin",
+			nvrPass:  "QWERTY12",
 			channels: []int{14, 12, 13, 7, 9, 16, 15, 10, 8},
 		},
 		{
-			name:     "Filial 2",
+			name:     "Toshmi",
 			address:  "Toshkent, Yunusobod",
 			channels: []int{1, 2, 3, 4, 5, 6, 7, 8, 9},
 		},
