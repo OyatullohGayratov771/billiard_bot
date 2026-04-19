@@ -82,48 +82,33 @@ func clipDateKeyboard() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-// clipTimeSlotKeyboard — sana uchun 30 daqiqali vaqt slotlarini ko'rsatadi
-func clipTimeSlotKeyboard(dateStr string, isToday bool) tgbotapi.InlineKeyboardMarkup {
-	day, _ := time.Parse("02.01.2006", dateStr)
-
-	startH, startM := 10, 0
-	endT := time.Date(day.Year(), day.Month(), day.Day(), 23, 30, 0, 0, time.Local)
-	if isToday {
-		now := time.Now().Add(-5 * time.Minute)
-		endT = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), (now.Minute()/30)*30, 0, 0, time.Local)
-	}
-
-	var slots []time.Time
-	for t := time.Date(day.Year(), day.Month(), day.Day(), startH, startM, 0, 0, time.Local); !t.After(endT); t = t.Add(30 * time.Minute) {
-		slots = append(slots, t)
-	}
-
-	var rows [][]tgbotapi.InlineKeyboardButton
-	row := []tgbotapi.InlineKeyboardButton{}
-	for i := len(slots) - 1; i >= 0; i-- {
-		t := slots[i]
-		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
-			t.Format("15:04"),
-			fmt.Sprintf("clip_time:%02d:%02d", t.Hour(), t.Minute()),
-		))
-		if len(row) == 4 {
-			rows = append(rows, row)
-			row = []tgbotapi.InlineKeyboardButton{}
-		}
-	}
-	if len(row) > 0 {
-		rows = append(rows, row)
-	}
-	if len(rows) == 0 {
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("⚠️ Bugun hali vaqt yo'q", "clip_cancel"),
-		))
-	}
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:date"),
-		tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", "clip_cancel"),
-	))
-	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+// clipTimeSpinnerKeyboard — soat:daqiqa spinner (▲/▼ tugmalar)
+func clipTimeSpinnerKeyboard(hour, minute int) tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("soat", "clip_noop"),
+			tgbotapi.NewInlineKeyboardButtonData("daqiqa", "clip_noop"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("▲", "clip_time_adj:+h"),
+			tgbotapi.NewInlineKeyboardButtonData("▲", "clip_time_adj:+m"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("  %02d  ", hour), "clip_noop"),
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("  %02d  ", minute), "clip_noop"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("▼", "clip_time_adj:-h"),
+			tgbotapi.NewInlineKeyboardButtonData("▼", "clip_time_adj:-m"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ Tasdiqlash", "clip_time_ok"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "clip_back:date"),
+			tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", "clip_cancel"),
+		),
+	)
 }
 
 // clipDurationKeyboard — davomiylik tanlash (1-5 daqiqa)

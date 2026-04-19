@@ -136,8 +136,12 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbClipSelectTable(bot, chatID, msgID, tgID, arg1)
 	case "clip_date":
 		h.cbClipSelectDate(bot, chatID, msgID, tgID, arg1)
-	case "clip_time":
-		h.cbClipSelectTimeSlot(bot, chatID, msgID, tgID, arg1, arg2)
+	case "clip_time_adj":
+		h.cbClipTimeAdjust(bot, chatID, msgID, tgID, arg1)
+	case "clip_time_ok":
+		h.cbClipTimeOK(bot, chatID, msgID, tgID)
+	case "clip_noop":
+		// silent — faqat display uchun tugmalar
 	case "clip_dur":
 		h.cbClipSelectDuration(bot, chatID, msgID, tgID, arg1)
 	case "clip_back":
