@@ -163,7 +163,7 @@ func compressIfNeeded(clipID int64, path string, durationSec int) error {
 		"-bufsize", fmt.Sprintf("%dk", targetKbps*4),
 		"-preset", "fast",
 		"-c:a", "aac",
-		"-b:a", "64k",
+		"-b:a", "32k",
 		"-movflags", "+faststart",
 		"-y", tmpPath,
 	})
@@ -214,12 +214,14 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 	timeout := time.Duration(durationSec*2+120) * time.Second
 	err := runFFmpeg(outPath, timeout, []string{
 		"-loglevel", "warning",
-		"-fflags", "+genpts+igndts",
+		"-fflags", "+genpts",
 		"-rtsp_transport", "tcp",
+		"-stimeout", "15000000", // 15s RTSP read timeout (CSeq mismatch uchun)
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-c:v", "copy",
-		"-c:a", "aac", "-b:a", "64k",
+		"-c:a", "aac", "-ar", "8000", "-b:a", "32k", // 8kHz @ 32k = 4096 bits/frame < 6144 max
+		"-avoid_negative_ts", "make_zero",
 		"-movflags", "+faststart",
 		"-y", outPath,
 	})
@@ -245,7 +247,8 @@ func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string
 	}
 	args = append(args,
 		"-c:v", "copy",
-		"-c:a", "aac", "-b:a", "64k",
+		"-c:a", "aac", "-ar", "8000", "-b:a", "32k",
+		"-avoid_negative_ts", "make_zero",
 		"-movflags", "+faststart",
 		"-y", outPath,
 	)
