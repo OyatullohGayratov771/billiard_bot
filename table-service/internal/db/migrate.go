@@ -151,33 +151,45 @@ func SeedBranches(db *sql.DB) error {
 
 	for _, b := range branches {
 		var id int
-		err := db.QueryRow(
-			`INSERT INTO branches (name, address, nvr_ip, nvr_port, nvr_user, nvr_pass)
-			 VALUES ($1, $2, $3, $4, $5, $6)
-			 ON CONFLICT DO NOTHING RETURNING id`,
-			b.name, b.address, b.nvrIP, b.nvrPort, b.nvrUser, b.nvrPass,
-		).Scan(&id)
-
+		// Avval mavjudligini tekshiramiz
+		err := db.QueryRow(`SELECT id FROM branches WHERE name = $1`, b.name).Scan(&id)
 		if err == sql.ErrNoRows {
-			continue
-		}
-		if err != nil {
-			return err
-		}
-
-		for i, ch := range b.channels {
-			tableNum := i + 1
-			_, err := db.Exec(
-				`INSERT INTO tables (branch_id, table_num, camera_channel, price_per_hour)
-				 VALUES ($1, $2, $3, 2000000)
-				 ON CONFLICT DO NOTHING`,
-				id, tableNum, ch,
-			)
+			// Yangi filial yaratamiz
+			err = db.QueryRow(
+				`INSERT INTO branches (name, address, nvr_ip, nvr_port, nvr_user, nvr_pass)
+				 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+				b.name, b.address, b.nvrIP, b.nvrPort, b.nvrUser, b.nvrPass,
+			).Scan(&id)
 			if err != nil {
 				return err
 			}
+			log.Printf("✅ %s: yangi filial yaratildi (id=%d)", b.name, id)
+		} else if err != nil {
+			return err
 		}
-		log.Printf("✅ %s: %d ta stol yaratildi", b.name, len(b.channels))
+
+		// Stollarni tekshirib yaratamiz (mavjud bo'lsa o'tkazib yuboramiz)
+		created := 0
+		for i, ch := range b.channels {
+			tableNum := i + 1
+			res, tErr := db.Exec(
+				`INSERT INTO tables (branch_id, table_num, camera_channel, price_per_hour)
+				 VALUES ($1, $2, $3, 2000000)
+				 ON CONFLICT (branch_id, table_num) DO NOTHING`,
+				id, tableNum, ch,
+			)
+			if tErr != nil {
+				return tErr
+			}
+			if n, _ := res.RowsAffected(); n > 0 {
+				created++
+			}
+		}
+		if created > 0 {
+			log.Printf("✅ %s: %d ta yangi stol yaratildi", b.name, created)
+		} else {
+			log.Printf("ℹ️  %s: stollar allaqachon mavjud, o'tkazildi", b.name)
+		}
 	}
 	return nil
 }
