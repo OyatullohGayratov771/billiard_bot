@@ -56,7 +56,7 @@ func clipDateKeyboard() tgbotapi.InlineKeyboardMarkup {
 	var rows [][]tgbotapi.InlineKeyboardButton
 	row := []tgbotapi.InlineKeyboardButton{}
 
-	for i := 0; i < 7; i++ {
+	for i := 0; i < 6; i++ {
 		day := now.AddDate(0, 0, -i)
 		label := day.Format("02.01 Mon")
 		switch i {
@@ -70,7 +70,7 @@ func clipDateKeyboard() tgbotapi.InlineKeyboardMarkup {
 		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
 			label, fmt.Sprintf("clip_date:%s", day.Format("02.01.2006")),
 		))
-		if len(row) == 2 || i == 6 {
+		if len(row) == 2 || i == 5 {
 			rows = append(rows, row)
 			row = []tgbotapi.InlineKeyboardButton{}
 		}

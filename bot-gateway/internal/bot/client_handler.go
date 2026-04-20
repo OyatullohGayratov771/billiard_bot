@@ -87,7 +87,7 @@ func (h *Handler) cbClipSelectTable(bot *tgbotapi.BotAPI, chatID int64, msgID in
 func (h *Handler) cbClipSelectDate(bot *tgbotapi.BotAPI, chatID int64, msgID int, tgID int64, dateStr string) {
 	day, err := time.Parse("02.01.2006", dateStr)
 	// 7-kun validatsiya: UTC midnight bilan solishtirish (off-by-one bug oldini olish)
-	sixDaysAgo := time.Now().UTC().AddDate(0, 0, -6).Truncate(24 * time.Hour)
+	sixDaysAgo := time.Now().UTC().AddDate(0, 0, -5).Truncate(24 * time.Hour)
 	if err != nil || day.UTC().Before(sixDaysAgo) {
 		send(bot, chatID, "⚠️ Noto'g'ri sana tanlandi.")
 		return
