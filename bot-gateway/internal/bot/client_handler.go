@@ -344,12 +344,22 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 
 		h.states.Clear(tgID)
 
+		durMin := int(cr.EndTime.Sub(cr.StartTime).Minutes())
 		send(bot, chatID, fmt.Sprintf(
 			"✅ <b>So'rovingiz qabul qilindi!</b>\n\n"+
+				"━━━━━━━━━━━━━━━━━\n"+
 				"📋 Buyurtma #%d\n"+
-				"⏳ Admin to'lovni tekshirib, klipni yuboradi.\n\n"+
-				"Odatda 1-2 soat ichida yuboriladi.",
+				"🏢 %s  •  🎱 %d-stol\n"+
+				"🕐 %s – %s  <b>(%d daq)</b>\n"+
+				"📅 %s\n"+
+				"━━━━━━━━━━━━━━━━━\n\n"+
+				"📸 To'lov screenshoti qabul qilindi\n"+
+				"⏳ Admin tekshirib, klipingizni tayyorlaydi\n\n"+
+				"📲 <i>Klip tayyor bo'lgach, shu yerga yuboriladi!</i>",
 			cr.ID,
+			cr.BranchName, cr.TableNum,
+			cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"), durMin,
+			cr.StartTime.Format("02.01.2006"),
 		))
 
 		// Adminlarga xabar (screenshot bilan)

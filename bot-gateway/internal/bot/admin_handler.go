@@ -187,18 +187,21 @@ func (h *Handler) cbAdminConfirmPayment(bot *tgbotapi.BotAPI, chatID int64, msgI
 
 	// Mijozga marketing xabar
 	if cr, err := h.clipSvc.GetByID(clipID); err == nil {
+		durMin := int(cr.EndTime.Sub(cr.StartTime).Minutes())
 		send(bot, cr.ClientTgID, fmt.Sprintf(
-			"🎬 <b>Zo'r! Klipingiz tayyorlanmoqda!</b>\n\n"+
+			"🎬 <b>Ajoyib! Klipingiz tayyorlanmoqda!</b>\n\n"+
+				"━━━━━━━━━━━━━━━━━\n"+
 				"📋 Buyurtma #%d\n"+
 				"🏢 %s  •  🎱 %d-stol\n"+
-				"🕐 %s — %s\n\n"+
-				"━━━━━━━━━━━━━━━━━\n"+
-				"⏳ <b>10-15 daqiqa</b> ichida klipingiz yuboriladi!\n"+
-				"🎯 O'yiningizning eng ajoyib lahzalari saqlanmoqda...\n\n"+
-				"🎱 <i>Billiard Club — har bir zarbda g'alaba! 🏆</i>",
+				"🕐 %s – %s  (%d daq)\n"+
+				"📅 %s\n"+
+				"━━━━━━━━━━━━━━━━━\n\n"+
+				"⏳ <b>10–15 daqiqa</b> ichida klipingiz yuboriladi!\n\n"+
+				"🎯 <i>O'yiningizning eng yaxshi lahzalari saqlanmoqda...</i>\n"+
+				"🎱 <i>Billiard Club — har bir zarbda g'alaba!</i> 🏆",
 			cr.ID, cr.BranchName, cr.TableNum,
-			cr.StartTime.Format("02.01.2006 15:04"),
-			cr.EndTime.Format("15:04"),
+			cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"), durMin,
+			cr.StartTime.Format("02.01.2006"),
 		))
 	}
 
