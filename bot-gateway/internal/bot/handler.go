@@ -161,6 +161,8 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbAdminRefund(bot, chatID, tgID, user, arg1)
 	case "admin_clips_list":
 		h.showPendingClips(bot, chatID, user)
+	case "admin_all_clips":
+		h.showAllClips(bot, chatID, msgID, user)
 	case "my_clip_detail":
 		h.cbShowMyClipDetail(bot, chatID, msgID, tgID, arg1)
 	case "my_clips_back":

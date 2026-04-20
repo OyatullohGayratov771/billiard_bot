@@ -72,34 +72,66 @@ func (h *Handler) showPendingClips(bot *tgbotapi.BotAPI, chatID int64, user *mod
 		return
 	}
 
+	var rows [][]tgbotapi.InlineKeyboardButton
+	var header string
 	if len(clips) == 0 {
-		send(bot, chatID, "✅ Hozircha kutilayotgan klip so'rovlar yo'q.")
+		header = "🎬 <b>Klip so'rovlar</b>\n\n✅ Faol so'rovlar yo'q."
+	} else {
+		header = fmt.Sprintf("🎬 <b>Klip so'rovlar</b> — <b>%d faol</b>\n\n⏳ Kutilmoqda  💰 To'langan  ⚙️ Jarayonda", len(clips))
+		for _, c := range clips {
+			icon := statusIcon(c.Status)
+			label := fmt.Sprintf("%s #%d — %s %d-stol  %s",
+				icon, c.ID, c.BranchName, c.TableNum,
+				c.StartTime.Format("02.01 15:04"))
+			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(label, fmt.Sprintf("clip_detail:%d", c.ID)),
+			))
+		}
+	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("📋 Barcha so'rovlar (tarix)", "admin_all_clips"),
+	))
+	kb := tgbotapi.NewInlineKeyboardMarkup(rows...)
+	sendWithKeyboard(bot, chatID, header, kb)
+}
+
+func (h *Handler) showAllClips(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	clips, err := h.clipSvc.ListRecent(30)
+	if err != nil {
+		send(bot, chatID, "❌ Xatolik.")
 		return
 	}
 
 	var rows [][]tgbotapi.InlineKeyboardButton
-	for _, c := range clips {
-		icon := "⏳"
-		switch c.Status {
-		case models.ClipStatusPaid:
-			icon = "💰"
-		case models.ClipStatusProcessing:
-			icon = "⚙️"
+	var header string
+	if len(clips) == 0 {
+		header = "📋 <b>So'rovlar tarixi</b>\n\nHali birorta so'rov yo'q."
+	} else {
+		header = fmt.Sprintf("📋 <b>So'nggi %d ta so'rov</b>", len(clips))
+		for _, c := range clips {
+			icon := statusIcon(c.Status)
+			label := fmt.Sprintf("%s #%d — %s %d-stol  %s",
+				icon, c.ID, c.BranchName, c.TableNum,
+				c.StartTime.Format("02.01 15:04"))
+			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(label, fmt.Sprintf("clip_detail:%d", c.ID)),
+			))
 		}
-		label := fmt.Sprintf("%s #%d — %s %d-stol  %s",
-			icon, c.ID, c.BranchName, c.TableNum,
-			c.StartTime.Format("02.01 15:04"))
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(label,
-				fmt.Sprintf("clip_detail:%d", c.ID)),
-		))
 	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Faol so'rovlar", "admin_clips_list"),
+	))
 	kb := tgbotapi.NewInlineKeyboardMarkup(rows...)
-	sendWithKeyboard(bot, chatID,
-		fmt.Sprintf("🎬 <b>Klip so'rovlar</b> (%d ta)\n\n⏳ Kutilmoqda   💰 To'langan   ⚙️ Jarayonda", len(clips)), kb)
+	if msgID > 0 {
+		editMessage(bot, chatID, msgID, header, &kb)
+	} else {
+		sendWithKeyboard(bot, chatID, header, kb)
+	}
 }
 
-// Klip detail ko'rsatish uchun alohida callback ham qo'shish kerak
 func (h *Handler) cbShowClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, clipIDStr string) {
 	clipID := mustParseInt64(clipIDStr)
 	cr, err := h.clipSvc.GetByID(clipID)
@@ -109,26 +141,32 @@ func (h *Handler) cbShowClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID int
 	}
 
 	clientPhone := "—"
-	if cu, err := h.userSvc.GetByTelegramID(cr.ClientTgID); err == nil && cu.Phone != "" {
+	if cu, err2 := h.userSvc.GetByTelegramID(cr.ClientTgID); err2 == nil && cu.Phone != "" {
 		clientPhone = cu.Phone
 	}
+
+	durMin := int(cr.EndTime.Sub(cr.StartTime).Minutes())
 	noteStr := ""
 	if cr.Notes != "" {
-		noteStr = fmt.Sprintf("\n📝 Izoh: <i>%s</i>", cr.Notes)
+		noteStr = fmt.Sprintf("\n📝 <i>%s</i>", cr.Notes)
 	}
+
 	text := fmt.Sprintf(
-		"🎬 <b>Klip #%d</b>\n\n"+
-			"👤 Mijoz: %s\n"+
-			"📱 Telefon: %s\n"+
-			"🏢 Filial: %s\n"+
-			"🎱 Stol: %d\n"+
-			"🕐 Boshlanish: %s\n"+
-			"🕑 Tugash: %s\n"+
-			"📊 Holat: <b>%s</b>%s",
-		cr.ID, cr.ClientName, clientPhone, cr.BranchName, cr.TableNum,
-		cr.StartTime.Format("02.01.2006 15:04"),
-		cr.EndTime.Format("02.01.2006 15:04"),
-		statusText(cr.Status), noteStr,
+		"━━━━━━━━━━━━━━━━━━━━\n"+
+			"🎬 <b>Klip #%d</b>  %s\n"+
+			"━━━━━━━━━━━━━━━━━━━━\n"+
+			"👤 %s\n"+
+			"📱 %s\n"+
+			"🏢 %s  •  🎱 %d-stol\n"+
+			"🕐 %s – %s  <b>(%d daq)</b>\n"+
+			"📅 %s\n"+
+			"━━━━━━━━━━━━━━━━━━━━%s",
+		cr.ID, statusText(cr.Status),
+		cr.ClientName, clientPhone,
+		cr.BranchName, cr.TableNum,
+		cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"), durMin,
+		cr.StartTime.Format("02.01.2006"),
+		noteStr,
 	)
 
 	kb := clipRequestActionsKeyboard(cr.ID, cr.Status)

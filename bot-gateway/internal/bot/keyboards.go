@@ -171,45 +171,81 @@ func clipTablesKeyboard(tables []*models.Table, branchID int64) tgbotapi.InlineK
 
 // ===================== ADMIN: CLIP REQUESTS =====================
 
+func statusIcon(status string) string {
+	switch status {
+	case models.ClipStatusPending:
+		return "⏳"
+	case models.ClipStatusPaid:
+		return "💰"
+	case models.ClipStatusProcessing:
+		return "⚙️"
+	case models.ClipStatusDone:
+		return "✅"
+	case models.ClipStatusFailed:
+		return "❌"
+	case models.ClipStatusRefunded:
+		return "↩️"
+	}
+	return "•"
+}
+
 func clipRequestActionsKeyboard(clipID int64, status string) tgbotapi.InlineKeyboardMarkup {
 	var rows [][]tgbotapi.InlineKeyboardButton
 
-	if status == models.ClipStatusPending {
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("✅ To'lovni tasdiqlash",
-				fmt.Sprintf("admin_confirm_pay:%d", clipID)),
-		))
+	switch status {
+	case models.ClipStatusPending:
+		rows = append(rows,
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("✅ To'lovni tasdiqlash",
+					fmt.Sprintf("admin_confirm_pay:%d", clipID)),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("❌ Rad etish",
+					fmt.Sprintf("admin_clip_fail:%d", clipID)),
+				tgbotapi.NewInlineKeyboardButtonData("↩️ Qaytarish",
+					fmt.Sprintf("admin_refund:%d", clipID)),
+			),
+		)
+	case models.ClipStatusPaid:
+		rows = append(rows,
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("📹 NVR dan yozish",
+					fmt.Sprintf("clip_record:%d", clipID)),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("📤 Ruchnoy yuborish",
+					fmt.Sprintf("clip_upload:%d", clipID)),
+				tgbotapi.NewInlineKeyboardButtonData("✅ Yuborildi",
+					fmt.Sprintf("admin_clip_done:%d", clipID)),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("❌ Rad etish",
+					fmt.Sprintf("admin_clip_fail:%d", clipID)),
+				tgbotapi.NewInlineKeyboardButtonData("↩️ Qaytarish",
+					fmt.Sprintf("admin_refund:%d", clipID)),
+			),
+		)
+	case models.ClipStatusProcessing:
+		rows = append(rows,
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔄 Yangilash",
+					fmt.Sprintf("clip_detail:%d", clipID)),
+				tgbotapi.NewInlineKeyboardButtonData("❌ Rad etish",
+					fmt.Sprintf("admin_clip_fail:%d", clipID)),
+			),
+		)
+	default:
+		rows = append(rows,
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("↩️ Qaytarish",
+					fmt.Sprintf("admin_refund:%d", clipID)),
+			),
+		)
 	}
-	if status == models.ClipStatusPaid {
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("📹 NVR dan yozish",
-				fmt.Sprintf("clip_record:%d", clipID)),
-		))
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("📤 Video yuborish (ruchnoy)",
-				fmt.Sprintf("clip_upload:%d", clipID)),
-		))
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("✅ Klip yuborildi (Done)",
-				fmt.Sprintf("admin_clip_done:%d", clipID)),
-		))
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("❌ Muvaffaqiyatsiz",
-				fmt.Sprintf("admin_clip_fail:%d", clipID)),
-		))
-	}
-	if status == models.ClipStatusProcessing {
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🔄 Holat yangilash",
-				fmt.Sprintf("clip_detail:%d", clipID)),
-		))
-	}
+
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("↩️ Qaytarish (Refund)",
-			fmt.Sprintf("admin_refund:%d", clipID)),
-	))
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("🔙 Ro'yxat", "admin_clips_list"),
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Faol so'rovlar", "admin_clips_list"),
+		tgbotapi.NewInlineKeyboardButtonData("📋 Barcha", "admin_all_clips"),
 	))
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }

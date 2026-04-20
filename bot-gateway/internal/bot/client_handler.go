@@ -337,6 +337,11 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 		// Screenshot'ni to'lov sifatida saqlash
 		_ = h.clipSvc.CreatePayment(cr.ID, fileID)
 
+		// BranchName va TableNum uchun GetByID (Create JOIN maydonlarni qaytarmaydi)
+		if fullCR, err2 := h.clipSvc.GetByID(cr.ID); err2 == nil {
+			cr = fullCR
+		}
+
 		h.states.Clear(tgID)
 
 		send(bot, chatID, fmt.Sprintf(
@@ -473,23 +478,23 @@ func (h *Handler) notifyAdminsNewClip(bot *tgbotapi.BotAPI, cr *models.ClipReque
 	admins2, _ := h.userSvc.ListByRole(models.RoleAdmin)
 	admins = append(admins, admins2...)
 
-	// Mijoz telefon raqamini olish
 	clientPhone := "—"
-	if clientUser, err := h.userSvc.GetByTelegramID(cr.ClientTgID); err == nil && clientUser.Phone != "" {
-		clientPhone = clientUser.Phone
+	if cu, err2 := h.userSvc.GetByTelegramID(cr.ClientTgID); err2 == nil && cu.Phone != "" {
+		clientPhone = cu.Phone
 	}
 
+	durMin := int(cr.EndTime.Sub(cr.StartTime).Minutes())
 	caption := fmt.Sprintf(
-		"🔔 <b>Yangi klip so'rovi!</b>\n\n"+
-			"📋 #%d\n"+
-			"👤 Mijoz: %s\n"+
-			"📱 Telefon: %s\n"+
-			"🏢 Filial: %s | 🎱 Stol: %d\n"+
-			"🕐 Boshlanish: %s\n"+
-			"🕑 Tugash: %s",
-		cr.ID, cr.ClientName, clientPhone, cr.BranchName, cr.TableNum,
-		cr.StartTime.Format("02.01.2006 15:04"),
-		cr.EndTime.Format("02.01.2006 15:04"),
+		"🔔 <b>Yangi klip so'rovi #%d</b>\n\n"+
+			"👤 %s  •  📱 %s\n"+
+			"🏢 %s  •  🎱 %d-stol\n"+
+			"🕐 %s – %s  (%d daq)\n"+
+			"📅 %s",
+		cr.ID,
+		cr.ClientName, clientPhone,
+		cr.BranchName, cr.TableNum,
+		cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"), durMin,
+		cr.StartTime.Format("02.01.2006"),
 	)
 
 	kb := tgbotapi.NewInlineKeyboardMarkup(
@@ -497,10 +502,8 @@ func (h *Handler) notifyAdminsNewClip(bot *tgbotapi.BotAPI, cr *models.ClipReque
 			tgbotapi.NewInlineKeyboardButtonData(
 				"✅ To'lovni tasdiqlash", fmt.Sprintf("admin_confirm_pay:%d", cr.ID),
 			),
-		),
-		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(
-				"📋 Batafsil ko'rish", fmt.Sprintf("clip_detail:%d", cr.ID),
+				"📋 Batafsil", fmt.Sprintf("clip_detail:%d", cr.ID),
 			),
 		),
 	)
@@ -511,7 +514,7 @@ func (h *Handler) notifyAdminsNewClip(bot *tgbotapi.BotAPI, cr *models.ClipReque
 			photoMsg.Caption = caption
 			photoMsg.ParseMode = "HTML"
 			photoMsg.ReplyMarkup = kb
-			if _, err := bot.Send(photoMsg); err != nil {
+			if _, err3 := bot.Send(photoMsg); err3 != nil {
 				msg := tgbotapi.NewMessage(admin.TelegramID, caption)
 				msg.ParseMode = "HTML"
 				msg.ReplyMarkup = kb

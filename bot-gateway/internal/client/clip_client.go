@@ -68,6 +68,11 @@ func (c *ClipClient) ListPending() ([]*models.ClipRequest, error) {
 	return clips, c.get("/clips/pending", &clips)
 }
 
+func (c *ClipClient) ListRecent(limit int) ([]*models.ClipRequest, error) {
+	var clips []*models.ClipRequest
+	return clips, c.get("/clips/recent", &clips)
+}
+
 func (c *ClipClient) TriggerRecording(clipID int64) error {
 	return c.postNoResponse(fmt.Sprintf("/clips/%d/record", clipID), []byte("{}"))
 }

@@ -109,6 +109,25 @@ func (r *ClipRepo) ListPending() ([]*models.ClipRequest, error) {
 	return scanClipRequests(rows)
 }
 
+func (r *ClipRepo) ListRecent(limit int) ([]*models.ClipRequest, error) {
+	rows, err := r.db.Query(`
+		SELECT cr.id, cr.client_tg_id, cr.client_name, cr.branch_id, cr.table_id,
+		       cr.start_time, cr.end_time, cr.status,
+		       COALESCE(cr.clip_path,''), COALESCE(cr.notes,''), cr.created_at,
+		       b.name, t.table_num
+		FROM clip_requests cr
+		JOIN branches b ON b.id = cr.branch_id
+		JOIN tables t ON t.id = cr.table_id
+		ORDER BY cr.created_at DESC
+		LIMIT $1
+	`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanClipRequests(rows)
+}
+
 func (r *ClipRepo) CreatePayment(clipRequestID int64, screenshotID string) error {
 	_, err := r.db.Exec(`
 		INSERT INTO payments (clip_request_id, amount, method, status, screenshot_id, paid_at)

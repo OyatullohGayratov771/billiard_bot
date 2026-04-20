@@ -24,6 +24,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /health", h.health)
 	mux.HandleFunc("POST /clips", h.createClip)
 	mux.HandleFunc("GET /clips/pending", h.listPending)
+	mux.HandleFunc("GET /clips/recent", h.listRecent)
 	mux.HandleFunc("GET /clips/client/{tg_id}", h.listByClient)
 	mux.HandleFunc("GET /clips/{id}", h.getClip)
 	mux.HandleFunc("GET /files/{id}", h.getClipFile)
@@ -78,6 +79,15 @@ func (h *Handler) createClip(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) listPending(w http.ResponseWriter, r *http.Request) {
 	clips, err := h.clipSvc.ListPending()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, clips)
+}
+
+func (h *Handler) listRecent(w http.ResponseWriter, r *http.Request) {
+	clips, err := h.clipSvc.ListRecent(30)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return

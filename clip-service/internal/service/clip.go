@@ -200,3 +200,7 @@ func (s *ClipService) ListByClient(tgID int64) ([]*models.ClipRequest, error) {
 func (s *ClipService) ListPending() ([]*models.ClipRequest, error) {
 	return s.clipRepo.ListPending()
 }
+
+func (s *ClipService) ListRecent(limit int) ([]*models.ClipRequest, error) {
+	return s.clipRepo.ListRecent(limit)
+}

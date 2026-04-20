@@ -31,6 +31,7 @@ type ClipService interface {
 	GetByID(id int64) (*models.ClipRequest, error)
 	ListByClient(tgID int64) ([]*models.ClipRequest, error)
 	ListPending() ([]*models.ClipRequest, error)
+	ListRecent(limit int) ([]*models.ClipRequest, error)
 	TriggerRecording(clipID int64) error
 	DownloadClipFile(clipID int64) ([]byte, error)
 }
