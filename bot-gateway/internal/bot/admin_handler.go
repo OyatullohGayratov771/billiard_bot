@@ -262,7 +262,7 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 				)
 				dlKb := tgbotapi.NewInlineKeyboardMarkup(
 					tgbotapi.NewInlineKeyboardRow(
-						tgbotapi.NewInlineKeyboardButtonData("⬇️ Yuklab olish", fmt.Sprintf("dl_clip:%d", clipID)),
+						tgbotapi.NewInlineKeyboardButtonData("📱 Galereyaga saqlash", fmt.Sprintf("dl_clip:%d", clipID)),
 					),
 				)
 
@@ -716,7 +716,7 @@ func (h *Handler) handleAdminUploadInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mes
 	)
 	dlKb := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("⬇️ Yuklab olish", fmt.Sprintf("dl_clip:%d", clipID)),
+			tgbotapi.NewInlineKeyboardButtonData("📱 Galereyaga saqlash", fmt.Sprintf("dl_clip:%d", clipID)),
 		),
 	)
 
@@ -790,19 +790,20 @@ func (h *Handler) cmdHelp(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *mod
 	send(bot, msg.Chat.ID, text)
 }
 
-// cbDownloadClip — mijoz yuklab olish tugmasini bosganda Document sifatida qayta yuboradi
+// cbDownloadClip — Video sifatida qayta yuboradi → Telegram galereya sifatida ko'rsatadi
 func (h *Handler) cbDownloadClip(bot *tgbotapi.BotAPI, chatID int64, tgID int64, clipIDStr string) {
 	clipID := mustParseInt64(clipIDStr)
 	fileIDVal, ok := h.clipDownloads.Load(clipID)
 	if !ok {
-		send(bot, chatID, "⚠️ Fayl muddati o'tgan yoki topilmadi. Admindan qayta so'rang.")
+		send(bot, chatID, "⚠️ Fayl topilmadi. Admindan qayta so'rang.")
 		return
 	}
-	docMsg := tgbotapi.NewDocument(chatID, tgbotapi.FileID(fileIDVal.(string)))
-	docMsg.Caption = "⬇️ <b>Klip — MP4 fayl</b>"
-	docMsg.ParseMode = "HTML"
-	if _, err := bot.Send(docMsg); err != nil {
-		send(bot, chatID, fmt.Sprintf("❌ Yuklashda xatolik: %v", err))
+	videoMsg := tgbotapi.NewVideo(chatID, tgbotapi.FileID(fileIDVal.(string)))
+	videoMsg.Caption = "📱 Saqlash: videoni bosib turing → <b>Galereyaga saqlash</b>"
+	videoMsg.ParseMode = "HTML"
+	videoMsg.SupportsStreaming = true
+	if _, err := bot.Send(videoMsg); err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ Xatolik: %v", err))
 	}
 }
 
