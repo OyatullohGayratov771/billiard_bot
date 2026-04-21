@@ -790,7 +790,7 @@ func (h *Handler) cmdHelp(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *mod
 	send(bot, msg.Chat.ID, text)
 }
 
-// cbDownloadClip — Video sifatida qayta yuboradi → Telegram galereya sifatida ko'rsatadi
+// cbDownloadClip — video + galereya saqlash ko'rsatmasi yuboradi
 func (h *Handler) cbDownloadClip(bot *tgbotapi.BotAPI, chatID int64, tgID int64, clipIDStr string) {
 	clipID := mustParseInt64(clipIDStr)
 	fileIDVal, ok := h.clipDownloads.Load(clipID)
@@ -798,13 +798,28 @@ func (h *Handler) cbDownloadClip(bot *tgbotapi.BotAPI, chatID int64, tgID int64,
 		send(bot, chatID, "⚠️ Fayl topilmadi. Admindan qayta so'rang.")
 		return
 	}
-	videoMsg := tgbotapi.NewVideo(chatID, tgbotapi.FileID(fileIDVal.(string)))
-	videoMsg.Caption = "📱 Saqlash: videoni bosib turing → <b>Galereyaga saqlash</b>"
-	videoMsg.ParseMode = "HTML"
-	videoMsg.SupportsStreaming = true
-	if _, err := bot.Send(videoMsg); err != nil {
-		send(bot, chatID, fmt.Sprintf("❌ Xatolik: %v", err))
+
+	// Videoni Document sifatida yuborish — "Fayllarni saqlash" papkasiga tushadigan qilib
+	docMsg := tgbotapi.NewDocument(chatID, tgbotapi.FileID(fileIDVal.(string)))
+	docMsg.Caption = "🎬 <b>Klip fayli</b>"
+	docMsg.ParseMode = "HTML"
+	_, err := bot.Send(docMsg)
+
+	// Ko'rsatma xabari
+	instructions := "📲 <b>Galereyaga saqlash yo'llari:</b>\n\n" +
+		"<b>Android:</b>\n" +
+		"1. Yuqoridagi faylni bosib turing\n" +
+		"2. <b>«Galereyaga saqlash»</b> ni tanlang\n" +
+		"   <i>(Agar chiqmasa: Telegram → Sozlamalar → Ruxsatlar → Saqlash ruxsatini bering)</i>\n\n" +
+		"<b>iPhone:</b>\n" +
+		"1. Faylni oching\n" +
+		"2. Ulashish tugmasini (↗️) bosing\n" +
+		"3. <b>«Videoni saqlash»</b> ni tanlang"
+
+	if err != nil {
+		instructions = "⚠️ Fayl yuborishda xatolik. Admindan qayta so'rang.\n\n" + instructions
 	}
+	send(bot, chatID, instructions)
 }
 
 // ===================== HELPERS =====================
