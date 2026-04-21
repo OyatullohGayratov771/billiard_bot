@@ -43,7 +43,7 @@ func (h *Handler) startClipRequest(bot *tgbotapi.BotAPI, chatID int64, tgID int6
 
 	text := "🎬 <b>Klip So'rash</b>\n" +
 		clipProgress(1) + "\n\n" +
-		"💰 Narx: <b>10,000 so'm</b> / klip\n\n" +
+		"💰 Narx: <b>5,000 so'm</b> / klip\n\n" +
 		"Qaysi filialda o'ynagansiz?"
 
 	sendWithKeyboard(bot, chatID, text, clipBranchKeyboard(branches))
@@ -190,7 +190,7 @@ func (h *Handler) cbClipPayConfirm(bot *tgbotapi.BotAPI, chatID int64, msgID int
 
 	editMessage(bot, chatID, msgID,
 		"💳 <b>To'lov</b>\n\n"+
-			"Click yoki Payme orqali <b>10,000 so'm</b> to'lang:"+
+			"Click yoki Payme orqali <b>5,000 so'm</b> to'lang:"+
 			payDetails+
 			"\n\n📸 To'lovdan so'ng <b>screenshot rasmini yuboring</b>", nil)
 }
@@ -253,7 +253,7 @@ func (h *Handler) cbClipSelectDuration(bot *tgbotapi.BotAPI, chatID int64, msgID
 			"🕐 Boshlanish: <b>%s</b>\n"+
 			"🕑 Tugash: <b>%s</b>\n"+
 			"⏱ Davomiylik: <b>%d daqiqa</b>\n"+
-			"💰 Narx: <b>10,000 so'm</b>\n\n"+
+			"💰 Narx: <b>5,000 so'm</b>\n\n"+
 			"Tasdiqlaysizmi?",
 		branchName, branchAddr, tableNum,
 		startTime.Format("02.01.2006 15:04"),
@@ -348,7 +348,6 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 		send(bot, chatID, fmt.Sprintf(
 			"✅ <b>So'rovingiz qabul qilindi!</b>\n\n"+
 				"━━━━━━━━━━━━━━━━━\n"+
-				"📋 Buyurtma #%d\n"+
 				"🏢 %s  •  🎱 %d-stol\n"+
 				"🕐 %s – %s  <b>(%d daq)</b>\n"+
 				"📅 %s\n"+
@@ -356,7 +355,6 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 				"📸 To'lov screenshoti qabul qilindi\n"+
 				"⏳ Admin tekshirib, klipingizni tayyorlaydi\n\n"+
 				"📲 <i>Klip tayyor bo'lgach, shu yerga yuboriladi!</i>",
-			cr.ID,
 			cr.BranchName, cr.TableNum,
 			cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"), durMin,
 			cr.StartTime.Format("02.01.2006"),
@@ -425,15 +423,15 @@ func (h *Handler) showMyClips(bot *tgbotapi.BotAPI, chatID int64, tgID int64) {
 			noteStr = "\n   📝 <i>" + c.Notes + "</i>"
 		}
 		sb.WriteString(fmt.Sprintf(
-			"%s <b>#%d</b> — %s %d-stol\n   📅 %s — %s%s\n\n",
-			statusText(c.Status), c.ID, c.BranchName, c.TableNum,
+			"%s %s  %d-stol\n   🕐 %s – %s%s\n\n",
+			statusText(c.Status), c.BranchName, c.TableNum,
 			c.StartTime.Format("02.01.2006 15:04"),
 			c.EndTime.Format("15:04"),
 			noteStr,
 		))
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(
-				fmt.Sprintf("#%d — %s", c.ID, c.StartTime.Format("02.01 15:04")),
+				fmt.Sprintf("%s %d-stol • %s", c.BranchName, c.TableNum, c.StartTime.Format("02.01 15:04")),
 				fmt.Sprintf("my_clip_detail:%d", c.ID),
 			),
 		))
@@ -458,13 +456,12 @@ func (h *Handler) cbShowMyClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID i
 	}
 
 	text := fmt.Sprintf(
-		"📋 <b>Buyurtma #%d</b>\n\n"+
+		"📋 <b>Buyurtma tafsiloti</b>\n\n"+
 			"🏢 Filial: %s\n"+
 			"🎱 Stol: %d\n"+
-			"🕐 Boshlanish: %s\n"+
-			"🕑 Tugash: %s\n"+
+			"🕐 Vaqt: %s – %s\n"+
 			"📊 Holat: <b>%s</b>%s",
-		cr.ID, cr.BranchName, cr.TableNum,
+		cr.BranchName, cr.TableNum,
 		cr.StartTime.Format("02.01.2006 15:04"),
 		cr.EndTime.Format("15:04"),
 		statusText(cr.Status), noteStr,
