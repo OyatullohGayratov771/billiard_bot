@@ -46,9 +46,10 @@ func (h *Handler) requireStaff(bot *tgbotapi.BotAPI, chatID int64, user *models.
 		models.RoleSuperadmin, models.RoleAdmin, models.RoleOperator)
 }
 
-// logAction — har bir servis o'z audit log ni yozadi, bot-gateway da no-op
+// logAction — audit log: kim, nima qildi
 func (h *Handler) logAction(user *models.User, action, details string) {
-	log.Printf("audit: user=%v action=%s details=%s", user, action, details)
+	log.Printf("audit: [%s] @%s (tg:%d) → %s | %s",
+		user.Role, user.Username, user.TelegramID, action, details)
 }
 
 // rateLimiter — oddiy rate limiting (xotira ichida)

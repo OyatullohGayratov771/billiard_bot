@@ -206,10 +206,25 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 	return path, nil
 }
 
+// maskRTSP — RTSP URL dagi parolni yashiradi (log uchun).
+func maskRTSP(url string) string {
+	// rtsp://user:pass@host/... → rtsp://user:***@host/...
+	if i := strings.Index(url, "://"); i >= 0 {
+		rest := url[i+3:]
+		if at := strings.Index(rest, "@"); at >= 0 {
+			creds := rest[:at]
+			if colon := strings.Index(creds, ":"); colon >= 0 {
+				return url[:i+3] + creds[:colon+1] + "***" + rest[at:]
+			}
+		}
+	}
+	return url
+}
+
 // recordRTSP — RTSP -c copy orqali yozadi (ISAPI ishlamagan holda fallback).
 func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nvrPort, channel int, startTime, endTime time.Time, durationSec int, outPath string) (string, error) {
 	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
-	log.Printf("[klip#%d] RTSP fallback: %s", clipID, rtspURL)
+	log.Printf("[klip#%d] RTSP: %s", clipID, maskRTSP(rtspURL))
 
 	timeout := time.Duration(durationSec*2+120) * time.Second
 	err := runFFmpeg(outPath, timeout, []string{

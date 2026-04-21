@@ -115,8 +115,6 @@ func Migrate(db *sql.DB) error {
 	// Eski bazaga start_time / end_time ustunlari qo'shish
 	_, _ = db.Exec(`ALTER TABLE clip_requests ADD COLUMN IF NOT EXISTS start_time TIMESTAMPTZ`)
 	_, _ = db.Exec(`ALTER TABLE clip_requests ADD COLUMN IF NOT EXISTS end_time   TIMESTAMPTZ`)
-	// Eski NOT NULL cheklovini olib tashlash
-	_, _ = db.Exec(`ALTER TABLE clip_requests ALTER COLUMN requested_time DROP NOT NULL`)
 	log.Println("✅ Migration bajarildi (8 jadval)")
 	return nil
 }
