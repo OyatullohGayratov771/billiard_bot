@@ -234,7 +234,7 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
-		"-c:v", "copy",
+		"-c:v", "libx264", "-preset", "fast", "-crf", "23",
 		"-c:a", "aac", "-ar", "44100", "-b:a", "64k",
 		"-avoid_negative_ts", "make_zero",
 		"-movflags", "+faststart",
@@ -261,8 +261,8 @@ func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string
 		args = append(args, "-t", fmt.Sprintf("%d", durationSec))
 	}
 	args = append(args,
-		"-c:v", "copy",
-		"-c:a", "aac", "-ar", "8000", "-b:a", "32k",
+		"-c:v", "libx264", "-preset", "fast", "-crf", "23",
+		"-c:a", "aac", "-ar", "44100", "-b:a", "64k",
 		"-avoid_negative_ts", "make_zero",
 		"-movflags", "+faststart",
 		"-y", outPath,
