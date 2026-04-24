@@ -17,6 +17,7 @@ type Handler struct {
 
 	states    *StateManager
 	userCache *UserCache
+	limiter   *rateLimiter
 }
 
 func NewHandler(
@@ -30,11 +31,17 @@ func NewHandler(
 		clipSvc:   clipSvc,
 		states:    NewStateManager(),
 		userCache: newUserCache(),
+		limiter:   newRateLimiter(),
 	}
 }
 
 // Handle — asosiy dispatcher
 func (h *Handler) Handle(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	tgID, _, _, _ := getUserFromUpdate(update)
+	if tgID != 0 && h.limiter.isBlocked(tgID) {
+		return
+	}
+
 	if update.CallbackQuery != nil {
 		h.handleCallback(bot, update.CallbackQuery)
 		return

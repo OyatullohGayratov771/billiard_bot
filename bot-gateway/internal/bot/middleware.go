@@ -2,6 +2,10 @@ package bot
 
 import (
 	"log"
+	"strings"
+	"sync"
+	"time"
+	"unicode/utf8"
 
 	"bot-gateway/internal/models"
 
@@ -52,27 +56,74 @@ func (h *Handler) logAction(user *models.User, action, details string) {
 		user.Role, user.Username, user.TelegramID, action, details)
 }
 
-// rateLimiter — oddiy rate limiting (xotira ichida)
+// rateLimiter — sliding window: 10 soniyada 15 ta so'rovdan oshsa bloklaydi
 type rateLimiter struct {
-	counts map[int64]int
+	mu      sync.Mutex
+	buckets map[int64][]time.Time
 }
 
 func newRateLimiter() *rateLimiter {
-	return &rateLimiter{counts: make(map[int64]int)}
+	rl := &rateLimiter{buckets: make(map[int64][]time.Time)}
+	go rl.cleanup()
+	return rl
 }
 
-// isBlocked — 10 soniyada 5 ta so'rovdan ko'p bo'lsa bloklaydi (soddalashtirilgan)
 func (rl *rateLimiter) isBlocked(tgID int64) bool {
-	rl.counts[tgID]++
-	if rl.counts[tgID] > 30 {
-		log.Printf("⚠️  Rate limit: tg:%d", tgID)
+	const window = 10 * time.Second
+	const limit = 15
+
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	now := time.Now()
+	cutoff := now.Add(-window)
+
+	ts := rl.buckets[tgID]
+	filtered := ts[:0]
+	for _, t := range ts {
+		if t.After(cutoff) {
+			filtered = append(filtered, t)
+		}
+	}
+	filtered = append(filtered, now)
+	rl.buckets[tgID] = filtered
+
+	if len(filtered) > limit {
+		log.Printf("⚠️  Rate limit: tg:%d (%d req/10s)", tgID, len(filtered))
 		return true
 	}
 	return false
 }
 
-func (rl *rateLimiter) reset(tgID int64) {
-	delete(rl.counts, tgID)
+func (rl *rateLimiter) cleanup() {
+	for range time.Tick(5 * time.Minute) {
+		rl.mu.Lock()
+		cutoff := time.Now().Add(-10 * time.Second)
+		for id, ts := range rl.buckets {
+			alive := ts[:0]
+			for _, t := range ts {
+				if t.After(cutoff) {
+					alive = append(alive, t)
+				}
+			}
+			if len(alive) == 0 {
+				delete(rl.buckets, id)
+			} else {
+				rl.buckets[id] = alive
+			}
+		}
+		rl.mu.Unlock()
+	}
+}
+
+// safeText — matn uzunligini cheklaydi (Unicode rune bo'yicha)
+func safeText(s string, maxRunes int) string {
+	s = strings.TrimSpace(s)
+	if utf8.RuneCountInString(s) <= maxRunes {
+		return s
+	}
+	runes := []rune(s)
+	return string(runes[:maxRunes])
 }
 
 // getUserFromUpdate — message yoki callback'dan telegram ID oladi

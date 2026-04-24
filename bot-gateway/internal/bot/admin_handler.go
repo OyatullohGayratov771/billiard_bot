@@ -330,7 +330,7 @@ func (h *Handler) cbAdminRefund(bot *tgbotapi.BotAPI, chatID int64, tgID int64, 
 func (h *Handler) handleAdminNoteInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User, isRefund bool) {
 	tgID := msg.From.ID
 	chatID := msg.Chat.ID
-	note := strings.TrimSpace(msg.Text)
+	note := safeText(msg.Text, 300)
 
 	clipIDVal, _ := h.states.GetData(tgID, "clip_id")
 	h.states.Clear(tgID)
@@ -576,7 +576,7 @@ func (h *Handler) cbNVRSetup(bot *tgbotapi.BotAPI, chatID int64, tgID int64, bra
 func (h *Handler) handleNVRInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, state *UserState) {
 	tgID := msg.From.ID
 	chatID := msg.Chat.ID
-	text := strings.TrimSpace(msg.Text)
+	text := safeText(msg.Text, 100)
 
 	switch state.State {
 	case StateNVRIP:
@@ -630,7 +630,7 @@ func (h *Handler) handleNVRInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, st
 func (h *Handler) handleTableRTSPInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, state *UserState) {
 	tgID := msg.From.ID
 	chatID := msg.Chat.ID
-	rtspURL := strings.TrimSpace(msg.Text)
+	rtspURL := safeText(msg.Text, 500)
 
 	tableID, _ := h.states.GetInt64(tgID, "table_id")
 	h.states.Clear(tgID)

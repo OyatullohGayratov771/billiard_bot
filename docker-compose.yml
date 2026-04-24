@@ -11,6 +11,8 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: "json-file"
       options:
@@ -36,8 +38,10 @@ services:
     environment:
       DATABASE_DSN: "host=postgres port=5432 user=${DB_USER:-postgres} password=${DB_PASSWORD:-postgres} dbname=${DB_NAME:-billiard_bot} sslmode=disable"
       TABLE_SERVICE_PORT: "8082"
-    ports:
-      - "8082:8082"
+    expose:
+      - "8082"
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: "json-file"
       options:
@@ -65,8 +69,10 @@ services:
     environment:
       DATABASE_DSN: "host=postgres port=5432 user=${DB_USER:-postgres} password=${DB_PASSWORD:-postgres} dbname=${DB_NAME:-billiard_bot} sslmode=disable"
       USER_SERVICE_PORT: "8081"
-    ports:
-      - "8081:8081"
+    expose:
+      - "8081"
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: "json-file"
       options:
@@ -95,10 +101,12 @@ services:
       DATABASE_DSN: "host=postgres port=5432 user=${DB_USER:-postgres} password=${DB_PASSWORD:-postgres} dbname=${DB_NAME:-billiard_bot} sslmode=disable"
       CLIP_SERVICE_PORT: "8083"
       CLIPS_DIR: "/app/clips"
-    ports:
-      - "8083:8083"
+    expose:
+      - "8083"
     volumes:
       - clips_data:/app/clips
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: "json-file"
       options:
@@ -131,6 +139,8 @@ services:
       CLIP_SERVICE_URL: "http://clip-service:8083"
     volumes:
       - clips_data:/app/clips
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: "json-file"
       options:
