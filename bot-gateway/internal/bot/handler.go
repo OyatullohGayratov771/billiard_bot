@@ -3,7 +3,6 @@ package bot
 import (
 	"log"
 	"strings"
-	"sync"
 
 	"bot-gateway/internal/models"
 
@@ -16,9 +15,8 @@ type Handler struct {
 	tableSvc TableService
 	clipSvc  ClipService
 
-	states        *StateManager
-	userCache     *UserCache
-	clipDownloads sync.Map // clipID (int64) → telegram file_id (string)
+	states    *StateManager
+	userCache *UserCache
 }
 
 func NewHandler(
@@ -197,8 +195,6 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 	case "settings_back":
 		h.showSettings(bot, chatID, user)
 
-	case "dl_clip":
-		h.cbDownloadClip(bot, chatID, tgID, arg1)
 	case "add_staff":
 		if !h.requireRole(bot, chatID, user, models.RoleSuperadmin) {
 			return

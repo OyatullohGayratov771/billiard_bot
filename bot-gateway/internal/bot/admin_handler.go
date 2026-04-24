@@ -260,12 +260,6 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 					cr.BranchName, cr.TableNum,
 					cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"),
 				)
-				dlKb := tgbotapi.NewInlineKeyboardMarkup(
-					tgbotapi.NewInlineKeyboardRow(
-						tgbotapi.NewInlineKeyboardButtonData("📱 Galereyaga saqlash", fmt.Sprintf("dl_clip:%d", clipID)),
-					),
-				)
-
 				f, err := os.Open(cur.ClipPath)
 				if err != nil {
 					send(bot, chatID, fmt.Sprintf("❌ Klip fayl ochilmadi: %v", err))
@@ -277,8 +271,7 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 					tgbotapi.FileReader{Name: fileName, Reader: f})
 				videoMsg.Caption = caption
 				videoMsg.ParseMode = "HTML"
-				videoMsg.ReplyMarkup = dlKb
-				sentMsg, sendErr := bot.Send(videoMsg)
+				_, sendErr := bot.Send(videoMsg)
 				f.Close()
 				os.Remove(cur.ClipPath)
 
@@ -290,9 +283,6 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 					return
 				}
 
-				if sentMsg.Video != nil {
-					h.clipDownloads.Store(clipID, sentMsg.Video.FileID)
-				}
 				send(bot, chatID, fmt.Sprintf("✅ Klip #%d mijozga yuborildi!", clipID))
 				return
 			}
@@ -714,26 +704,13 @@ func (h *Handler) handleAdminUploadInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mes
 		cr.StartTime.Format("02.01.2006 15:04"),
 		cr.EndTime.Format("15:04"),
 	)
-	dlKb := tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("📱 Galereyaga saqlash", fmt.Sprintf("dl_clip:%d", clipID)),
-		),
-	)
-
 	var sendErr error
 
 	if msg.Video != nil {
 		videoMsg := tgbotapi.NewVideo(clientTgID, tgbotapi.FileID(msg.Video.FileID))
 		videoMsg.Caption = caption
 		videoMsg.ParseMode = "HTML"
-		videoMsg.ReplyMarkup = dlKb
-		sentMsg, err := bot.Send(videoMsg)
-		sendErr = err
-		if err == nil && sentMsg.Video != nil {
-			h.clipDownloads.Store(clipID, sentMsg.Video.FileID)
-		} else if err == nil {
-			h.clipDownloads.Store(clipID, msg.Video.FileID)
-		}
+		_, sendErr = bot.Send(videoMsg)
 	} else if msg.Document != nil {
 		docMsg := tgbotapi.NewDocument(clientTgID, tgbotapi.FileID(msg.Document.FileID))
 		docMsg.Caption = caption
@@ -788,38 +765,6 @@ func (h *Handler) cmdHelp(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *mod
 			"/help — Ushbu yordam"
 	}
 	send(bot, msg.Chat.ID, text)
-}
-
-// cbDownloadClip — video + galereya saqlash ko'rsatmasi yuboradi
-func (h *Handler) cbDownloadClip(bot *tgbotapi.BotAPI, chatID int64, tgID int64, clipIDStr string) {
-	clipID := mustParseInt64(clipIDStr)
-	fileIDVal, ok := h.clipDownloads.Load(clipID)
-	if !ok {
-		send(bot, chatID, "⚠️ Fayl topilmadi. Admindan qayta so'rang.")
-		return
-	}
-
-	// Videoni Document sifatida yuborish — "Fayllarni saqlash" papkasiga tushadigan qilib
-	docMsg := tgbotapi.NewDocument(chatID, tgbotapi.FileID(fileIDVal.(string)))
-	docMsg.Caption = "🎬 <b>Klip fayli</b>"
-	docMsg.ParseMode = "HTML"
-	_, err := bot.Send(docMsg)
-
-	// Ko'rsatma xabari
-	instructions := "📲 <b>Galereyaga saqlash yo'llari:</b>\n\n" +
-		"<b>Android:</b>\n" +
-		"1. Yuqoridagi faylni bosib turing\n" +
-		"2. <b>«Galereyaga saqlash»</b> ni tanlang\n" +
-		"   <i>(Agar chiqmasa: Telegram → Sozlamalar → Ruxsatlar → Saqlash ruxsatini bering)</i>\n\n" +
-		"<b>iPhone:</b>\n" +
-		"1. Faylni oching\n" +
-		"2. Ulashish tugmasini (↗️) bosing\n" +
-		"3. <b>«Videoni saqlash»</b> ni tanlang"
-
-	if err != nil {
-		instructions = "⚠️ Fayl yuborishda xatolik. Admindan qayta so'rang.\n\n" + instructions
-	}
-	send(bot, chatID, instructions)
 }
 
 // ===================== HELPERS =====================
