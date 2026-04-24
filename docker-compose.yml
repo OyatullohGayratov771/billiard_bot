@@ -11,6 +11,11 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 3s
@@ -33,6 +38,11 @@ services:
       TABLE_SERVICE_PORT: "8082"
     ports:
       - "8082:8082"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8082/health || exit 1"]
       interval: 5s
@@ -57,6 +67,11 @@ services:
       USER_SERVICE_PORT: "8081"
     ports:
       - "8081:8081"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8081/health || exit 1"]
       interval: 5s
@@ -84,6 +99,11 @@ services:
       - "8083:8083"
     volumes:
       - clips_data:/app/clips
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8083/health || exit 1"]
       interval: 5s
@@ -111,6 +131,11 @@ services:
       CLIP_SERVICE_URL: "http://clip-service:8083"
     volumes:
       - clips_data:/app/clips
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
 volumes:
   pgdata:

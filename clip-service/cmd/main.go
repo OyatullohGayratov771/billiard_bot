@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"time"
 
 	"clip-service/internal/config"
 	"clip-service/internal/db"
@@ -29,6 +31,29 @@ func main() {
 		log.Fatalf("❌ Clips papka yaratilmadi: %v", err)
 	}
 	log.Printf("📁 Kliplar saqlash joyi: %s", clipsDir)
+
+	// Eski klip fayllarni tozalash (har 30 daqiqada, 2 soatdan eski .mp4 fayllar)
+	go func() {
+		for {
+			time.Sleep(30 * time.Minute)
+			cutoff := time.Now().Add(-2 * time.Hour)
+			removed := 0
+			_ = filepath.Walk(clipsDir, func(path string, info os.FileInfo, err error) error {
+				if err != nil || info.IsDir() {
+					return nil
+				}
+				if filepath.Ext(path) == ".mp4" && info.ModTime().Before(cutoff) {
+					if removeErr := os.Remove(path); removeErr == nil {
+						removed++
+					}
+				}
+				return nil
+			})
+			if removed > 0 {
+				log.Printf("🧹 Eski kliplar tozalandi: %d fayl o'chirildi", removed)
+			}
+		}
+	}()
 
 	clipRepo := repository.NewClipRepo(database)
 	branchRepo := repository.NewBranchRepo(database)
