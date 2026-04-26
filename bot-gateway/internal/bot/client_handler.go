@@ -130,9 +130,9 @@ func (h *Handler) cbClipTimeAdjust(bot *tgbotapi.BotAPI, chatID int64, msgID int
 	case "-h":
 		hour = (hour - 1 + 24) % 24
 	case "+m":
-		minute = (minute + 5) % 60
+		minute = (minute + 1) % 60
 	case "-m":
-		minute = (minute - 5 + 60) % 60
+		minute = (minute - 1 + 60) % 60
 	}
 
 	h.states.SetData(tgID, "cur_hour", hour)
@@ -170,7 +170,7 @@ func (h *Handler) cbClipTimeOK(bot *tgbotapi.BotAPI, chatID int64, msgID int, tg
 	kb := clipDurationKeyboard()
 	editMessage(bot, chatID, msgID,
 		"🎬 <b>Klip So'rash</b>\n"+clipProgress(5)+"\n\n"+
-			fmt.Sprintf("📅 <b>%s</b>  🕐 <b>%02d:%02d</b>\n⏳ Klip davomiyligini tanlang (max 5 daqiqa):", dateStr, hour, minute), &kb)
+			fmt.Sprintf("📅 <b>%s</b>  🕐 <b>%02d:%02d</b>\n⏳ Klip davomiyligini tanlang (max 3 daqiqa):", dateStr, hour, minute), &kb)
 }
 
 // cbClipPayConfirm — mijoz tasdiqladi, endi screenshot so'raymiz

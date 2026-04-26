@@ -111,10 +111,10 @@ func clipTimeSpinnerKeyboard(hour, minute int) tgbotapi.InlineKeyboardMarkup {
 	)
 }
 
-// clipDurationKeyboard — davomiylik tanlash (1-5 daqiqa)
+// clipDurationKeyboard — davomiylik tanlash (1-3 daqiqa)
 func clipDurationKeyboard() tgbotapi.InlineKeyboardMarkup {
 	row := []tgbotapi.InlineKeyboardButton{}
-	for d := 1; d <= 5; d++ {
+	for d := 1; d <= 3; d++ {
 		row = append(row, tgbotapi.NewInlineKeyboardButtonData(
 			fmt.Sprintf("%d daq", d),
 			fmt.Sprintf("clip_dur:%d", d),
