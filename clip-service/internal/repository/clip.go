@@ -156,14 +156,32 @@ func (r *ClipRepo) ConfirmPayment(clipRequestID int64) error {
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(
-		`UPDATE clip_requests SET status='paid' WHERE id=$1`,
+	res, err := tx.Exec(
+		`UPDATE clip_requests SET status='paid' WHERE id=$1 AND status='pending'`,
 		clipRequestID,
 	)
 	if err != nil {
 		return err
 	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return errors.New("bu klip allaqachon tasdiqlangan yoki holati o'zgargan")
+	}
 	return tx.Commit()
+}
+
+// ClaimProcessing atomically transitions paid→processing; returns error if another admin already claimed it.
+func (r *ClipRepo) ClaimProcessing(clipID int64) error {
+	res, err := r.db.Exec(
+		`UPDATE clip_requests SET status='processing' WHERE id=$1 AND status='paid'`,
+		clipID,
+	)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return errors.New("klip yozish allaqachon boshqa admin tomonidan boshlangan")
+	}
+	return nil
 }
 
 func scanClipRequests(rows *sql.Rows) ([]*models.ClipRequest, error) {

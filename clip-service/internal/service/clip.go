@@ -86,7 +86,7 @@ func (s *ClipService) RecordClip(clipID int64) error {
 	if err != nil {
 		return fmt.Errorf("buyurtma topilmadi")
 	}
-	if cr.Status != models.ClipStatusPaid && cr.Status != models.ClipStatusProcessing {
+	if cr.Status != models.ClipStatusPaid {
 		return fmt.Errorf("klip yozish uchun avval to'lov tasdiqlanishi kerak (hozirgi holat: %s)", cr.Status)
 	}
 
@@ -113,8 +113,10 @@ func (s *ClipService) RecordClip(clipID int64) error {
 		return fmt.Errorf("stol kamera kanali sozlanmagan")
 	}
 
-	// Status ni "processing" ga o'zgartir
-	_ = s.clipRepo.SetStatus(clipID, models.ClipStatusProcessing, "")
+	// Atomic: paid → processing (agar boshqa admin allaqachon bossa, xato qaytaradi)
+	if err := s.clipRepo.ClaimProcessing(clipID); err != nil {
+		return err
+	}
 
 	durationSec := int(cr.EndTime.Sub(cr.StartTime).Seconds())
 
