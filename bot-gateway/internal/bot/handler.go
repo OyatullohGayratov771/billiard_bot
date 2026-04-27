@@ -232,6 +232,8 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbAdminTrnDetail(bot, chatID, msgID, user, arg1)
 	case "admin_trn_cancel":
 		h.cbAdminTrnCancel(bot, chatID, user, arg1)
+	case "admin_trn_cancel_confirm":
+		h.cbAdminTrnCancelConfirm(bot, chatID, user, arg1)
 	case "admin_trn_regs":
 		h.cbAdminTrnRegs(bot, chatID, msgID, user, arg1)
 	case "admin_trn_approve":

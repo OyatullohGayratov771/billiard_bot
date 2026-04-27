@@ -109,6 +109,7 @@ func (r *Repo) Register(tournamentID, userTgID int64, userName string) (*models.
 	return reg, err
 }
 
+
 func (r *Repo) GetRegistration(id int64) (*models.Registration, error) {
 	reg := &models.Registration{}
 	err := r.db.QueryRow(`
@@ -180,8 +181,11 @@ func (r *Repo) GetUserRegistration(tournamentID, userTgID int64) (*models.Regist
 
 func (r *Repo) GetUserTournaments(userTgID int64) ([]*models.Registration, error) {
 	rows, err := r.db.Query(`
-		SELECT id, tournament_id, user_tg_id, user_name, status, registered_at, decided_at
-		FROM tournament_registrations WHERE user_tg_id=$1 ORDER BY registered_at DESC LIMIT 10`, userTgID)
+		SELECT tr.id, tr.tournament_id, tr.user_tg_id, tr.user_name, tr.status, tr.registered_at, tr.decided_at,
+		       COALESCE(t.name, '')
+		FROM tournament_registrations tr
+		LEFT JOIN tournaments t ON t.id = tr.tournament_id
+		WHERE tr.user_tg_id=$1 ORDER BY tr.registered_at DESC LIMIT 20`, userTgID)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +193,7 @@ func (r *Repo) GetUserTournaments(userTgID int64) ([]*models.Registration, error
 	var list []*models.Registration
 	for rows.Next() {
 		reg := &models.Registration{}
-		if err := rows.Scan(&reg.ID, &reg.TournamentID, &reg.UserTgID, &reg.UserName, &reg.Status, &reg.RegisteredAt, &reg.DecidedAt); err != nil {
+		if err := rows.Scan(&reg.ID, &reg.TournamentID, &reg.UserTgID, &reg.UserName, &reg.Status, &reg.RegisteredAt, &reg.DecidedAt, &reg.TournamentName); err != nil {
 			return nil, err
 		}
 		list = append(list, reg)

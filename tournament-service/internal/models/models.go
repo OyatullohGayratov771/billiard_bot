@@ -42,13 +42,14 @@ type Tournament struct {
 }
 
 type Registration struct {
-	ID           int64      `json:"id"`
-	TournamentID int64      `json:"tournament_id"`
-	UserTgID     int64      `json:"user_tg_id"`
-	UserName     string     `json:"user_name"`
-	Status       string     `json:"status"`
-	RegisteredAt time.Time  `json:"registered_at"`
-	DecidedAt    *time.Time `json:"decided_at"`
+	ID             int64      `json:"id"`
+	TournamentID   int64      `json:"tournament_id"`
+	TournamentName string     `json:"tournament_name"`
+	UserTgID       int64      `json:"user_tg_id"`
+	UserName       string     `json:"user_name"`
+	Status         string     `json:"status"`
+	RegisteredAt   time.Time  `json:"registered_at"`
+	DecidedAt      *time.Time `json:"decided_at"`
 }
 
 type Match struct {

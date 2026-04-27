@@ -110,11 +110,61 @@ func (h *Handler) cbAdminTrnCancel(bot *tgbotapi.BotAPI, chatID int64, user *mod
 		return
 	}
 	trnID := mustParseInt64(trnIDStr)
+	t, err := h.tournamentSvc.GetTournament(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Turnir topilmadi.")
+		return
+	}
+	kb := confirmKeyboard(
+		fmt.Sprintf("admin_trn_cancel_confirm:%d", trnID),
+		fmt.Sprintf("admin_trn_detail:%d", trnID),
+	)
+	sendWithKeyboard(bot, chatID, fmt.Sprintf(
+		"⚠️ <b>%s</b> turnirini bekor qilmoqchimisiz?\n\n"+
+			"Barcha ro'yxatdan o'tgan ishtirokchilarga xabar yuboriladi.",
+		t.Name,
+	), kb)
+}
+
+func (h *Handler) cbAdminTrnCancelConfirm(bot *tgbotapi.BotAPI, chatID int64, user *models.User, trnIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	trnID := mustParseInt64(trnIDStr)
+
+	t, err := h.tournamentSvc.GetTournament(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Turnir topilmadi.")
+		return
+	}
+
+	regs, _ := h.tournamentSvc.ListRegistrations(trnID)
+
 	if err := h.tournamentSvc.CancelTournament(trnID); err != nil {
 		send(bot, chatID, fmt.Sprintf("❌ %v", err))
 		return
 	}
-	send(bot, chatID, fmt.Sprintf("❌ Turnir #%d bekor qilindi.", trnID))
+
+	notified := 0
+	for _, r := range regs {
+		if r.Status == models.RegStatusPending || r.Status == models.RegStatusApproved {
+			send(bot, r.UserTgID, fmt.Sprintf(
+				"❌ <b>Turnir bekor qilindi</b>\n\n"+
+					"🏆 %s\n"+
+					"📅 %s\n\n"+
+					"Kechirasiz! Boshqa turnirlarni kuzatib boring.",
+				t.Name,
+				t.ScheduledAt.Format("02.01.2006 15:04"),
+			))
+			notified++
+		}
+	}
+
+	h.logAction(user, "cancel_tournament", fmt.Sprintf("trn:%d notified:%d", trnID, notified))
+	send(bot, chatID, fmt.Sprintf(
+		"❌ <b>%s</b> bekor qilindi.\n%d ishtirokchiga xabar yuborildi.",
+		t.Name, notified,
+	))
 	h.showAdminTournamentList(bot, chatID, user)
 }
 

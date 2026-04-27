@@ -29,6 +29,12 @@ func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, 
 	if maxPlayers < 2 {
 		return nil, errors.New("max ishtirokchilar kamida 2 bo'lishi kerak")
 	}
+	if price < 0 {
+		return nil, errors.New("narx manfiy bo'lishi mumkin emas")
+	}
+	if scheduledAt.Before(time.Now()) {
+		return nil, errors.New("turnir sanasi o'tib ketgan")
+	}
 	return s.repo.CreateTournament(name, branchID, tableID, scheduledAt, price, maxPlayers, adminTgID)
 }
 
@@ -79,8 +85,11 @@ func (s *Service) ApproveRegistration(tournamentID, regID int64) error {
 	if reg.TournamentID != tournamentID {
 		return errors.New("noto'g'ri turnir")
 	}
-	t, _ := s.repo.GetTournament(tournamentID)
-	if t != nil && t.ApprovedCount >= t.MaxPlayers {
+	t, err := s.repo.GetTournament(tournamentID)
+	if err != nil {
+		return fmt.Errorf("turnir topilmadi: %v", err)
+	}
+	if t.ApprovedCount >= t.MaxPlayers {
 		return fmt.Errorf("o'rin qolmadi (%d/%d to'lgan)", t.ApprovedCount, t.MaxPlayers)
 	}
 	return s.repo.SetRegistrationStatus(regID, models.RegStatusApproved)
@@ -229,8 +238,12 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 				} else {
 					winner = *match.Player2TgID
 				}
-				tx.Exec(`UPDATE tournament_matches SET winner_tg_id=$1, status='done' WHERE id=$2`, winner, id)
-				s.fillSlotTx(tx, nextID, slot, winner)
+				if _, err := tx.Exec(`UPDATE tournament_matches SET winner_tg_id=$1, status='done' WHERE id=$2`, winner, id); err != nil {
+					return nil, fmt.Errorf("bye advance xatosi (r=%d m=%d): %v", r, m, err)
+				}
+				if err := s.fillSlotTx(tx, nextID, slot, winner); err != nil {
+					return nil, fmt.Errorf("slot to'ldirishda xato (r=%d m=%d): %v", r, m, err)
+				}
 
 			case models.MatchStatusVoid:
 				// nothing to advance — sibling match may cascade parent to bye/void
@@ -272,16 +285,20 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 	if err := s.repo.SetTournamentStatus(tournamentID, models.TournamentStatusInProgress); err != nil {
 		return nil, err
 	}
-	tx.Commit() //nolint — errors handled below
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("bracket saqlashda xato: %v", err)
+	}
 	return s.repo.GetBracket(tournamentID)
 }
 
-func (s *Service) fillSlotTx(tx *sql.Tx, matchID int64, slot int, playerTgID int64) {
+func (s *Service) fillSlotTx(tx *sql.Tx, matchID int64, slot int, playerTgID int64) error {
+	var err error
 	if slot == 1 {
-		tx.Exec(`UPDATE tournament_matches SET player1_tg_id=$1 WHERE id=$2`, playerTgID, matchID)
+		_, err = tx.Exec(`UPDATE tournament_matches SET player1_tg_id=$1 WHERE id=$2`, playerTgID, matchID)
 	} else {
-		tx.Exec(`UPDATE tournament_matches SET player2_tg_id=$1 WHERE id=$2`, playerTgID, matchID)
+		_, err = tx.Exec(`UPDATE tournament_matches SET player2_tg_id=$1 WHERE id=$2`, playerTgID, matchID)
 	}
+	return err
 }
 
 func (s *Service) GetBracket(tournamentID int64) ([]*models.Match, error) {
@@ -338,9 +355,13 @@ func (s *Service) SetResult(matchID, winnerTgID int64) (nextMatchID int64, finis
 
 	// Check if next match is now ready
 	var p1, p2 *int64
-	s.db.QueryRow(`SELECT player1_tg_id, player2_tg_id FROM tournament_matches WHERE id=$1`, nmID).Scan(&p1, &p2)
+	if err := s.db.QueryRow(`SELECT player1_tg_id, player2_tg_id FROM tournament_matches WHERE id=$1`, nmID).Scan(&p1, &p2); err != nil {
+		return 0, false, fmt.Errorf("keyingi o'yin tekshirishda xato: %v", err)
+	}
 	if p1 != nil && p2 != nil {
-		s.db.Exec(`UPDATE tournament_matches SET status='ready' WHERE id=$1`, nmID)
+		if _, err := s.db.Exec(`UPDATE tournament_matches SET status='ready' WHERE id=$1`, nmID); err != nil {
+			return 0, false, fmt.Errorf("keyingi o'yin holatini yangilashda xato: %v", err)
+		}
 	}
 
 	return nmID, false, nil

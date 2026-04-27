@@ -76,7 +76,8 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 
 	reg, _ := h.tournamentSvc.GetUserRegistration(trnID, tgID)
 
-	if t.Status == models.TournamentStatusRegistration {
+	switch t.Status {
+	case models.TournamentStatusRegistration:
 		if reg == nil {
 			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("✅ Ro'yxatdan o'tish",
@@ -88,21 +89,28 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 				text += "\n\n⏳ <i>Sizning so'rovingiz tekshirilmoqda...</i>"
 			case models.RegStatusApproved:
 				text += "\n\n✅ <i>Siz ro'yxatdan o'tgansiz!</i>"
-				rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData("🏆 Bracket",
-						fmt.Sprintf("trn_bracket:%d", trnID)),
-				))
 			case models.RegStatusRejected:
 				text += "\n\n❌ <i>Sizning so'rovingiz rad etildi.</i>"
 			}
 		}
-	} else if t.Status == models.TournamentStatusInProgress {
+
+	case models.TournamentStatusInProgress:
 		if reg != nil && reg.Status == models.RegStatusApproved {
 			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("🏆 Bracket ko'rish",
 					fmt.Sprintf("trn_bracket:%d", trnID)),
 			))
 		}
+
+	case models.TournamentStatusFinished:
+		text += "\n\n🏆 <i>Turnir yakunlandi!</i>"
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🏆 Natijalarni ko'rish",
+				fmt.Sprintf("trn_bracket:%d", trnID)),
+		))
+
+	case models.TournamentStatusCancelled:
+		text += "\n\n❌ <i>Bu turnir bekor qilindi.</i>"
 	}
 
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
@@ -181,11 +189,15 @@ func (h *Handler) showMyTournaments(bot *tgbotapi.BotAPI, chatID int64, tgID int
 	var rows [][]tgbotapi.InlineKeyboardButton
 	for _, r := range regs {
 		icon := regStatusIcon(r.Status)
-		sb.WriteString(fmt.Sprintf("%s Turnir #%d — %s\n",
-			icon, r.TournamentID, r.RegisteredAt.Format("02.01.2006")))
+		name := r.TournamentName
+		if name == "" {
+			name = fmt.Sprintf("Turnir #%d", r.TournamentID)
+		}
+		sb.WriteString(fmt.Sprintf("%s %s — %s\n",
+			icon, name, r.RegisteredAt.Format("02.01.2006")))
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(
-				fmt.Sprintf("%s Turnir #%d", icon, r.TournamentID),
+				fmt.Sprintf("%s %s", icon, name),
 				fmt.Sprintf("trn_detail:%d", r.TournamentID),
 			),
 		))
