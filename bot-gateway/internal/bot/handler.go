@@ -11,9 +11,10 @@ import (
 
 // Handler — barcha bot handlerlarini birlashtiradi
 type Handler struct {
-	userSvc  UserService
-	tableSvc TableService
-	clipSvc  ClipService
+	userSvc       UserService
+	tableSvc      TableService
+	clipSvc       ClipService
+	tournamentSvc TournamentService
 
 	states    *StateManager
 	userCache *UserCache
@@ -24,14 +25,16 @@ func NewHandler(
 	userSvc UserService,
 	tableSvc TableService,
 	clipSvc ClipService,
+	tournamentSvc TournamentService,
 ) *Handler {
 	return &Handler{
-		userSvc:   userSvc,
-		tableSvc:  tableSvc,
-		clipSvc:   clipSvc,
-		states:    NewStateManager(),
-		userCache: newUserCache(),
-		limiter:   newRateLimiter(),
+		userSvc:       userSvc,
+		tableSvc:      tableSvc,
+		clipSvc:       clipSvc,
+		tournamentSvc: tournamentSvc,
+		states:        NewStateManager(),
+		userCache:     newUserCache(),
+		limiter:       newRateLimiter(),
 	}
 }
 
@@ -106,6 +109,12 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 		h.showStaffList(bot, chatID, user)
 	case "⚙️ Sozlamalar":
 		h.showSettings(bot, chatID, user)
+	case "🏆 Turnirlar":
+		if user.IsStaff() {
+			h.showAdminTournamentList(bot, chatID, user)
+		} else {
+			h.showClientTournamentList(bot, chatID, tgID)
+		}
 	default:
 		send(bot, chatID, "❓ Noma'lum buyruq. Pastdagi tugmalardan foydalaning.")
 	}
@@ -210,6 +219,44 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		}
 		h.states.Set(tgID, StateAddStaffID)
 		send(bot, chatID, "👤 Xodimning Telegram ID sini kiriting:\n\n<i>ID ni bilish uchun @userinfobot ga /start yozing</i>")
+
+	case "admin_trn_sel_branch":
+		h.cbAdminTrnSelBranch(bot, chatID, tgID, arg1)
+
+	// ── TURNIR: admin ──
+	case "admin_trn_list":
+		h.showAdminTournamentList(bot, chatID, user)
+	case "admin_trn_create":
+		h.cbAdminTrnCreate(bot, chatID, tgID, user)
+	case "admin_trn_detail":
+		h.cbAdminTrnDetail(bot, chatID, msgID, user, arg1)
+	case "admin_trn_cancel":
+		h.cbAdminTrnCancel(bot, chatID, user, arg1)
+	case "admin_trn_regs":
+		h.cbAdminTrnRegs(bot, chatID, msgID, user, arg1)
+	case "admin_trn_approve":
+		h.cbAdminTrnApproveReg(bot, chatID, msgID, user, arg1, arg2)
+	case "admin_trn_reject":
+		h.cbAdminTrnRejectReg(bot, chatID, msgID, user, arg1, arg2)
+	case "admin_trn_bracket":
+		h.cbAdminGenBracket(bot, chatID, msgID, user, arg1)
+	case "admin_trn_result":
+		h.cbAdminTrnResult(bot, chatID, msgID, user, arg1)
+	case "admin_trn_winner":
+		h.cbAdminTrnWinner(bot, chatID, msgID, user, arg1, arg2)
+
+	// ── TURNIR: client ──
+	case "trn_list":
+		h.showClientTournamentList(bot, chatID, tgID)
+	case "trn_detail":
+		h.cbClientTrnDetail(bot, chatID, msgID, tgID, arg1)
+	case "trn_register":
+		h.cbClientRegister(bot, chatID, msgID, user, arg1)
+	case "trn_my":
+		h.showMyTournaments(bot, chatID, tgID)
+	case "trn_bracket":
+		h.cbClientBracket(bot, chatID, msgID, tgID, arg1)
+
 	default:
 		log.Printf("unknown callback: %s", data)
 	}

@@ -1,6 +1,10 @@
 package bot
 
-import "bot-gateway/internal/models"
+import (
+	"time"
+
+	"bot-gateway/internal/models"
+)
 
 // UserService — user-service bilan ishlash interfeysi
 type UserService interface {
@@ -20,6 +24,23 @@ type TableService interface {
 	GetTable(id int64) (*models.Table, error)
 	UpdateBranchNVR(id int64, ip string, port int, user, pass string) error
 	SetTableRTSP(tableID int64, rtspURL string) error
+}
+
+// TournamentService — tournament-service bilan ishlash interfeysi
+type TournamentService interface {
+	CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64) (*models.Tournament, error)
+	ListTournaments(status string) ([]*models.Tournament, error)
+	GetTournament(id int64) (*models.Tournament, error)
+	CancelTournament(id int64) error
+	Register(tournamentID, userTgID int64, userName string) (*models.TournamentRegistration, error)
+	ListRegistrations(tournamentID int64) ([]*models.TournamentRegistration, error)
+	ApproveRegistration(tournamentID, regID int64) error
+	RejectRegistration(tournamentID, regID int64) error
+	GenerateBracket(tournamentID int64) ([]*models.TournamentMatch, error)
+	GetBracket(tournamentID int64) ([]*models.TournamentMatch, error)
+	SetResult(matchID, winnerTgID int64) (nextMatchID int64, finished bool, err error)
+	GetUserTournaments(tgID int64) ([]*models.TournamentRegistration, error)
+	GetUserRegistration(tournamentID, userTgID int64) (*models.TournamentRegistration, error)
 }
 
 // ClipService — clip-service bilan ishlash interfeysi

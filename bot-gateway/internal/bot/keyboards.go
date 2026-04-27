@@ -18,15 +18,16 @@ func mainMenuKeyboard(user *models.User) tgbotapi.ReplyKeyboardMarkup {
 	case models.RoleSuperadmin:
 		rows = [][]tgbotapi.KeyboardButton{
 			{btn("🎬 Klip so'rovlar"), btn("👥 Xodimlar")},
-			{btn("⚙️ Sozlamalar")},
+			{btn("🏆 Turnirlar"), btn("⚙️ Sozlamalar")},
 		}
 	case models.RoleAdmin, models.RoleOperator:
 		rows = [][]tgbotapi.KeyboardButton{
-			{btn("🎬 Klip so'rovlar")},
+			{btn("🎬 Klip so'rovlar"), btn("🏆 Turnirlar")},
 		}
 	default:
 		rows = [][]tgbotapi.KeyboardButton{
 			{btn("🎬 Klip so'rash"), btn("📋 Mening buyurtmalarim")},
+			{btn("🏆 Turnirlar")},
 		}
 	}
 
@@ -248,6 +249,46 @@ func clipRequestActionsKeyboard(clipID int64, status string) tgbotapi.InlineKeyb
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("🔙 Faol so'rovlar", "admin_clips_list"),
 		tgbotapi.NewInlineKeyboardButtonData("📋 Barcha", "admin_all_clips"),
+	))
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+// ===================== TOURNAMENT — ADMIN DETAIL =====================
+
+func adminTournamentDetailKeyboard(t *models.Tournament) tgbotapi.InlineKeyboardMarkup {
+	var rows [][]tgbotapi.InlineKeyboardButton
+
+	switch t.Status {
+	case models.TournamentStatusRegistration:
+		rows = append(rows,
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("👥 Ro'yxat",
+					fmt.Sprintf("admin_trn_regs:%d", t.ID)),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("⚡ Bracket yaratish",
+					fmt.Sprintf("admin_trn_bracket:%d", t.ID)),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("❌ Bekor qilish",
+					fmt.Sprintf("admin_trn_cancel:%d", t.ID)),
+			),
+		)
+	case models.TournamentStatusInProgress:
+		rows = append(rows,
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🏆 Natija kiritish",
+					fmt.Sprintf("admin_trn_result:%d", t.ID)),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("👥 Ishtirokchilar",
+					fmt.Sprintf("admin_trn_regs:%d", t.ID)),
+			),
+		)
+	}
+
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Turnirlar", "admin_trn_list"),
 	))
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }

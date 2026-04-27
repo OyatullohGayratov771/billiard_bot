@@ -16,8 +16,9 @@ type Config struct {
 	Superadmins     []int64
 	UserServiceURL  string
 	TableServiceURL string
-	ClipServiceURL  string
-	PaymentCard     string
+	ClipServiceURL        string
+	TournamentServiceURL  string
+	PaymentCard           string
 	PaymentPhone    string
 }
 
@@ -33,7 +34,8 @@ func LoadConfig() {
 		Superadmins:     parseSuperadmins(getEnv("SUPERADMIN_IDS", "")),
 		UserServiceURL:  getEnv("USER_SERVICE_URL", "http://user-service:8081"),
 		TableServiceURL: getEnv("TABLE_SERVICE_URL", "http://table-service:8082"),
-		ClipServiceURL:  getEnv("CLIP_SERVICE_URL", "http://clip-service:8083"),
+		ClipServiceURL:       getEnv("CLIP_SERVICE_URL", "http://clip-service:8083"),
+		TournamentServiceURL: getEnv("TOURNAMENT_SERVICE_URL", "http://tournament-service:8084"),
 		PaymentCard:     getEnv("PAYMENT_CARD", ""),
 		PaymentPhone:    getEnv("PAYMENT_PHONE", ""),
 	}

@@ -396,6 +396,16 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 	// --- Stol RTSP URL ---
 	case StateTableRTSP:
 		h.handleTableRTSPInput(bot, msg, state)
+
+	// --- Turnir yaratish FSM ---
+	case StateTrnName:
+		h.handleTrnNameInput(bot, msg)
+	case StateTrnDateTime:
+		h.handleTrnDateTimeInput(bot, msg)
+	case StateTrnPrice:
+		h.handleTrnPriceInput(bot, msg)
+	case StateTrnMaxPlayers:
+		h.handleTrnMaxPlayersInput(bot, msg)
 	}
 }
 

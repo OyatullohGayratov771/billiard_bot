@@ -118,6 +118,35 @@ services:
       timeout: 3s
       retries: 10
 
+  tournament-service:
+    build:
+      context: ./tournament-service
+      dockerfile: Dockerfile
+    container_name: billiard_tournament_service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_DSN: "host=postgres port=5432 user=${DB_USER:-postgres} password=${DB_PASSWORD:-postgres} dbname=${DB_NAME:-billiard_bot} sslmode=disable"
+      TOURNAMENT_SERVICE_PORT: "8084"
+    expose:
+      - "8084"
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   bot:
     build:
       context: ./bot-gateway
@@ -131,12 +160,15 @@ services:
         condition: service_healthy
       clip-service:
         condition: service_healthy
+      tournament-service:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       USER_SERVICE_URL: "http://user-service:8081"
       TABLE_SERVICE_URL: "http://table-service:8082"
       CLIP_SERVICE_URL: "http://clip-service:8083"
+      TOURNAMENT_SERVICE_URL: "http://tournament-service:8084"
     volumes:
       - clips_data:/app/clips
     security_opt:

@@ -29,6 +29,12 @@ const (
 	// Admin: rad etish / qaytarish izoh
 	StateAdminRejectNote = "admin:reject_note"
 	StateAdminRefundNote = "admin:refund_note"
+
+	// Turnir yaratish oqimi (admin)
+	StateTrnName       = "trn:name"
+	StateTrnDateTime   = "trn:datetime"
+	StateTrnPrice      = "trn:price"
+	StateTrnMaxPlayers = "trn:max_players"
 )
 
 // UserState — bitta foydalanuvchining joriy holati

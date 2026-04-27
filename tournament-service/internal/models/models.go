@@ -1,0 +1,67 @@
+package models
+
+import "time"
+
+const (
+	TournamentStatusRegistration = "registration"
+	TournamentStatusInProgress   = "in_progress"
+	TournamentStatusFinished     = "finished"
+	TournamentStatusCancelled    = "cancelled"
+)
+
+const (
+	RegStatusPending  = "pending"
+	RegStatusApproved = "approved"
+	RegStatusRejected = "rejected"
+)
+
+const (
+	MatchStatusPending = "pending" // players not assigned yet
+	MatchStatusReady   = "ready"   // both players assigned, awaiting result
+	MatchStatusBye     = "bye"     // one player auto-advances
+	MatchStatusVoid    = "void"    // no players (double-bye cascade)
+	MatchStatusDone    = "done"    // winner recorded
+)
+
+type Tournament struct {
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	BranchID    int64     `json:"branch_id"`
+	TableID     *int64    `json:"table_id"`
+	ScheduledAt time.Time `json:"scheduled_at"`
+	Price       int64     `json:"price"`
+	MaxPlayers  int       `json:"max_players"`
+	Status      string    `json:"status"`
+	CreatedBy   int64     `json:"created_by"`
+	CreatedAt   time.Time `json:"created_at"`
+
+	BranchName string `json:"branch_name"`
+	TableNum   int    `json:"table_num"`
+
+	ApprovedCount int `json:"approved_count"`
+}
+
+type Registration struct {
+	ID           int64      `json:"id"`
+	TournamentID int64      `json:"tournament_id"`
+	UserTgID     int64      `json:"user_tg_id"`
+	UserName     string     `json:"user_name"`
+	Status       string     `json:"status"`
+	RegisteredAt time.Time  `json:"registered_at"`
+	DecidedAt    *time.Time `json:"decided_at"`
+}
+
+type Match struct {
+	ID           int64  `json:"id"`
+	TournamentID int64  `json:"tournament_id"`
+	Round        int    `json:"round"`
+	MatchNum     int    `json:"match_num"`
+	Player1TgID  *int64 `json:"player1_tg_id"`
+	Player2TgID  *int64 `json:"player2_tg_id"`
+	WinnerTgID   *int64 `json:"winner_tg_id"`
+	Status       string `json:"status"`
+
+	Player1Name string `json:"player1_name"`
+	Player2Name string `json:"player2_name"`
+	WinnerName  string `json:"winner_name"`
+}
