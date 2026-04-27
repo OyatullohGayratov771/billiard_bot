@@ -99,11 +99,11 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 	}
 
 	switch msg.Text {
-	case "🎬 Klip so'rovlar":
+	case "🎬 Kliplar":
 		h.showPendingClips(bot, chatID, user)
 	case "🎬 Klip so'rash":
 		h.startClipRequest(bot, chatID, tgID)
-	case "📋 Mening buyurtmalarim":
+	case "📋 Mening kliplar":
 		h.showMyClips(bot, chatID, tgID)
 	case "👥 Xodimlar":
 		h.showStaffList(bot, chatID, user)

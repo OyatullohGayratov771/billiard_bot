@@ -402,8 +402,6 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 		h.handleTrnNameInput(bot, msg)
 	case StateTrnDateTime:
 		h.handleTrnDateTimeInput(bot, msg)
-	case StateTrnPrice:
-		h.handleTrnPriceInput(bot, msg)
 	case StateTrnMaxPlayers:
 		h.handleTrnMaxPlayersInput(bot, msg)
 	}

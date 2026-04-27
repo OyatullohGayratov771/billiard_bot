@@ -25,10 +25,10 @@ func (h *Handler) showClientTournamentList(bot *tgbotapi.BotAPI, chatID int64, t
 		header += "Hozirda faol turnirlar yo'q.\nKeyinroq qaytib keling! 👀"
 	} else {
 		for _, t := range tournaments {
-			label := fmt.Sprintf("🏆 %s — %s (%s so'm)",
+			label := fmt.Sprintf("🏆 %s — %s (%d/%d)",
 				t.Name,
 				t.ScheduledAt.Format("02.01 15:04"),
-				formatTrnPrice(t.Price),
+				t.ApprovedCount, t.MaxPlayers,
 			)
 			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(label, fmt.Sprintf("trn_detail:%d", t.ID)),
@@ -60,14 +60,13 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 			"📍 Filial: %s\n"+
 			"🎱 Stol: %s\n"+
 			"📅 Sana: <b>%s</b>\n"+
-			"💰 Qatnashish: <b>%s so'm</b>\n"+
 			"👥 O'rinlar: <b>%d / %d</b>\n"+
-			"📊 Holat: %s",
+			"📊 Holat: %s\n"+
+			"💸 Qatnashish: <b>Bepul</b>",
 		t.Name,
 		t.BranchName,
 		tableInfo,
 		t.ScheduledAt.Format("02.01.2006 15:04"),
-		formatTrnPrice(t.Price),
 		t.ApprovedCount, t.MaxPlayers,
 		tournamentStatusText(t.Status),
 	)

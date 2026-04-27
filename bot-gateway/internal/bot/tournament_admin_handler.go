@@ -31,7 +31,7 @@ func (h *Handler) showAdminTournamentList(bot *tgbotapi.BotAPI, chatID int64, us
 	} else {
 		for _, t := range tournaments {
 			icon := tournamentStatusIcon(t.Status)
-			label := fmt.Sprintf("%s %s — %s (%d/%d)",
+			label := fmt.Sprintf("%s %s  •  %s  •  %d/%d",
 				icon, t.Name,
 				t.ScheduledAt.Format("02.01 15:04"),
 				t.ApprovedCount, t.MaxPlayers,
@@ -85,14 +85,12 @@ func (h *Handler) cbAdminTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID int
 			"📍 Filial: %s\n"+
 			"🎱 Stol: %s\n"+
 			"📅 Sana: <b>%s</b>\n"+
-			"💰 Narx: <b>%s so'm</b>\n"+
 			"👥 Ishtirokchilar: <b>%d / %d</b>\n"+
 			"📊 Holat: %s",
 		t.Name,
 		t.BranchName,
 		tableInfo,
 		t.ScheduledAt.Format("02.01.2006 15:04"),
-		formatTrnPrice(t.Price),
 		t.ApprovedCount, t.MaxPlayers,
 		tournamentStatusText(t.Status),
 	)
@@ -486,21 +484,8 @@ func (h *Handler) handleTrnDateTimeInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mes
 		return
 	}
 	h.states.SetData(tgID, "trn_datetime", dt)
-	h.states.Set(tgID, StateTrnPrice)
-	send(bot, chatID, "3️⃣ Qatnashish narxini kiriting (so'mda):\n<i>Bepul bo'lsa 0 kiriting</i>")
-}
-
-func (h *Handler) handleTrnPriceInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
-	tgID := msg.From.ID
-	chatID := msg.Chat.ID
-	price := mustParseInt64(strings.TrimSpace(msg.Text))
-	if price < 0 {
-		send(bot, chatID, "⚠️ Narx manfiy bo'lishi mumkin emas.")
-		return
-	}
-	h.states.SetData(tgID, "trn_price", price)
 	h.states.Set(tgID, StateTrnMaxPlayers)
-	send(bot, chatID, "4️⃣ Maksimal ishtirokchilar sonini kiriting:\n<i>Misol: 4, 8, 16, 32</i>")
+	send(bot, chatID, "3️⃣ Maksimal ishtirokchilar sonini kiriting:\n<i>Misol: 4, 8, 16, 32</i>")
 }
 
 func (h *Handler) handleTrnMaxPlayersInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
@@ -516,14 +501,12 @@ func (h *Handler) handleTrnMaxPlayersInput(bot *tgbotapi.BotAPI, msg *tgbotapi.M
 	name, _ := h.states.GetString(tgID, "trn_name")
 	branchID, _ := h.states.GetInt64(tgID, "trn_branch_id")
 	dtVal, _ := h.states.GetData(tgID, "trn_datetime")
-	priceVal, _ := h.states.GetData(tgID, "trn_price")
 
 	h.states.Clear(tgID)
 
 	dt, _ := dtVal.(time.Time)
-	price, _ := priceVal.(int64)
 
-	t, err := h.tournamentSvc.CreateTournament(name, branchID, nil, dt, price, maxPlayers, tgID)
+	t, err := h.tournamentSvc.CreateTournament(name, branchID, nil, dt, 0, maxPlayers, tgID)
 	if err != nil {
 		send(bot, chatID, fmt.Sprintf("❌ %v", err))
 		return
@@ -533,13 +516,11 @@ func (h *Handler) handleTrnMaxPlayersInput(bot *tgbotapi.BotAPI, msg *tgbotapi.M
 		"✅ <b>Turnir yaratildi!</b>\n\n"+
 			"🏆 %s\n"+
 			"📅 %s\n"+
-			"👥 Max: %d ishtirokchi\n"+
-			"💰 Narx: %s so'm\n\n"+
+			"👥 Max: %d ishtirokchi\n\n"+
 			"Ro'yxatga olish boshlandi.",
 		t.Name,
 		t.ScheduledAt.Format("02.01.2006 15:04"),
 		t.MaxPlayers,
-		formatTrnPrice(t.Price),
 	))
 }
 

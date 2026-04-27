@@ -12,26 +12,31 @@ import (
 // ===================== MAIN MENU =====================
 
 func mainMenuKeyboard(user *models.User) tgbotapi.ReplyKeyboardMarkup {
-	var rows [][]tgbotapi.KeyboardButton
+	kb := tgbotapi.NewReplyKeyboard()
+	kb.ResizeKeyboard = true
 
 	switch user.Role {
 	case models.RoleSuperadmin:
-		rows = [][]tgbotapi.KeyboardButton{
-			{btn("🎬 Klip so'rovlar"), btn("👥 Xodimlar")},
-			{btn("🏆 Turnirlar"), btn("⚙️ Sozlamalar")},
+		kb.Keyboard = [][]tgbotapi.KeyboardButton{
+			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
+			{btn("👥 Xodimlar"), btn("⚙️ Sozlamalar")},
 		}
-	case models.RoleAdmin, models.RoleOperator:
-		rows = [][]tgbotapi.KeyboardButton{
-			{btn("🎬 Klip so'rovlar"), btn("🏆 Turnirlar")},
+	case models.RoleAdmin:
+		kb.Keyboard = [][]tgbotapi.KeyboardButton{
+			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
 		}
-	default:
-		rows = [][]tgbotapi.KeyboardButton{
-			{btn("🎬 Klip so'rash"), btn("📋 Mening buyurtmalarim")},
-			{btn("🏆 Turnirlar")},
+	case models.RoleOperator:
+		kb.Keyboard = [][]tgbotapi.KeyboardButton{
+			{btn("🎬 Kliplar")},
+		}
+	default: // client
+		kb.Keyboard = [][]tgbotapi.KeyboardButton{
+			{btn("🎬 Klip so'rash"), btn("🏆 Turnirlar")},
+			{btn("📋 Mening kliplar")},
 		}
 	}
 
-	return tgbotapi.NewReplyKeyboard(rows...)
+	return kb
 }
 
 func btn(text string) tgbotapi.KeyboardButton {
