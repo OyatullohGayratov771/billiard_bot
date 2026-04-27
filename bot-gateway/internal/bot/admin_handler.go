@@ -185,9 +185,11 @@ func (h *Handler) cbAdminConfirmPayment(bot *tgbotapi.BotAPI, chatID int64, msgI
 	h.logAction(user, "confirm_payment", fmt.Sprintf("clip:%d", clipID))
 	send(bot, chatID, fmt.Sprintf("✅ Klip #%d uchun to'lov tasdiqlandi.", clipID))
 
-	// Mijozga marketing xabar
-	if cr, err := h.clipSvc.GetByID(clipID); err == nil {
+	cr, err := h.clipSvc.GetByID(clipID)
+	if err == nil {
 		durMin := int(cr.EndTime.Sub(cr.StartTime).Minutes())
+
+		// Mijozga marketing xabar
 		send(bot, cr.ClientTgID, fmt.Sprintf(
 			"🎬 <b>Ajoyib! Klipingiz tayyorlanmoqda!</b>\n\n"+
 				"━━━━━━━━━━━━━━━━━\n"+
@@ -202,9 +204,37 @@ func (h *Handler) cbAdminConfirmPayment(bot *tgbotapi.BotAPI, chatID int64, msgI
 			cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"), durMin,
 			cr.StartTime.Format("02.01.2006"),
 		))
+
+		// Boshqa adminlarga xabar
+		h.notifyOtherAdmins(bot, user.TelegramID, fmt.Sprintf(
+			"✅ <b>%s</b> to'lovni tasdiqladi\n\n"+
+				"🎬 Klip #%d — %s  %d-stol\n"+
+				"🕐 %s – %s  (%d daq)\n"+
+				"👤 Mijoz: %s",
+			user.DisplayName(),
+			cr.ID, cr.BranchName, cr.TableNum,
+			cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"), durMin,
+			cr.ClientName,
+		))
 	}
 
 	h.cbShowClipDetail(bot, chatID, msgID, user, clipIDStr)
+}
+
+// notifyOtherAdmins — barcha admin/superadminlarga xabar yuboradi (actorTgID bundan mustasno)
+func (h *Handler) notifyOtherAdmins(bot *tgbotapi.BotAPI, actorTgID int64, text string) {
+	staff, err := h.userSvc.ListStaff()
+	if err != nil {
+		return
+	}
+	for _, u := range staff {
+		if u.TelegramID == actorTgID {
+			continue
+		}
+		if u.Role == models.RoleSuperadmin || u.Role == models.RoleAdmin {
+			send(bot, u.TelegramID, text)
+		}
+	}
 }
 
 // cbRecordClip — NVR dan klip yozishni boshlaydi va bot mijozga yuboradi
