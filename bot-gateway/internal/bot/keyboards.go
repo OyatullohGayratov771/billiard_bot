@@ -202,7 +202,7 @@ func clipRequestActionsKeyboard(clipID int64, status string) tgbotapi.InlineKeyb
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("❌ Rad etish",
 					fmt.Sprintf("admin_clip_fail:%d", clipID)),
-				tgbotapi.NewInlineKeyboardButtonData("↩️ Qaytarish",
+				tgbotapi.NewInlineKeyboardButtonData("↩️ Pul qaytarish",
 					fmt.Sprintf("admin_refund:%d", clipID)),
 			),
 		)
@@ -213,15 +213,11 @@ func clipRequestActionsKeyboard(clipID int64, status string) tgbotapi.InlineKeyb
 					fmt.Sprintf("clip_record:%d", clipID)),
 			),
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("📤 Ruchnoy yuborish",
+				tgbotapi.NewInlineKeyboardButtonData("📤 Qo'lda yuborish",
 					fmt.Sprintf("clip_upload:%d", clipID)),
-				tgbotapi.NewInlineKeyboardButtonData("✅ Yuborildi",
-					fmt.Sprintf("admin_clip_done:%d", clipID)),
 			),
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("❌ Rad etish",
-					fmt.Sprintf("admin_clip_fail:%d", clipID)),
-				tgbotapi.NewInlineKeyboardButtonData("↩️ Qaytarish",
+				tgbotapi.NewInlineKeyboardButtonData("↩️ Pul qaytarish",
 					fmt.Sprintf("admin_refund:%d", clipID)),
 			),
 		)
@@ -230,17 +226,23 @@ func clipRequestActionsKeyboard(clipID int64, status string) tgbotapi.InlineKeyb
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("🔄 Yangilash",
 					fmt.Sprintf("clip_detail:%d", clipID)),
-				tgbotapi.NewInlineKeyboardButtonData("❌ Rad etish",
-					fmt.Sprintf("admin_clip_fail:%d", clipID)),
 			),
 		)
-	default:
+	case models.ClipStatusFailed:
 		rows = append(rows,
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("↩️ Qaytarish",
+				tgbotapi.NewInlineKeyboardButtonData("🔄 Qayta urinish",
+					fmt.Sprintf("clip_retry:%d", clipID)),
+				tgbotapi.NewInlineKeyboardButtonData("📤 Qo'lda yuborish",
+					fmt.Sprintf("clip_upload:%d", clipID)),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("↩️ Pul qaytarish",
 					fmt.Sprintf("admin_refund:%d", clipID)),
 			),
 		)
+	default:
+		// done, refunded — faqat navigatsiya
 	}
 
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(

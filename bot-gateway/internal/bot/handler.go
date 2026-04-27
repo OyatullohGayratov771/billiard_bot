@@ -182,6 +182,8 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbShowClipDetail(bot, chatID, msgID, user, arg1)
 	case "clip_record":
 		h.cbRecordClip(bot, chatID, msgID, user, arg1)
+	case "clip_retry":
+		h.cbRetryRecording(bot, chatID, msgID, user, arg1)
 	case "clip_upload":
 		h.cbAdminManualUpload(bot, chatID, tgID, user, arg1)
 	case "nvr_setup":

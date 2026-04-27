@@ -246,9 +246,14 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 				if errDetail == "" {
 					errDetail = "NVR sozlamalarini tekshiring."
 				}
-				send(bot, chatID, fmt.Sprintf(
-					"❌ <b>Klip #%d yozishda xatolik!</b>\n\n<code>%s</code>",
-					clipID, html.EscapeString(errDetail)))
+				kb := clipRequestActionsKeyboard(clipID, models.ClipStatusFailed)
+				sendWithKeyboard(bot, chatID,
+					fmt.Sprintf(
+						"⚠️ <b>Klip #%d — yozishda muammo</b>\n\n"+
+							"<code>%s</code>\n\n"+
+							"Bu server xatosi yoki internet uzilishi bo'lishi mumkin.\n"+
+							"Qayta urinib ko'ring yoki videoni qo'lda yuborishingiz mumkin:",
+						clipID, html.EscapeString(errDetail)), kb)
 				return
 			}
 
@@ -289,6 +294,22 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 		}
 		send(bot, chatID, fmt.Sprintf("⏰ Klip #%d yozish vaqti tugadi. Qayta urinib ko'ring.", clipID))
 	}()
+}
+
+// cbRetryRecording — xato bo'lgan klipni qayta yozishga urinadi
+func (h *Handler) cbRetryRecording(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, clipIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	clipID := mustParseInt64(clipIDStr)
+
+	// failed → paid ga qaytaramiz, keyin qayta yozamiz
+	if err := h.clipSvc.SetStatus(user.ID, clipID, models.ClipStatusPaid, ""); err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		return
+	}
+	h.logAction(user, "retry_recording", fmt.Sprintf("clip:%d", clipID))
+	h.cbRecordClip(bot, chatID, msgID, user, clipIDStr)
 }
 
 func (h *Handler) cbAdminClipDone(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, clipIDStr string) {
