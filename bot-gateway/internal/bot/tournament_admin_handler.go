@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"bot-gateway/internal/config"
 	"bot-gateway/internal/models"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -294,8 +295,9 @@ func (h *Handler) cbAdminTrnRejectReg(bot *tgbotapi.BotAPI, chatID int64, msgID 
 		send(bot, targetReg.UserTgID, fmt.Sprintf(
 			"❌ <b>Turnirga qabul qilinmadingiz.</b>\n\n"+
 				"🏆 Turnir #%d\n\n"+
-				"Boshqa turnirlar uchun kuzatib boring.",
-			trnID,
+				"Boshqa turnirlarni kuzatib boring.\n"+
+				"❓ Savollar bo'lsa: %s",
+			trnID, config.AppConfig.SupportUsername,
 		))
 	}
 

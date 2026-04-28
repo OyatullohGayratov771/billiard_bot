@@ -115,6 +115,10 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 		} else {
 			h.showClientTournamentList(bot, chatID, tgID)
 		}
+	case "🥇 Mening turnirlar":
+		h.showMyTournaments(bot, chatID, tgID)
+	case "👤 Akkaunt":
+		h.showMyProfile(bot, chatID, user)
 	default:
 		send(bot, chatID, "❓ Noma'lum buyruq. Pastdagi tugmalardan foydalaning.")
 	}

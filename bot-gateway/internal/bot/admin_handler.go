@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"bot-gateway/internal/config"
 	"bot-gateway/internal/models"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -400,6 +401,7 @@ func (h *Handler) handleAdminNoteInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Messa
 
 	var newStatus string
 	var adminMsg, clientMsg string
+	support := config.AppConfig.SupportUsername
 	if isRefund {
 		newStatus = models.ClipStatusRefunded
 		adminMsg = fmt.Sprintf("↩️ Klip #%d qaytarildi.", clipID)
@@ -408,11 +410,11 @@ func (h *Handler) handleAdminNoteInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Messa
 				"🏢 %s  •  🎱 %d-stol\n"+
 				"🕐 %s – %s\n\n"+
 				"📝 <b>Sabab:</b> %s\n\n"+
-				"Savollar bo'lsa admin bilan bog'laning.",
+				"❓ Savollar bo'lsa: %s",
 			cr.BranchName, cr.TableNum,
 			cr.StartTime.Format("02.01.2006 15:04"),
 			cr.EndTime.Format("15:04"),
-			note,
+			note, support,
 		)
 	} else {
 		newStatus = models.ClipStatusFailed
@@ -422,11 +424,12 @@ func (h *Handler) handleAdminNoteInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Messa
 				"🏢 %s  •  🎱 %d-stol\n"+
 				"🕐 %s – %s\n\n"+
 				"📝 <b>Sabab:</b> %s\n\n"+
-				"Yangi so'rov yuborishingiz mumkin.",
+				"🔄 Yangi so'rov yuborishingiz mumkin.\n"+
+				"❓ Muammo bo'lsa: %s",
 			cr.BranchName, cr.TableNum,
 			cr.StartTime.Format("02.01.2006 15:04"),
 			cr.EndTime.Format("15:04"),
-			note,
+			note, support,
 		)
 	}
 
@@ -790,30 +793,38 @@ func (h *Handler) handleAdminUploadInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mes
 // ===================== HELP =====================
 
 func (h *Handler) cmdHelp(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
+	support := config.AppConfig.SupportUsername
 	var text string
 	if user.IsStaff() {
-		text = "ℹ️ <b>Yordam — Xodim</b>\n\n" +
-			"🎬 <b>Klip so'rovlar</b> — Mijozlardan kelgan so'rovlar\n" +
-			"   └ Ro'yxatdan so'rovni bosing → tafsilot\n" +
-			"   └ ✅ To'lovni tasdiqlash → klip yozing yoki yuklang\n" +
-			"   └ ❌ Rad etish / ↩️ Qaytarish → izoh yozing\n\n" +
-			"👥 <b>Xodimlar</b> — Xodim qo'shish, rol berish\n\n" +
-			"⚙️ <b>Sozlamalar</b> — NVR IP/port/login va stol RTSP URL\n\n" +
+		text = "ℹ️ <b>Yordam — Xodim paneli</b>\n\n" +
+			"🎬 <b>Kliplar</b> — Mijozlardan kelgan so'rovlar\n" +
+			"   └ So'rovni bosing → To'lovni tasdiqlang\n" +
+			"   └ 📹 NVR dan yozing yoki 📤 Qo'lda yuklang\n" +
+			"   └ ❌ Rad etish / ↩️ Pul qaytarish → izoh yozing\n\n" +
+			"🏆 <b>Turnirlar</b> — Turnir boshqaruvi\n" +
+			"   └ ➕ Yangi turnir → Nom, Sana, Max ishtirokchi\n" +
+			"   └ Ro'yxatni tasdiqlang → Bracket yarating\n" +
+			"   └ Har o'yin natijasini kiriting\n\n" +
+			"👥 <b>Xodimlar</b> — Xodim qo'shish, rol berish\n" +
+			"⚙️ <b>Sozlamalar</b> — NVR va stol RTSP sozlamalari\n\n" +
 			"📌 <b>Buyruqlar:</b>\n" +
 			"/start — Bosh menyu\n" +
-			"/cancel — Joriy amaliyotni bekor qilish\n" +
-			"/help — Ushbu yordam"
+			"/cancel — Amaliyotni bekor qilish\n\n" +
+			"❓ Texnik muammo: " + support
 	} else {
 		text = "ℹ️ <b>Yordam</b>\n\n" +
 			"🎬 <b>Klip so'rash</b>\n" +
-			"   └ Filial → Stol → Sana → Vaqt → Davomiylik tanlang\n" +
-			"   └ Tasdiqlang → 5,000 so'm to'lab screenshot yuboring\n" +
+			"   └ Filial → Stol → Sana → Vaqt → Davomiylik\n" +
+			"   └ Tasdiqlang → To'lov screenshotini yuboring\n" +
 			"   └ Admin tasdiqlasa klipingiz yuboriladi\n\n" +
-			"📋 <b>Mening buyurtmalarim</b> — So'rovlaringiz holati\n\n" +
+			"📋 <b>Mening kliplar</b> — Buyurtmalaringiz holati\n\n" +
+			"🏆 <b>Turnirlar</b> — Faol turnirlar ro'yxati\n" +
+			"🥇 <b>Mening turnirlar</b> — Qatnashgan turnirlarim\n\n" +
+			"👤 <b>Akkaunt</b> — Profil va aloqa ma'lumotlari\n\n" +
 			"📌 <b>Buyruqlar:</b>\n" +
 			"/start — Bosh menyu\n" +
-			"/cancel — Joriy amaliyotni bekor qilish\n" +
-			"/help — Ushbu yordam"
+			"/cancel — Amaliyotni bekor qilish\n\n" +
+			"❓ Yordam yoki muammo uchun: " + support
 	}
 	send(bot, msg.Chat.ID, text)
 }

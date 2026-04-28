@@ -483,6 +483,45 @@ func (h *Handler) cbShowMyClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID i
 	editMessage(bot, chatID, msgID, text, &kb)
 }
 
+// ===================== AKKAUNT =====================
+
+func (h *Handler) showMyProfile(bot *tgbotapi.BotAPI, chatID int64, user *models.User) {
+	phone := user.Phone
+	if phone == "" {
+		phone = "📵 Ulashilmagan"
+	}
+
+	username := "—"
+	if user.Username != "" {
+		username = "@" + user.Username
+	}
+
+	since := "—"
+	if !user.CreatedAt.IsZero() {
+		since = user.CreatedAt.Format("02.01.2006")
+	}
+
+	text := fmt.Sprintf(
+		"👤 <b>Mening akkaunt</b>\n\n"+
+			"━━━━━━━━━━━━━━━━━━━\n"+
+			"🧑 Ism: <b>%s</b>\n"+
+			"🔖 Username: %s\n"+
+			"📱 Telefon: <b>%s</b>\n"+
+			"🆔 Telegram ID: <code>%d</code>\n"+
+			"📅 A'zo bo'lgan: %s\n"+
+			"━━━━━━━━━━━━━━━━━━━\n\n"+
+			"❓ Savolingiz bo'lsa: %s",
+		user.DisplayName(),
+		username,
+		phone,
+		user.TelegramID,
+		since,
+		config.AppConfig.SupportUsername,
+	)
+
+	send(bot, chatID, text)
+}
+
 // ===================== ADMINLARGA XABAR =====================
 
 func (h *Handler) notifyAdminsNewClip(bot *tgbotapi.BotAPI, cr *models.ClipRequest, screenshotFileID string) {

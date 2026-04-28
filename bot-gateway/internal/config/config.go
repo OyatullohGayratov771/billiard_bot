@@ -10,16 +10,17 @@ import (
 )
 
 type Config struct {
-	TelegramToken   string
-	APIKey          string
-	JwtSecret       string
-	Superadmins     []int64
-	UserServiceURL  string
-	TableServiceURL string
-	ClipServiceURL        string
-	TournamentServiceURL  string
-	PaymentCard           string
-	PaymentPhone    string
+	TelegramToken        string
+	APIKey               string
+	JwtSecret            string
+	Superadmins          []int64
+	UserServiceURL       string
+	TableServiceURL      string
+	ClipServiceURL       string
+	TournamentServiceURL string
+	PaymentCard          string
+	PaymentPhone         string
+	SupportUsername      string
 }
 
 var AppConfig Config
@@ -38,6 +39,7 @@ func LoadConfig() {
 		TournamentServiceURL: getEnv("TOURNAMENT_SERVICE_URL", "http://tournament-service:8084"),
 		PaymentCard:     getEnv("PAYMENT_CARD", ""),
 		PaymentPhone:    getEnv("PAYMENT_PHONE", ""),
+		SupportUsername: getEnv("SUPPORT_USERNAME", "@billiardkingadmin"),
 	}
 
 	log.Println("✅ Config yuklandi")

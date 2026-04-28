@@ -31,8 +31,9 @@ func mainMenuKeyboard(user *models.User) tgbotapi.ReplyKeyboardMarkup {
 		}
 	default: // client
 		kb.Keyboard = [][]tgbotapi.KeyboardButton{
-			{btn("🎬 Klip so'rash"), btn("🏆 Turnirlar")},
-			{btn("📋 Mening kliplar")},
+			{btn("🎬 Klip so'rash"), btn("📋 Mening kliplar")},
+			{btn("🏆 Turnirlar"), btn("🥇 Mening turnirlar")},
+			{btn("👤 Akkaunt")},
 		}
 	}
 
