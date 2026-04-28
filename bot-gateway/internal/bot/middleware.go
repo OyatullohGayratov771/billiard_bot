@@ -173,6 +173,27 @@ func answerCallback(bot *tgbotapi.BotAPI, callbackID, text string) {
 	}
 }
 
+// deleteMessage — xabarni o'chiradi (xato bo'lsa log qiladi)
+func deleteMessage(bot *tgbotapi.BotAPI, chatID int64, msgID int) {
+	del := tgbotapi.NewDeleteMessage(chatID, msgID)
+	if _, err := bot.Request(del); err != nil {
+		log.Printf("deleteMessage error: %v", err)
+	}
+}
+
+// sendAndGetMsgID — xabar yuboradi va qaytarilgan message ID ni beradi
+func sendAndGetMsgID(bot *tgbotapi.BotAPI, chatID int64, text string, kb tgbotapi.InlineKeyboardMarkup) int {
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = "HTML"
+	msg.ReplyMarkup = kb
+	m, err := bot.Send(msg)
+	if err != nil {
+		log.Printf("sendAndGetMsgID error: %v", err)
+		return 0
+	}
+	return m.MessageID
+}
+
 // editMessage — inline xabarni tahrirlaydi
 func editMessage(bot *tgbotapi.BotAPI, chatID int64, msgID int, text string, kb *tgbotapi.InlineKeyboardMarkup) {
 	edit := tgbotapi.NewEditMessageText(chatID, msgID, text)

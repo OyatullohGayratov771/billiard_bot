@@ -103,13 +103,13 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 		if user.IsStaff() {
 			h.showPendingClips(bot, chatID, user)
 		} else {
-			sendWithKeyboard(bot, chatID, "🎬 Kliplar", clipClientSubmenu())
+			h.openClientSubmenu(bot, chatID, tgID, "🎬 Kliplar", clipClientSubmenu())
 		}
 	case "🏆 Turnirlar":
 		if user.IsStaff() {
 			h.showAdminTournamentList(bot, chatID, user)
 		} else {
-			sendWithKeyboard(bot, chatID, "🏆 Turnirlar", tournamentClientSubmenu())
+			h.openClientSubmenu(bot, chatID, tgID, "🏆 Turnirlar", tournamentClientSubmenu())
 		}
 	case "👥 Xodimlar":
 		h.showStaffList(bot, chatID, user)
@@ -251,23 +251,40 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 
 	// ── TURNIR: client ──
 	case "trn_list", "trn_menu_list":
+		deleteMessage(bot, chatID, msgID)
 		h.showClientTournamentList(bot, chatID, tgID)
 	case "trn_detail":
 		h.cbClientTrnDetail(bot, chatID, msgID, tgID, arg1)
 	case "trn_register":
 		h.cbClientRegister(bot, chatID, msgID, user, arg1)
 	case "trn_my", "trn_menu_my":
+		deleteMessage(bot, chatID, msgID)
 		h.showMyTournaments(bot, chatID, tgID)
 	case "trn_bracket":
 		h.cbClientBracket(bot, chatID, msgID, tgID, arg1)
 
 	// ── KLIP: client submenu ──
 	case "clip_menu_request":
+		deleteMessage(bot, chatID, msgID)
 		h.startClipRequest(bot, chatID, tgID)
 	case "clip_menu_my":
+		deleteMessage(bot, chatID, msgID)
 		h.showMyClips(bot, chatID, tgID)
+
+	case "client_menu_close":
+		deleteMessage(bot, chatID, msgID)
+		h.states.SetData(tgID, "menu_msg_id", 0)
 
 	default:
 		log.Printf("unknown callback: %s", data)
 	}
+}
+
+// openClientSubmenu — eski submenu xabarini o'chirib yangi submenu yuboradi
+func (h *Handler) openClientSubmenu(bot *tgbotapi.BotAPI, chatID, tgID int64, title string, kb tgbotapi.InlineKeyboardMarkup) {
+	if oldID, ok := h.states.GetInt64(tgID, "menu_msg_id"); ok && oldID != 0 {
+		deleteMessage(bot, chatID, int(oldID))
+	}
+	newID := sendAndGetMsgID(bot, chatID, title, kb)
+	h.states.SetData(tgID, "menu_msg_id", int64(newID))
 }

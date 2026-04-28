@@ -306,6 +306,9 @@ func clipClientSubmenu() tgbotapi.InlineKeyboardMarkup {
 			tgbotapi.NewInlineKeyboardButtonData("🎬 Klip so'rash", "clip_menu_request"),
 			tgbotapi.NewInlineKeyboardButtonData("📋 Mening kliplar", "clip_menu_my"),
 		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔙 Yopish", "client_menu_close"),
+		),
 	)
 }
 
@@ -314,6 +317,9 @@ func tournamentClientSubmenu() tgbotapi.InlineKeyboardMarkup {
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🏆 Faol turnirlar", "trn_menu_list"),
 			tgbotapi.NewInlineKeyboardButtonData("🥇 Mening turnirlar", "trn_menu_my"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔙 Yopish", "client_menu_close"),
 		),
 	)
 }
