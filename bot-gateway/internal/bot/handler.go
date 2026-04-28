@@ -100,23 +100,21 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 
 	switch msg.Text {
 	case "🎬 Kliplar":
-		h.showPendingClips(bot, chatID, user)
-	case "🎬 Klip so'rash":
-		h.startClipRequest(bot, chatID, tgID)
-	case "📋 Mening kliplar":
-		h.showMyClips(bot, chatID, tgID)
-	case "👥 Xodimlar":
-		h.showStaffList(bot, chatID, user)
-	case "⚙️ Sozlamalar":
-		h.showSettings(bot, chatID, user)
+		if user.IsStaff() {
+			h.showPendingClips(bot, chatID, user)
+		} else {
+			sendWithKeyboard(bot, chatID, "🎬 Kliplar", clipClientSubmenu())
+		}
 	case "🏆 Turnirlar":
 		if user.IsStaff() {
 			h.showAdminTournamentList(bot, chatID, user)
 		} else {
-			h.showClientTournamentList(bot, chatID, tgID)
+			sendWithKeyboard(bot, chatID, "🏆 Turnirlar", tournamentClientSubmenu())
 		}
-	case "🥇 Mening turnirlar":
-		h.showMyTournaments(bot, chatID, tgID)
+	case "👥 Xodimlar":
+		h.showStaffList(bot, chatID, user)
+	case "⚙️ Sozlamalar":
+		h.showSettings(bot, chatID, user)
 	case "👤 Akkaunt":
 		h.showMyProfile(bot, chatID, user)
 	default:
@@ -252,16 +250,22 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbAdminTrnWinner(bot, chatID, msgID, user, arg1, arg2)
 
 	// ── TURNIR: client ──
-	case "trn_list":
+	case "trn_list", "trn_menu_list":
 		h.showClientTournamentList(bot, chatID, tgID)
 	case "trn_detail":
 		h.cbClientTrnDetail(bot, chatID, msgID, tgID, arg1)
 	case "trn_register":
 		h.cbClientRegister(bot, chatID, msgID, user, arg1)
-	case "trn_my":
+	case "trn_my", "trn_menu_my":
 		h.showMyTournaments(bot, chatID, tgID)
 	case "trn_bracket":
 		h.cbClientBracket(bot, chatID, msgID, tgID, arg1)
+
+	// ── KLIP: client submenu ──
+	case "clip_menu_request":
+		h.startClipRequest(bot, chatID, tgID)
+	case "clip_menu_my":
+		h.showMyClips(bot, chatID, tgID)
 
 	default:
 		log.Printf("unknown callback: %s", data)

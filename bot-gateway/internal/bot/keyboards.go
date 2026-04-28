@@ -31,8 +31,7 @@ func mainMenuKeyboard(user *models.User) tgbotapi.ReplyKeyboardMarkup {
 		}
 	default: // client
 		kb.Keyboard = [][]tgbotapi.KeyboardButton{
-			{btn("🎬 Klip so'rash"), btn("📋 Mening kliplar")},
-			{btn("🏆 Turnirlar"), btn("🥇 Mening turnirlar")},
+			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
 			{btn("👤 Akkaunt")},
 		}
 	}
@@ -297,6 +296,26 @@ func adminTournamentDetailKeyboard(t *models.Tournament) tgbotapi.InlineKeyboard
 		tgbotapi.NewInlineKeyboardButtonData("🔙 Turnirlar", "admin_trn_list"),
 	))
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+// ===================== CLIENT SUBMENUS =====================
+
+func clipClientSubmenu() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🎬 Klip so'rash", "clip_menu_request"),
+			tgbotapi.NewInlineKeyboardButtonData("📋 Mening kliplar", "clip_menu_my"),
+		),
+	)
+}
+
+func tournamentClientSubmenu() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🏆 Faol turnirlar", "trn_menu_list"),
+			tgbotapi.NewInlineKeyboardButtonData("🥇 Mening turnirlar", "trn_menu_my"),
+		),
+	)
 }
 
 // ===================== STAFF MANAGEMENT =====================
