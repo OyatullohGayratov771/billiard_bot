@@ -28,12 +28,14 @@ func (r *Recorder) ClipPath(clipID int64) string {
 	return filepath.Join(r.clipsDir, fmt.Sprintf("clip_%d.mp4", clipID))
 }
 
-// HikvisionPlaybackRTSP — NVR arxiv RTSP URL.
-// Format ishchi misol asosida: tracks/CHANNEL01/?starttime=...Z&endtime=...Z (trailing slash, port yo'q)
+// HikvisionPlaybackRTSP — NVR arxiv RTSP URL (Hikvision standart format).
 func HikvisionPlaybackRTSP(user, pass, host string, port, channel int, startTime, endTime time.Time) string {
+	if port == 0 {
+		port = 554
+	}
 	return fmt.Sprintf(
-		"rtsp://%s:%s@%s/Streaming/tracks/%d01/?starttime=%sZ&endtime=%sZ",
-		user, pass, host, channel,
+		"rtsp://%s:%s@%s:%d/Streaming/tracks/%d01?starttime=%sZ&endtime=%sZ",
+		user, pass, host, port, channel,
 		startTime.UTC().Format("20060102T150405"),
 		endTime.UTC().Format("20060102T150405"),
 	)
@@ -241,13 +243,34 @@ func maskRTSP(url string) string {
 	return url
 }
 
-// recordRTSP — RTSP -c copy orqali yozadi (ISAPI ishlamagan holda fallback).
+// recordRTSP — NVR RTSP orqali klip yozadi.
+// Birinchi -c copy (tez, sifat yo'qotmaydi), xato bo'lsa H.264 encode fallback.
 func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nvrPort, channel int, startTime, endTime time.Time, durationSec int, outPath string) (string, error) {
 	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
 	log.Printf("[klip#%d] RTSP: %s", clipID, maskRTSP(rtspURL))
 
 	timeout := time.Duration(durationSec*2+120) * time.Second
+
+	// Attempt 1: stream copy (original sifat, decode yo'q, tez)
 	err := runFFmpeg(outPath, timeout, []string{
+		"-loglevel", "warning",
+		"-fflags", "+genpts",
+		"-rtsp_transport", "tcp",
+		"-i", rtspURL,
+		"-t", fmt.Sprintf("%d", durationSec),
+		"-c", "copy",
+		"-movflags", "+faststart",
+		"-y", outPath,
+	})
+	if err == nil {
+		logDone(clipID, durationSec, outPath)
+		return outPath, nil
+	}
+
+	log.Printf("[klip#%d] -c copy muvaffaqiyatsiz (%v), H.264 encode urinilmoqda...", clipID, err)
+
+	// Attempt 2: H.264 encode fallback
+	err2 := runFFmpeg(outPath, timeout, []string{
 		"-loglevel", "warning",
 		"-fflags", "+genpts",
 		"-rtsp_transport", "tcp",
@@ -260,8 +283,8 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 		"-movflags", "+faststart",
 		"-y", outPath,
 	})
-	if err != nil {
-		return "", fmt.Errorf("RTSP: %v", err)
+	if err2 != nil {
+		return "", fmt.Errorf("RTSP (copy: %v; encode: %v)", err, err2)
 	}
 
 	logDone(clipID, durationSec, outPath)

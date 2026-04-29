@@ -54,6 +54,11 @@ func (c *TableClient) SetTableRTSP(tableID int64, rtspURL string) error {
 	return c.putNoResponse(fmt.Sprintf("/tables/%d/rtsp", tableID), body)
 }
 
+func (c *TableClient) SetTableChannel(tableID int64, channel int) error {
+	body, _ := json.Marshal(map[string]int{"channel": channel})
+	return c.putNoResponse(fmt.Sprintf("/tables/%d/channel", tableID), body)
+}
+
 func (c *TableClient) putNoResponse(path string, body []byte) error {
 	req, err := http.NewRequest(http.MethodPut, c.baseURL+path, bytes.NewReader(body))
 	if err != nil {

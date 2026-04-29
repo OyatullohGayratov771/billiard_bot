@@ -77,6 +77,32 @@ func (c *ClipClient) TriggerRecording(clipID int64) error {
 	return c.postNoResponse(fmt.Sprintf("/clips/%d/record", clipID), []byte("{}"))
 }
 
+// TestCameraPhoto — NVR kamerasidan screenshot oladi va JPEG bytes qaytaradi
+func (c *ClipClient) TestCameraPhoto(branchID int64, channel int) ([]byte, error) {
+	resp, err := c.http.Get(fmt.Sprintf("%s/test/camera/photo?branch_id=%d&channel=%d", c.baseURL, branchID, channel))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		var e map[string]string
+		_ = json.NewDecoder(resp.Body).Decode(&e)
+		return nil, fmt.Errorf("clip-service: %s", e["error"])
+	}
+	var data []byte
+	buf := make([]byte, 32*1024)
+	for {
+		n, readErr := resp.Body.Read(buf)
+		if n > 0 {
+			data = append(data, buf[:n]...)
+		}
+		if readErr != nil {
+			break
+		}
+	}
+	return data, nil
+}
+
 func (c *ClipClient) DownloadClipFile(clipID int64) ([]byte, error) {
 	resp, err := c.http.Get(fmt.Sprintf("%s/files/%d", c.baseURL, clipID))
 	if err != nil {

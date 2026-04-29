@@ -52,6 +52,10 @@ func (s *TableService) SetTableRTSP(tableID int64, rtspURL string) error {
 	return s.tableRepo.SetRTSPUrl(tableID, rtspURL)
 }
 
+func (s *TableService) SetTableChannel(tableID int64, channel int) error {
+	return s.tableRepo.SetCameraChannel(tableID, channel)
+}
+
 // StartSession — operator role va branch id bilan tekshirib sessiya boshlaydi
 func (s *TableService) StartSession(operatorID int64, operatorRole string, operatorBranchID *int64, tableID int64, clientName string) (*models.Session, error) {
 	table, err := s.tableRepo.GetByID(tableID)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -33,6 +34,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /clips/{id}/status", h.setStatus)
 	mux.HandleFunc("POST /clips/{id}/record", h.recordClip)
 	mux.HandleFunc("POST /test/camera", h.testCamera)
+	mux.HandleFunc("GET /test/camera/photo", h.testCameraPhoto)
 }
 
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
@@ -235,6 +237,36 @@ func (h *Handler) testCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"screenshot": path})
+}
+
+// GET /test/camera/photo?branch_id=N&channel=N — screenshot JPEG bytes qaytaradi
+func (h *Handler) testCameraPhoto(w http.ResponseWriter, r *http.Request) {
+	branchID, err := strconv.ParseInt(r.URL.Query().Get("branch_id"), 10, 64)
+	if err != nil || branchID == 0 {
+		writeError(w, http.StatusBadRequest, "invalid branch_id")
+		return
+	}
+	channel, err := strconv.Atoi(r.URL.Query().Get("channel"))
+	if err != nil || channel <= 0 {
+		writeError(w, http.StatusBadRequest, "invalid channel")
+		return
+	}
+	imgPath, err := h.clipSvc.TestCamera(branchID, channel)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer func() { _ = os.Remove(imgPath) }()
+
+	data, err := os.ReadFile(imgPath)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "screenshot o'qib bo'lmadi")
+		return
+	}
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

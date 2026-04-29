@@ -29,6 +29,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /branches/{id}/report/monthly", h.monthlyReport)
 	mux.HandleFunc("PUT /branches/{id}/nvr", h.updateNVR)
 	mux.HandleFunc("PUT /tables/{id}/rtsp", h.setTableRTSP)
+	mux.HandleFunc("PUT /tables/{id}/channel", h.setTableChannel)
 }
 
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
@@ -194,6 +195,27 @@ func (h *Handler) updateNVR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.tableSvc.UpdateBranchNVR(id, req.IP, req.Port, req.User, req.Pass); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+// PUT /tables/{id}/channel — stol D-kanal raqamini yangilaydi
+func (h *Handler) setTableChannel(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+	var req struct {
+		Channel int `json:"channel"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	if err := h.tableSvc.SetTableChannel(id, req.Channel); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

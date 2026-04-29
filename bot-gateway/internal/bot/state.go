@@ -23,6 +23,9 @@ const (
 	// Admin: stol RTSP URL
 	StateTableRTSP = "table:rtsp"
 
+	// Admin: stol D-kanal raqami
+	StateTableChannel = "table:channel"
+
 	// Admin: ruchnoy video yuborish
 	StateAdminUploadClip = "admin:upload_clip"
 
