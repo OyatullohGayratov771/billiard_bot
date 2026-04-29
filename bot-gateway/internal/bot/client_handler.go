@@ -397,10 +397,6 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 	case StateTableRTSP:
 		h.handleTableRTSPInput(bot, msg, state)
 
-	// --- Stol D-kanal ---
-	case StateTableChannel:
-		h.handleTableChannelInput(bot, msg, state)
-
 	// --- Turnir yaratish FSM ---
 	case StateTrnName:
 		h.handleTrnNameInput(bot, msg)

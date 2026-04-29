@@ -59,10 +59,6 @@ func (r *TableRepo) SetRTSPUrl(id int64, rtspURL string) error {
 	return err
 }
 
-func (r *TableRepo) SetCameraChannel(id int64, channel int) error {
-	_, err := r.db.Exec(`UPDATE tables SET camera_channel = $1 WHERE id = $2`, channel, id)
-	return err
-}
 
 func scanTables(rows *sql.Rows) ([]*models.Table, error) {
 	var tables []*models.Table

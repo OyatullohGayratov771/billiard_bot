@@ -523,38 +523,26 @@ func (h *Handler) showSettings(bot *tgbotapi.BotAPI, chatID int64, user *models.
 		if b.NVRHost != "" {
 			nvrStatus = fmt.Sprintf("✅ %s:%d", b.NVRHost, b.NVRPort)
 		}
-		rows = append(rows,
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(
-					fmt.Sprintf("🔌 %s NVR — %s", b.Name, nvrStatus),
-					fmt.Sprintf("nvr_setup:%d", b.ID),
-				),
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(
+				fmt.Sprintf("🔌 %s NVR — %s", b.Name, nvrStatus),
+				fmt.Sprintf("nvr_setup:%d", b.ID),
 			),
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(
-					fmt.Sprintf("📹 %s — RTSP URL", b.Name),
-					fmt.Sprintf("rtsp_branch:%d", b.ID),
-				),
-				tgbotapi.NewInlineKeyboardButtonData(
-					fmt.Sprintf("📷 %s — D-kanal", b.Name),
-					fmt.Sprintf("chan_branch:%d", b.ID),
-				),
+		))
+	}
+	for _, b := range branches {
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(
+				fmt.Sprintf("📹 %s — stol RTSP", b.Name),
+				fmt.Sprintf("rtsp_branch:%d", b.ID),
 			),
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(
-					fmt.Sprintf("🔬 %s — Kamera test", b.Name),
-					fmt.Sprintf("camtest_branch:%d", b.ID),
-				),
-			),
-		)
+		))
 	}
 	kb := tgbotapi.NewInlineKeyboardMarkup(rows...)
 	sendWithKeyboard(bot, chatID,
 		"⚙️ <b>Sozlamalar</b>\n\n"+
-			"🔌 <b>NVR</b> — IP, port, login, parol\n"+
-			"📹 <b>RTSP URL</b> — har stol uchun live RTSP\n"+
-			"📷 <b>D-kanal</b> — har stol uchun NVR kanal raqami\n"+
-			"🔬 <b>Kamera test</b> — screenshot olib tekshirish", kb)
+			"🔌 <b>NVR</b> — branch darajasida (eski usul)\n"+
+			"📹 <b>Stol RTSP</b> — har bir stol uchun alohida URL", kb)
 }
 
 // cbRTSPBranch — RTSP sozlash uchun filial tanlanganda stollarni ko'rsatadi
@@ -689,148 +677,6 @@ func (h *Handler) handleNVRInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, st
 			ip, port, user,
 		))
 	}
-}
-
-// cbChannelBranch — D-kanal sozlash uchun filial tanlanganda stollarni ko'rsatadi
-func (h *Handler) cbChannelBranch(bot *tgbotapi.BotAPI, chatID int64, msgID int, branchIDStr string) {
-	branchID := mustParseInt64(branchIDStr)
-	tables, err := h.tableSvc.GetBranchTables(branchID)
-	if err != nil || len(tables) == 0 {
-		send(bot, chatID, "❌ Stollar topilmadi.")
-		return
-	}
-
-	var rows [][]tgbotapi.InlineKeyboardButton
-	for _, t := range tables {
-		chanLabel := "❌"
-		if t.CameraChannel > 0 {
-			chanLabel = fmt.Sprintf("D%d", t.CameraChannel)
-		}
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(
-				fmt.Sprintf("%s  %d-stol", chanLabel, t.TableNum),
-				fmt.Sprintf("chan_table:%d", t.ID),
-			),
-		))
-	}
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "settings_back"),
-	))
-	kb := tgbotapi.NewInlineKeyboardMarkup(rows...)
-	editMessage(bot, chatID, msgID,
-		"📷 <b>D-kanal sozlash</b>\n\nStol tanlang:\n\n<i>D-kanal — NVR dagi kamera raqami (D1, D3, D9...)</i>\n✅ — belgilangan  ❌ — belgilanmagan", &kb)
-}
-
-// cbChannelTable — stol tanlanganda D-kanal raqamini kiritishni so'raydi
-func (h *Handler) cbChannelTable(bot *tgbotapi.BotAPI, chatID int64, tgID int64, tableIDStr string) {
-	tableID := mustParseInt64(tableIDStr)
-	table, err := h.tableSvc.GetTable(tableID)
-	if err != nil {
-		send(bot, chatID, "❌ Stol topilmadi.")
-		return
-	}
-
-	h.states.Set(tgID, StateTableChannel)
-	h.states.SetData(tgID, "table_id", tableID)
-
-	current := "Belgilanmagan"
-	if table.CameraChannel > 0 {
-		current = fmt.Sprintf("D%d", table.CameraChannel)
-	}
-
-	send(bot, chatID, fmt.Sprintf(
-		"📷 <b>%s — %d-stol D-kanal</b>\n\n"+
-			"Hozirgi: <code>%s</code>\n\n"+
-			"NVR dagi D-kanal raqamini kiriting:\n"+
-			"<i>Misol: D1→1, D3→3, D9→9, D10→10, D13→13</i>",
-		table.BranchName, table.TableNum, current,
-	))
-}
-
-// handleTableChannelInput — stol D-kanal raqamini saqlaydi
-func (h *Handler) handleTableChannelInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, state *UserState) {
-	tgID := msg.From.ID
-	chatID := msg.Chat.ID
-	text := strings.TrimSpace(msg.Text)
-
-	tableID, _ := h.states.GetInt64(tgID, "table_id")
-	h.states.Clear(tgID)
-
-	channel := int(mustParseInt64(text))
-	if channel <= 0 || channel > 64 {
-		send(bot, chatID, "⚠️ Noto'g'ri kanal raqami. 1–64 orasida kiriting.")
-		return
-	}
-
-	if err := h.tableSvc.SetTableChannel(tableID, channel); err != nil {
-		send(bot, chatID, fmt.Sprintf("❌ Saqlashda xatolik: %v", err))
-		return
-	}
-
-	send(bot, chatID, fmt.Sprintf(
-		"✅ <b>D-kanal saqlandi!</b>\n\n"+
-			"🎱 Stol #%d → <code>D%d</code>",
-		tableID, channel,
-	))
-}
-
-// cbCamTestBranch — kamera test uchun filial tanlanganda stollarni ko'rsatadi
-func (h *Handler) cbCamTestBranch(bot *tgbotapi.BotAPI, chatID int64, msgID int, branchIDStr string) {
-	branchID := mustParseInt64(branchIDStr)
-	tables, err := h.tableSvc.GetBranchTables(branchID)
-	if err != nil || len(tables) == 0 {
-		send(bot, chatID, "❌ Stollar topilmadi.")
-		return
-	}
-
-	var rows [][]tgbotapi.InlineKeyboardButton
-	for _, t := range tables {
-		if t.CameraChannel <= 0 {
-			continue
-		}
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(
-				fmt.Sprintf("📷 %d-stol (D%d)", t.TableNum, t.CameraChannel),
-				fmt.Sprintf("camtest_table:%d:%d", branchID, t.CameraChannel),
-			),
-		))
-	}
-	if len(rows) == 0 {
-		editMessage(bot, chatID, msgID,
-			"❌ Bu filialda D-kanal sozlangan kamera yo'q.\n\n"+
-				"Avval <b>📷 D-kanal</b> sozlamasi orqali kanallarni belgilang.", nil)
-		return
-	}
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga", "settings_back"),
-	))
-	kb := tgbotapi.NewInlineKeyboardMarkup(rows...)
-	editMessage(bot, chatID, msgID, "🔬 <b>Kamera test</b>\n\nQaysi stolni tekshirmoqchisiz?", &kb)
-}
-
-// cbCamTestTable — belgilangan stol kamerasidan screenshot olib adminга yuboradi
-func (h *Handler) cbCamTestTable(bot *tgbotapi.BotAPI, chatID int64, msgID int, branchIDStr, channelStr string) {
-	branchID := mustParseInt64(branchIDStr)
-	channel := int(mustParseInt64(channelStr))
-
-	editMessage(bot, chatID, msgID,
-		fmt.Sprintf("⏳ D%d kamerasidan screenshot olinmoqda...", channel), nil)
-
-	go func() {
-		data, err := h.clipSvc.TestCameraPhoto(branchID, channel)
-		if err != nil {
-			send(bot, chatID, fmt.Sprintf("❌ Kamera test muvaffaqiyatsiz (D%d):\n<code>%s</code>", channel, err.Error()))
-			return
-		}
-		photo := tgbotapi.NewPhoto(chatID, tgbotapi.FileBytes{
-			Name:  fmt.Sprintf("camera_d%d.jpg", channel),
-			Bytes: data,
-		})
-		photo.Caption = fmt.Sprintf("📷 D%d kamera screenshot", channel)
-		if _, err := bot.Send(photo); err != nil {
-			send(bot, chatID, fmt.Sprintf("❌ Rasmni yuborib bo'lmadi: %v", err))
-		}
-	}()
 }
 
 // handleTableRTSPInput — stol RTSP URL kiritish

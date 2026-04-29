@@ -216,26 +216,6 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 			return
 		}
 		h.cbRTSPTable(bot, chatID, tgID, arg1)
-	case "chan_branch":
-		if !h.requireRole(bot, chatID, user, models.RoleSuperadmin) {
-			return
-		}
-		h.cbChannelBranch(bot, chatID, msgID, arg1)
-	case "chan_table":
-		if !h.requireRole(bot, chatID, user, models.RoleSuperadmin) {
-			return
-		}
-		h.cbChannelTable(bot, chatID, tgID, arg1)
-	case "camtest_branch":
-		if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
-			return
-		}
-		h.cbCamTestBranch(bot, chatID, msgID, arg1)
-	case "camtest_table":
-		if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
-			return
-		}
-		h.cbCamTestTable(bot, chatID, msgID, arg1, arg2)
 	case "settings_back":
 		h.showSettings(bot, chatID, user)
 

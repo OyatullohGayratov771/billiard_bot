@@ -141,9 +141,11 @@ func SeedBranches(db *sql.DB) error {
 			channels: []int{14, 12, 13, 7, 9, 16, 15, 10, 8},
 		},
 		{
-			name:     "Toshmi",
-			address:  "Toshkent, Yunusobod",
-			channels: []int{1, 2, 3, 4, 5, 6, 7, 8, 9},
+			name:    "Toshmi",
+			address: "Toshkent, Yunusobod",
+			// D1=1-stol, D9=2-stol, D10=3-stol, D11=4-stol, 5-stol kamera yo'q,
+			// D12=6-stol, 7-stol kamera yo'q, D13=8-stol, D3=9-stol(VIP)
+			channels: []int{1, 9, 10, 11, 0, 12, 0, 13, 3},
 		},
 	}
 
@@ -173,7 +175,7 @@ func SeedBranches(db *sql.DB) error {
 			res, tErr := db.Exec(
 				`INSERT INTO tables (branch_id, table_num, camera_channel, price_per_hour)
 				 VALUES ($1, $2, $3, 2000000)
-				 ON CONFLICT (branch_id, table_num) DO NOTHING`,
+				 ON CONFLICT (branch_id, table_num) DO UPDATE SET camera_channel = EXCLUDED.camera_channel`,
 				id, tableNum, ch,
 			)
 			if tErr != nil {

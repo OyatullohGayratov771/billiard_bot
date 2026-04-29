@@ -24,7 +24,6 @@ type TableService interface {
 	GetTable(id int64) (*models.Table, error)
 	UpdateBranchNVR(id int64, ip string, port int, user, pass string) error
 	SetTableRTSP(tableID int64, rtspURL string) error
-	SetTableChannel(tableID int64, channel int) error
 }
 
 // TournamentService — tournament-service bilan ishlash interfeysi
@@ -59,5 +58,4 @@ type ClipService interface {
 	ListRecent(limit int) ([]*models.ClipRequest, error)
 	TriggerRecording(clipID int64) error
 	DownloadClipFile(clipID int64) ([]byte, error)
-	TestCameraPhoto(branchID int64, channel int) ([]byte, error)
 }
