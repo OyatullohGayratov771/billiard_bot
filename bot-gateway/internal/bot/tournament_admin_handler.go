@@ -575,6 +575,77 @@ func formatTrnPrice(price int64) string {
 	return fmt.Sprintf("%d", price)
 }
 
+// ===================== TV BRACKET =====================
+
+func (h *Handler) cmdTVBracket(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
+	chatID := msg.Chat.ID
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	args := strings.Fields(msg.CommandArguments())
+	if len(args) == 0 {
+		send(bot, chatID, "❗ Ishlatish: /tv_bracket <turnir_id>\n\nMisol: /tv_bracket 5")
+		return
+	}
+	var trnID int64
+	if _, err := fmt.Sscan(args[0], &trnID); err != nil || trnID <= 0 {
+		send(bot, chatID, "❌ Noto'g'ri turnir ID.")
+		return
+	}
+	token, err := h.tournamentSvc.GenerateTVToken(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Token yaratib bo'lmadi: "+err.Error())
+		return
+	}
+	base := config.AppConfig.TVBaseURL
+	if base == "" {
+		send(bot, chatID, fmt.Sprintf(
+			"🖥 <b>TV Bracket token:</b>\n\n<code>%s</code>\n\n"+
+				"⚠️ <code>TV_BASE_URL</code> env o'rnatilmagan.\n"+
+				"URL ko'rinishi: <code>https://sizning-domen.uz/tv/%s</code>",
+			token, token))
+		return
+	}
+	url := base + "/tv/" + token
+	send(bot, chatID, fmt.Sprintf(
+		"🖥 <b>TV Bracket URL:</b>\n\n<code>%s</code>\n\n"+
+			"Ushbu URLni TVda oching.\n"+
+			"Yangilash uchun: /tv_update %d",
+		url, trnID))
+}
+
+func (h *Handler) cmdTVUpdate(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
+	chatID := msg.Chat.ID
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	args := strings.Fields(msg.CommandArguments())
+	if len(args) == 0 {
+		send(bot, chatID, "❗ Ishlatish: /tv_update <turnir_id>\n\nMisol: /tv_update 5")
+		return
+	}
+	var trnID int64
+	if _, err := fmt.Sscan(args[0], &trnID); err != nil || trnID <= 0 {
+		send(bot, chatID, "❌ Noto'g'ri turnir ID.")
+		return
+	}
+	token, err := h.tournamentSvc.GetTVTokenByTournament(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Bu turnir uchun TV URL yo'q.\nAvval /tv_bracket "+fmt.Sprint(trnID)+" bilan URL oling.")
+		return
+	}
+	viewers, err := h.tournamentSvc.PushTVUpdate(token)
+	if err != nil {
+		send(bot, chatID, "❌ Push yuborib bo'lmadi: "+err.Error())
+		return
+	}
+	if viewers == 0 {
+		send(bot, chatID, "📺 Signal yuborildi.\n<i>Hozir hech kim TVni ko'rmayapti.</i>")
+	} else {
+		send(bot, chatID, fmt.Sprintf("✅ <b>%d</b> ta TV ekran yangilandi! 📺", viewers))
+	}
+}
+
 func formatBracket(matches []*models.TournamentMatch) string {
 	var sb strings.Builder
 	curRound := 0

@@ -41,6 +41,9 @@ type TournamentService interface {
 	SetResult(matchID, winnerTgID int64) (nextMatchID int64, finished bool, err error)
 	GetUserTournaments(tgID int64) ([]*models.TournamentRegistration, error)
 	GetUserRegistration(tournamentID, userTgID int64) (*models.TournamentRegistration, error)
+	GenerateTVToken(tournamentID int64) (string, error)
+	GetTVTokenByTournament(tournamentID int64) (string, error)
+	PushTVUpdate(token string) (int, error)
 }
 
 // ClipService — clip-service bilan ishlash interfeysi

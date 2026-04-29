@@ -301,6 +301,40 @@ func (r *Repo) GetBracket(tournamentID int64) ([]*models.Match, error) {
 	return list, rows.Err()
 }
 
+// ===================== TV TOKENS =====================
+
+func (r *Repo) SaveTVToken(token string, tournamentID int64) error {
+	_, err := r.db.Exec(
+		`INSERT INTO tv_tokens (token, tournament_id) VALUES ($1,$2)
+		 ON CONFLICT (token) DO NOTHING`,
+		token, tournamentID,
+	)
+	return err
+}
+
+func (r *Repo) GetTVToken(token string) (*models.TVToken, error) {
+	t := &models.TVToken{}
+	err := r.db.QueryRow(
+		`SELECT token, tournament_id, created_at FROM tv_tokens WHERE token=$1`, token,
+	).Scan(&t.Token, &t.TournamentID, &t.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	return t, err
+}
+
+func (r *Repo) GetTVTokenByTournament(tournamentID int64) (string, error) {
+	var token string
+	err := r.db.QueryRow(
+		`SELECT token FROM tv_tokens WHERE tournament_id=$1 ORDER BY created_at DESC LIMIT 1`,
+		tournamentID,
+	).Scan(&token)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return token, err
+}
+
 func (r *Repo) GetMaxRound(tournamentID int64) (int, error) {
 	var maxRound int
 	err := r.db.QueryRow(`SELECT COALESCE(MAX(round),0) FROM tournament_matches WHERE tournament_id=$1`, tournamentID).Scan(&maxRound)

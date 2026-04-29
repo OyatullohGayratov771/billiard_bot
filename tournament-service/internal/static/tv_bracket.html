@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏆 Turnir Bracket</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#07070f;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:auto}
+
+/* ── HEADER ── */
+.hdr{background:linear-gradient(135deg,#0e0e22,#131330);border-bottom:2px solid #d4a012;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hdr-left h1{font-size:clamp(1.2rem,3vw,2rem);font-weight:800;color:#f0c030;letter-spacing:.5px}
+.hdr-left p{font-size:.8rem;color:#8080b0;margin-top:3px}
+.badge{display:flex;align-items:center;gap:7px;background:#0a1a0a;border:1px solid #30b030;border-radius:20px;padding:7px 14px;font-size:.8rem;color:#30c030;white-space:nowrap}
+.badge.offline{border-color:#555;color:#777}
+.dot{width:8px;height:8px;border-radius:50%;background:#30c030;animation:pulse 1.4s infinite}
+.badge.offline .dot{background:#555;animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ── BRACKET ── */
+.bracket{display:flex;align-items:stretch;padding:24px 28px 56px;gap:0;min-height:calc(100vh - 70px);overflow-x:auto}
+
+.round-col{display:flex;flex-direction:column;align-items:center;min-width:210px}
+.round-label{font-size:.68rem;text-transform:uppercase;letter-spacing:2px;color:#505090;margin-bottom:12px;text-align:center}
+
+.matches-col{display:flex;flex-direction:column;width:100%;flex:1}
+.match-slot{display:flex;align-items:center;flex:1}
+
+/* connector lines between rounds */
+.conn{display:flex;flex-direction:column;justify-content:center;width:36px;flex-shrink:0;align-self:stretch}
+.conn-line{border-top:2px solid #252540;width:100%}
+
+/* match card */
+.card{width:195px;border-radius:10px;overflow:hidden;border:1px solid #222240;background:#0e0e20;transition:box-shadow .25s,border-color .25s}
+.card.live{border-color:#d4a012;box-shadow:0 0 18px rgba(212,160,18,.35);animation:glow 2s ease-in-out infinite}
+.card.done{border-color:#1e3020}
+@keyframes glow{0%,100%{box-shadow:0 0 18px rgba(212,160,18,.35)}50%{box-shadow:0 0 32px rgba(212,160,18,.6)}}
+
+.player{padding:9px 12px;font-size:.88rem;font-weight:500;display:flex;align-items:center;gap:7px;transition:background .2s}
+.player+.player{border-top:1px solid #1a1a30}
+.player.win{background:rgba(212,160,18,.18);color:#f0c030;font-weight:700}
+.player.lose{color:#3a3a60}
+.ico{width:16px;text-align:center;font-size:.75rem;flex-shrink:0}
+
+.bye{width:195px;padding:9px 12px;border-radius:10px;border:1px dashed #1e1e38;background:#090912;color:#383858;font-size:.8rem;font-style:italic}
+.void{width:195px;height:58px}
+
+/* winner column */
+.winner-col{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:160px;flex:1;gap:6px}
+.trophy{font-size:3.6rem;animation:float 3s ease-in-out infinite}
+.winner-name{font-size:1.4rem;font-weight:800;color:#f0c030;text-align:center}
+.winner-sub{font-size:.7rem;color:#8080a0;text-transform:uppercase;letter-spacing:2px}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+
+/* no bracket placeholder */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;color:#303060;font-size:1rem;text-align:center;padding:40px}
+.empty .big{font-size:3rem}
+
+/* refresh overlay */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;z-index:99}
+.overlay.on{opacity:1}
+.spinner{width:44px;height:44px;border:4px solid #202040;border-top-color:#f0c030;border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* footer */
+.foot{position:fixed;bottom:0;left:0;right:0;background:#050510;border-top:1px solid #131328;padding:6px 24px;display:flex;justify-content:space-between;font-size:.7rem;color:#303058}
+
+/* mobile */
+@media(max-width:700px){
+  .bracket{flex-direction:column;padding:12px 12px 56px}
+  .round-col{min-width:unset;width:100%}
+  .matches-col{flex-direction:row;overflow-x:auto;gap:8px}
+  .match-slot{flex-shrink:0}
+  .conn{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="ov"><div class="spinner"></div></div>
+
+<header class="hdr">
+  <div class="hdr-left">
+    <h1 id="tname">🏆 Yuklanmoqda…</h1>
+    <p id="tmeta"></p>
+  </div>
+  <div class="badge" id="badge">
+    <span class="dot" id="dot"></span>
+    <span id="btext">Ulanmoqda…</span>
+  </div>
+</header>
+
+<div class="bracket" id="bracket">
+  <div class="empty"><div class="big">⏳</div><div>Bracket yuklanmoqda…</div></div>
+</div>
+
+<footer class="foot">
+  <span id="upd">—</span>
+  <span>🎱 Billiard King</span>
+</footer>
+
+<script>
+const TOKEN = '{{TOKEN}}';
+const dataURL = '/tv/' + TOKEN + '/data';
+const sseURL  = '/tv/' + TOKEN + '/sse';
+
+/* ── SSE ── */
+let sse, retryMs = 1500;
+
+function connectSSE() {
+  sse = new EventSource(sseURL);
+
+  sse.onopen = () => {
+    retryMs = 1500;
+    setBadge(true);
+  };
+
+  sse.onmessage = e => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'refresh') loadData();
+    } catch (_) {}
+  };
+
+  sse.onerror = () => {
+    setBadge(false);
+    sse.close();
+    setTimeout(connectSSE, retryMs);
+    retryMs = Math.min(retryMs * 2, 30000);
+  };
+}
+
+function setBadge(online) {
+  const badge = document.getElementById('badge');
+  const dot   = document.getElementById('dot');
+  const txt   = document.getElementById('btext');
+  badge.className = 'badge' + (online ? '' : ' offline');
+  dot.style.animation = online ? '' : 'none';
+  dot.style.background = online ? '#30c030' : '#555';
+  txt.textContent = online ? 'JONLI' : 'Uzildi…';
+}
+
+/* ── DATA ── */
+async function loadData() {
+  const ov = document.getElementById('ov');
+  ov.className = 'overlay on';
+  try {
+    const r = await fetch(dataURL);
+    if (!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    render(data);
+    document.getElementById('upd').textContent =
+      'Yangilandi: ' + new Date().toLocaleTimeString('uz-UZ');
+  } catch(e) {
+    console.error('load error', e);
+  } finally {
+    ov.className = 'overlay';
+  }
+}
+
+/* ── RENDER ── */
+function render(data) {
+  const t = data.tournament || {};
+  const matches = data.matches || [];
+
+  // header
+  document.getElementById('tname').textContent = '🏆 ' + (t.name || '—');
+  document.title = '🏆 ' + (t.name || 'Bracket');
+  const meta = [];
+  if (t.branch_name) meta.push('📍 ' + t.branch_name);
+  if (t.scheduled_at) meta.push('📅 ' + fmtDate(t.scheduled_at));
+  meta.push(statusLabel(t.status));
+  if (t.approved_count != null) meta.push('👥 ' + t.approved_count + '/' + t.max_players);
+  document.getElementById('tmeta').textContent = meta.join('   ·   ');
+
+  // group by round
+  const rounds = {};
+  let maxR = 0;
+  for (const m of matches) {
+    if (!rounds[m.round]) rounds[m.round] = [];
+    rounds[m.round].push(m);
+    if (m.round > maxR) maxR = m.round;
+  }
+
+  const bracket = document.getElementById('bracket');
+  bracket.innerHTML = '';
+
+  if (maxR === 0) {
+    bracket.innerHTML = '<div class="empty"><div class="big">⏳</div><div>Bracket hali yaratilmagan</div></div>';
+    return;
+  }
+
+  // find winner
+  let winner = null;
+  if (t.status === 'finished' && maxR > 0) {
+    for (const m of rounds[maxR] || []) {
+      if (m.status === 'done' && m.winner_name) winner = m.winner_name;
+    }
+  }
+
+  for (let r = 1; r <= maxR; r++) {
+    if (r > 1) bracket.appendChild(mkConn());
+
+    const col = document.createElement('div');
+    col.className = 'round-col';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'round-label';
+    lbl.textContent = r === maxR ? 'Final' : r + '-bosqich';
+    col.appendChild(lbl);
+
+    const mc = document.createElement('div');
+    mc.className = 'matches-col';
+
+    const rmatches = rounds[r] || [];
+    const gap = Math.pow(2, r - 1) * 10;
+    mc.style.gap = gap + 'px';
+
+    for (const m of rmatches) {
+      const slot = document.createElement('div');
+      slot.className = 'match-slot';
+      slot.appendChild(buildCard(m));
+      mc.appendChild(slot);
+    }
+
+    col.appendChild(mc);
+    bracket.appendChild(col);
+  }
+
+  // winner trophy
+  if (t.status === 'finished') {
+    bracket.appendChild(mkConn());
+    const wc = document.createElement('div');
+    wc.className = 'winner-col';
+    wc.innerHTML =
+      '<div class="trophy">🏆</div>' +
+      '<div class="winner-name">' + esc(winner || '—') + '</div>' +
+      '<div class="winner-sub">G\'olib</div>';
+    bracket.appendChild(wc);
+  }
+}
+
+function buildCard(m) {
+  if (m.status === 'void') {
+    const d = document.createElement('div');
+    d.className = 'void';
+    return d;
+  }
+  if (m.status === 'bye') {
+    const d = document.createElement('div');
+    d.className = 'bye';
+    d.textContent = (m.player1_name || '—') + ' → keyingi bosqich';
+    return d;
+  }
+  const live = m.status === 'ready';
+  const done = m.status === 'done';
+  const div = document.createElement('div');
+  div.className = 'card' + (live ? ' live' : '') + (done ? ' done' : '');
+
+  const p1win = done && m.winner_tg_id != null && m.winner_tg_id === m.player1_tg_id;
+  const p2win = done && m.winner_tg_id != null && m.winner_tg_id === m.player2_tg_id;
+
+  div.innerHTML =
+    player(m.player1_name, live, p1win, done && !p1win) +
+    player(m.player2_name, live, p2win, done && !p2win);
+  return div;
+}
+
+function player(name, live, win, lose) {
+  const cls = win ? ' win' : lose ? ' lose' : '';
+  const ico = win ? '🏆' : live ? '🎱' : '👤';
+  return '<div class="player' + cls + '"><span class="ico">' + ico +
+    '</span>' + esc(name || '—') + '</div>';
+}
+
+function mkConn() {
+  const d = document.createElement('div');
+  d.className = 'conn';
+  d.innerHTML = '<div class="conn-line"></div>';
+  return d;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'}) +
+    ' ' + d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+
+function statusLabel(s) {
+  return {registration:"📋 Ro'yxat",in_progress:'⚡ Jarayonda',finished:'🏆 Yakunlandi',cancelled:'❌ Bekor'}[s] || s;
+}
+
+// boot
+loadData();
+connectSSE();
+</script>
+</body>
+</html>

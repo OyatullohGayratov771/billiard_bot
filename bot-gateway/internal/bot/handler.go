@@ -92,6 +92,10 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 			sendWithKeyboard(bot, chatID, "✅ Bekor qilindi.", mainMenuKeyboard(user))
 		case "help":
 			h.cmdHelp(bot, msg, user)
+		case "tv_bracket":
+			h.cmdTVBracket(bot, msg, user)
+		case "tv_update":
+			h.cmdTVUpdate(bot, msg, user)
 		default:
 			send(bot, chatID, "❓ Noma'lum buyruq. /help bosing.")
 		}

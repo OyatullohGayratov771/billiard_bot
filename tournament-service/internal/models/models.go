@@ -52,6 +52,17 @@ type Registration struct {
 	DecidedAt      *time.Time `json:"decided_at"`
 }
 
+type TVToken struct {
+	Token        string    `json:"token"`
+	TournamentID int64     `json:"tournament_id"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+type TVData struct {
+	Tournament *Tournament `json:"tournament"`
+	Matches    []*Match    `json:"matches"`
+}
+
 type Match struct {
 	ID           int64  `json:"id"`
 	TournamentID int64  `json:"tournament_id"`

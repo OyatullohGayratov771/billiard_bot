@@ -62,6 +62,12 @@ func migrate(db *sql.DB) error {
 			status        TEXT   NOT NULL DEFAULT 'pending',
 			UNIQUE(tournament_id, round, match_num)
 		);
+
+		CREATE TABLE IF NOT EXISTS tv_tokens (
+			token         TEXT    PRIMARY KEY,
+			tournament_id BIGINT  NOT NULL,
+			created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		);
 	`)
 	if err != nil {
 		log.Printf("❌ Migration xatosi: %v", err)

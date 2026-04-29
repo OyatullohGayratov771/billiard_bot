@@ -1,6 +1,7 @@
 package handler
 
 import (
+	_ "embed"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -9,12 +10,16 @@ import (
 	"tournament-service/internal/service"
 )
 
+//go:embed static/tv_bracket.html
+var tvHTML string
+
 type Handler struct {
 	svc *service.Service
+	hub *Hub
 }
 
 func New(svc *service.Service) *Handler {
-	return &Handler{svc: svc}
+	return &Handler{svc: svc, hub: newHub()}
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
@@ -36,6 +41,15 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /matches/{id}/result", h.setResult)
 
 	mux.HandleFunc("GET /users/{tg_id}/tournaments", h.userTournaments)
+
+	// TV endpoints
+	mux.HandleFunc("POST /tv/token", h.tvGenerateToken)
+	mux.HandleFunc("GET /tv/by-tournament", h.tvGetTokenByTournament)
+	mux.HandleFunc("GET /tv/{token}", h.tvPage)
+	mux.HandleFunc("GET /tv/{token}/data", h.tvData)
+	mux.HandleFunc("GET /tv/{token}/sse", h.tvSSE)
+	mux.HandleFunc("POST /tv/{token}/push", h.tvPush)
+	mux.HandleFunc("GET /tv/{token}/status", h.tvStatus)
 }
 
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {

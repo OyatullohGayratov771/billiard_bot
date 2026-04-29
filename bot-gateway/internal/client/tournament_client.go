@@ -97,6 +97,31 @@ func (c *TournamentClient) GetUserTournaments(tgID int64) ([]*models.TournamentR
 	return list, c.get(fmt.Sprintf("/users/%d/tournaments", tgID), &list)
 }
 
+// ===================== TV =====================
+
+func (c *TournamentClient) GenerateTVToken(tournamentID int64) (string, error) {
+	body, _ := json.Marshal(map[string]any{"tournament_id": tournamentID})
+	var resp struct {
+		Token string `json:"token"`
+	}
+	return resp.Token, c.post("/tv/token", body, &resp)
+}
+
+func (c *TournamentClient) GetTVTokenByTournament(tournamentID int64) (string, error) {
+	var resp struct {
+		Token string `json:"token"`
+	}
+	return resp.Token, c.get(fmt.Sprintf("/tv/by-tournament?tournament_id=%d", tournamentID), &resp)
+}
+
+func (c *TournamentClient) PushTVUpdate(token string) (int, error) {
+	var resp struct {
+		Viewers int `json:"viewers"`
+	}
+	body, _ := json.Marshal(map[string]any{})
+	return resp.Viewers, c.post(fmt.Sprintf("/tv/%s/push", token), body, &resp)
+}
+
 func (c *TournamentClient) GetUserRegistration(tournamentID, userTgID int64) (*models.TournamentRegistration, error) {
 	// Get all regs and filter — no dedicated endpoint needed
 	regs, err := c.ListRegistrations(tournamentID)

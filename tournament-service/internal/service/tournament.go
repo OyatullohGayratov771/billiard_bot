@@ -1,7 +1,9 @@
 package service
 
 import (
+	cryptorand "crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -55,6 +57,43 @@ func (s *Service) CancelTournament(id int64) error {
 		return errors.New("tugagan turnirni bekor qilib bo'lmaydi")
 	}
 	return s.repo.SetTournamentStatus(id, models.TournamentStatusCancelled)
+}
+
+// ===================== TV =====================
+
+func (s *Service) GenerateTVToken(tournamentID int64) (string, error) {
+	if _, err := s.repo.GetTournament(tournamentID); err != nil {
+		return "", err
+	}
+	// Return existing token if already generated
+	if tok, err := s.repo.GetTVTokenByTournament(tournamentID); err == nil {
+		return tok, nil
+	}
+	buf := make([]byte, 16)
+	if _, err := cryptorand.Read(buf); err != nil {
+		return "", err
+	}
+	token := hex.EncodeToString(buf)
+	if err := s.repo.SaveTVToken(token, tournamentID); err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+func (s *Service) GetTVData(token string) (*models.TVData, error) {
+	tv, err := s.repo.GetTVToken(token)
+	if err != nil {
+		return nil, err
+	}
+	t, err := s.repo.GetTournament(tv.TournamentID)
+	if err != nil {
+		return nil, err
+	}
+	matches, err := s.repo.GetBracket(tv.TournamentID)
+	if err != nil {
+		return nil, err
+	}
+	return &models.TVData{Tournament: t, Matches: matches}, nil
 }
 
 // ===================== REGISTRATIONS =====================
