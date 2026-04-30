@@ -78,10 +78,9 @@ func nvrHTTPBase(host string) string {
 // false: yozuv aniq yo'q (darhol xato qaytar).
 func searchAndVerify(nvrHost, nvrUser, nvrPass string, channel int, startTime, endTime time.Time) bool {
 	xmlBody := fmt.Sprintf(
-		`<?xml version="1.0" encoding="UTF-8"?>`+
-			`<CMSearchDescription>`+
+		`<CMSearchDescription>`+
 			`<searchID>BILLIARD-CLIP</searchID>`+
-			`<trackIDList><trackID>%d01</trackID></trackIDList>`+
+			`<trackList><trackID>%d01</trackID></trackList>`+
 			`<timeSpanList><timeSpan>`+
 			`<startTime>%s</startTime><endTime>%s</endTime>`+
 			`</timeSpan></timeSpanList>`+
@@ -251,14 +250,15 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 
 	timeout := time.Duration(durationSec*2+120) * time.Second
 
-	// Attempt 1: stream copy (original sifat, decode yo'q, tez)
+	// Attempt 1: video copy + audio AAC (tez, video sifat yo'qotmaydi)
 	err := runFFmpeg(outPath, timeout, []string{
 		"-loglevel", "warning",
 		"-fflags", "+genpts",
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
-		"-c", "copy",
+		"-c:v", "copy",
+		"-c:a", "aac", "-ar", "44100", "-b:a", "64k",
 		"-movflags", "+faststart",
 		"-y", outPath,
 	})
@@ -267,9 +267,9 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 		return outPath, nil
 	}
 
-	log.Printf("[klip#%d] -c copy muvaffaqiyatsiz (%v), H.264 encode urinilmoqda...", clipID, err)
+	log.Printf("[klip#%d] video copy muvaffaqiyatsiz (%v), H.264 encode urinilmoqda...", clipID, err)
 
-	// Attempt 2: H.264 encode fallback
+	// Attempt 2: to'liq H.264 encode fallback
 	err2 := runFFmpeg(outPath, timeout, []string{
 		"-loglevel", "warning",
 		"-fflags", "+genpts",
