@@ -309,7 +309,6 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 				videoMsg.ParseMode = "HTML"
 				_, sendErr := bot.Send(videoMsg)
 				f.Close()
-				os.Remove(cur.ClipPath)
 
 				if sendErr != nil {
 					send(bot, chatID, fmt.Sprintf(
@@ -319,6 +318,7 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 					return
 				}
 
+				os.Remove(cur.ClipPath)
 				send(bot, chatID, fmt.Sprintf("✅ Klip #%d mijozga yuborildi!", clipID))
 				return
 			}

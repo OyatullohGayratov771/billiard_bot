@@ -153,8 +153,9 @@ func (h *Handler) cbClipTimeOK(bot *tgbotapi.BotAPI, chatID int64, msgID int, tg
 	minute, _ := minVal.(int)
 	dateStr, _ := h.states.GetString(tgID, "date")
 
+	tashkentLoc := time.FixedZone("Asia/Tashkent", 5*60*60)
 	startTime, _ := time.ParseInLocation("02.01.2006 15:04",
-		fmt.Sprintf("%s %02d:%02d", dateStr, hour, minute), time.Local)
+		fmt.Sprintf("%s %02d:%02d", dateStr, hour, minute), tashkentLoc)
 	if startTime.After(time.Now()) {
 		kb := clipTimeSpinnerKeyboard(hour, minute)
 		editMessage(bot, chatID, msgID,
@@ -208,8 +209,9 @@ func (h *Handler) cbClipSelectDuration(bot *tgbotapi.BotAPI, chatID int64, msgID
 	hour, _ := hourVal.(int)
 	minute, _ := minVal.(int)
 
+	tashkentLoc := time.FixedZone("Asia/Tashkent", 5*60*60)
 	startTime, _ := time.ParseInLocation("02.01.2006 15:04",
-		fmt.Sprintf("%s %02d:%02d", dateStr, hour, minute), time.Local)
+		fmt.Sprintf("%s %02d:%02d", dateStr, hour, minute), tashkentLoc)
 	endTime := startTime.Add(time.Duration(durMin) * time.Minute)
 
 	// Tugash vaqti kelajakda bo'lmasligi kerak
@@ -317,8 +319,9 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 		startStr, _ := h.states.GetString(tgID, "start_time")
 		endStr, _ := h.states.GetString(tgID, "end_time")
 
-		startTime, _ := time.Parse("02.01.2006 15:04", startStr)
-		endTime, _ := time.Parse("02.01.2006 15:04", endStr)
+		tashkentLoc := time.FixedZone("Asia/Tashkent", 5*60*60)
+		startTime, _ := time.ParseInLocation("02.01.2006 15:04", startStr, tashkentLoc)
+		endTime, _ := time.ParseInLocation("02.01.2006 15:04", endStr, tashkentLoc)
 
 		cr, err := h.clipSvc.CreateRequest(models.ClipRequestInput{
 			ClientTgID: tgID,
