@@ -80,13 +80,12 @@ func searchAndVerify(nvrHost, nvrUser, nvrPass string, channel int, startTime, e
 	xmlBody := fmt.Sprintf(
 		`<CMSearchDescription>`+
 			`<searchID>BILLIARD-CLIP</searchID>`+
-			`<trackList><trackID>%d01</trackID></trackList>`+
+			`<trackIDList><trackID>%d01</trackID></trackIDList>`+
 			`<timeSpanList><timeSpan>`+
 			`<startTime>%s</startTime><endTime>%s</endTime>`+
 			`</timeSpan></timeSpanList>`+
-			`<maxResults>10</maxResults>`+
+			`<maxResults>5</maxResults>`+
 			`<searchResultPostion>0</searchResultPostion>`+
-			`<metadataList><metadataDescriptor>//recordType.meta.std-cgi.com</metadataDescriptor></metadataList>`+
 			`</CMSearchDescription>`,
 		channel,
 		startTime.UTC().Format("2006-01-02T15:04:05Z"),
@@ -251,12 +250,13 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
 	log.Printf("[klip#%d] RTSP: %s", clipID, maskRTSP(rtspURL))
 
-	timeout := time.Duration(durationSec*2+120) * time.Second
+	timeout := time.Duration(durationSec+90) * time.Second
 
 	err := runFFmpeg(outPath, timeout, []string{
 		"-loglevel", "warning",
 		"-fflags", "+genpts",
 		"-rtsp_transport", "tcp",
+		"-stimeout", "20000000",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
