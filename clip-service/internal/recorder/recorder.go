@@ -246,35 +246,14 @@ func maskRTSP(url string) string {
 	return url
 }
 
-// recordRTSP — NVR RTSP orqali klip yozadi.
-// Birinchi -c copy (tez, sifat yo'qotmaydi), xato bo'lsa H.264 encode fallback.
+// recordRTSP — NVR RTSP orqali klip yozadi (H.264 encode — hamma telefon qo'llab-quvvatlaydi).
 func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nvrPort, channel int, startTime, endTime time.Time, durationSec int, outPath string) (string, error) {
 	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
 	log.Printf("[klip#%d] RTSP: %s", clipID, maskRTSP(rtspURL))
 
 	timeout := time.Duration(durationSec*2+120) * time.Second
 
-	// Attempt 1: video copy + audio AAC (tez, video sifat yo'qotmaydi)
 	err := runFFmpeg(outPath, timeout, []string{
-		"-loglevel", "warning",
-		"-fflags", "+genpts",
-		"-rtsp_transport", "tcp",
-		"-i", rtspURL,
-		"-t", fmt.Sprintf("%d", durationSec),
-		"-c:v", "copy",
-		"-c:a", "aac", "-ar", "44100", "-b:a", "64k",
-		"-movflags", "+faststart",
-		"-y", outPath,
-	})
-	if err == nil {
-		logDone(clipID, durationSec, outPath)
-		return outPath, nil
-	}
-
-	log.Printf("[klip#%d] video copy muvaffaqiyatsiz (%v), H.264 encode urinilmoqda...", clipID, err)
-
-	// Attempt 2: to'liq H.264 encode fallback
-	err2 := runFFmpeg(outPath, timeout, []string{
 		"-loglevel", "warning",
 		"-fflags", "+genpts",
 		"-rtsp_transport", "tcp",
@@ -287,8 +266,8 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 		"-movflags", "+faststart",
 		"-y", outPath,
 	})
-	if err2 != nil {
-		return "", fmt.Errorf("RTSP (copy: %v; encode: %v)", err, err2)
+	if err != nil {
+		return "", fmt.Errorf("RTSP encode: %v", err)
 	}
 
 	logDone(clipID, durationSec, outPath)
