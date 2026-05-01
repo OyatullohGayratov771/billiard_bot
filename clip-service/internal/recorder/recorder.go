@@ -152,9 +152,10 @@ func logDone(clipID int64, durationSec int, outPath string) {
 	log.Printf("[klip#%d] done: %.1fMB, %ds → %s", clipID, sizeMB, durationSec, outPath)
 }
 
-const telegramMaxBytes = 45 * 1024 * 1024 // 45MB (Telegram 50MB limitidan xavfsiz chegarasi)
+const telegramMaxBytes = 40 * 1024 * 1024 // 40MB threshold (Telegram 50MB limitidan havfsiz)
 
-// compressIfNeeded — 45MB dan katta bo'lsa H.264 ga siqadi, kichik bo'lsa tegmaydi.
+// compressIfNeeded — 40MB dan katta bo'lsa H.264 ga siqadi.
+// Xato bo'lsa error qaytaradi — katta fayl yuborilmaydi.
 func compressIfNeeded(clipID int64, path string, durationSec int) error {
 	info, err := os.Stat(path)
 	if err != nil || info.Size() <= telegramMaxBytes {
@@ -162,12 +163,12 @@ func compressIfNeeded(clipID int64, path string, durationSec int) error {
 	}
 
 	sizeMB := float64(info.Size()) / 1024 / 1024
-	// target 44MB: 44*1024*8 kbit / durationSec = kbps
-	targetKbps := 44 * 1024 * 8 / durationSec
-	if targetKbps < 300 {
-		targetKbps = 300
+	// 38MB maqsad: audio (64kbps) ni hisobga olib video kbps hisoblash
+	targetKbps := (38*1024*8 - 64*durationSec) / durationSec
+	if targetKbps < 200 {
+		targetKbps = 200
 	}
-	log.Printf("[klip#%d] hajm %.1fMB > 45MB → siqilmoqda (%d kbps)", clipID, sizeMB, targetKbps)
+	log.Printf("[klip#%d] hajm %.1fMB > 40MB → siqilmoqda (%d kbps)", clipID, sizeMB, targetKbps)
 
 	tmpPath := path + ".tmp.mp4"
 	err = runFFmpeg(tmpPath, time.Duration(durationSec*3+120)*time.Second, []string{
@@ -195,9 +196,11 @@ func compressIfNeeded(clipID int64, path string, durationSec int) error {
 		return fmt.Errorf("rename: %v", renErr)
 	}
 
-	if info2, err2 := os.Stat(path); err2 == nil {
-		log.Printf("[klip#%d] siqildi: %.1fMB → %.1fMB", clipID, sizeMB, float64(info2.Size())/1024/1024)
+	info2, err2 := os.Stat(path)
+	if err2 != nil {
+		return fmt.Errorf("siqilgan fayl topilmadi: %v", err2)
 	}
+	log.Printf("[klip#%d] siqildi: %.1fMB → %.1fMB", clipID, sizeMB, float64(info2.Size())/1024/1024)
 	return nil
 }
 
@@ -222,7 +225,8 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 		return "", err
 	}
 	if cErr := compressIfNeeded(clipID, path, durationSec); cErr != nil {
-		log.Printf("[klip#%d] compress xato (original yuboriladi): %v", clipID, cErr)
+		os.Remove(path)
+		return "", fmt.Errorf("siqishda xatolik: %v", cErr)
 	}
 	return path, nil
 }
@@ -317,7 +321,8 @@ func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string
 	}
 	logDone(clipID, durationSec, outPath)
 	if cErr := compressIfNeeded(clipID, outPath, durationSec); cErr != nil {
-		log.Printf("[klip#%d] compress xato (original yuboriladi): %v", clipID, cErr)
+		os.Remove(outPath)
+		return "", fmt.Errorf("siqishda xatolik: %v", cErr)
 	}
 	return outPath, nil
 }
