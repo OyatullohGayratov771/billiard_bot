@@ -11,12 +11,13 @@ import (
 )
 
 type TournamentClient struct {
-	baseURL string
-	http    *http.Client
+	baseURL       string
+	http          *http.Client
+	internalToken string
 }
 
-func NewTournamentClient(baseURL string, httpClient *http.Client) *TournamentClient {
-	return &TournamentClient{baseURL: baseURL, http: httpClient}
+func NewTournamentClient(baseURL string, httpClient *http.Client, internalToken string) *TournamentClient {
+	return &TournamentClient{baseURL: baseURL, http: httpClient, internalToken: internalToken}
 }
 
 func (c *TournamentClient) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64) (*models.Tournament, error) {
@@ -104,14 +105,14 @@ func (c *TournamentClient) GenerateTVToken(tournamentID int64) (string, error) {
 	var resp struct {
 		Token string `json:"token"`
 	}
-	return resp.Token, c.post("/tv/token", body, &resp)
+	return resp.Token, c.postInternal("/tv/token", body, &resp, true)
 }
 
 func (c *TournamentClient) GetTVTokenByTournament(tournamentID int64) (string, error) {
 	var resp struct {
 		Token string `json:"token"`
 	}
-	return resp.Token, c.get(fmt.Sprintf("/tv/by-tournament?tournament_id=%d", tournamentID), &resp)
+	return resp.Token, c.getInternal(fmt.Sprintf("/tv/by-tournament?tournament_id=%d", tournamentID), &resp, true)
 }
 
 func (c *TournamentClient) PushTVUpdate(token string) (int, error) {
@@ -119,7 +120,7 @@ func (c *TournamentClient) PushTVUpdate(token string) (int, error) {
 		Viewers int `json:"viewers"`
 	}
 	body, _ := json.Marshal(map[string]any{})
-	return resp.Viewers, c.post(fmt.Sprintf("/tv/%s/push", token), body, &resp)
+	return resp.Viewers, c.postInternal(fmt.Sprintf("/tv/%s/push", token), body, &resp, true)
 }
 
 func (c *TournamentClient) GetUserRegistration(tournamentID, userTgID int64) (*models.TournamentRegistration, error) {
@@ -137,7 +138,18 @@ func (c *TournamentClient) GetUserRegistration(tournamentID, userTgID int64) (*m
 }
 
 func (c *TournamentClient) get(path string, out any) error {
-	resp, err := c.http.Get(c.baseURL + path)
+	return c.getInternal(path, out, false)
+}
+
+func (c *TournamentClient) getInternal(path string, out any, internal bool) error {
+	req, err := http.NewRequest(http.MethodGet, c.baseURL+path, nil)
+	if err != nil {
+		return err
+	}
+	if internal && c.internalToken != "" {
+		req.Header.Set("X-Internal-Token", c.internalToken)
+	}
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return err
 	}
@@ -151,7 +163,19 @@ func (c *TournamentClient) get(path string, out any) error {
 }
 
 func (c *TournamentClient) post(path string, body []byte, out any) error {
-	resp, err := c.http.Post(c.baseURL+path, "application/json", bytes.NewReader(body))
+	return c.postInternal(path, body, out, false)
+}
+
+func (c *TournamentClient) postInternal(path string, body []byte, out any, internal bool) error {
+	req, err := http.NewRequest(http.MethodPost, c.baseURL+path, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if internal && c.internalToken != "" {
+		req.Header.Set("X-Internal-Token", c.internalToken)
+	}
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return err
 	}

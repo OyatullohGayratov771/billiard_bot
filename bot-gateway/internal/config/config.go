@@ -19,6 +19,7 @@ type Config struct {
 	ClipServiceURL       string
 	TournamentServiceURL string
 	TVBaseURL            string
+	InternalToken        string
 	PaymentCard          string
 	PaymentPhone         string
 	SupportUsername      string
@@ -39,6 +40,7 @@ func LoadConfig() {
 		ClipServiceURL:       getEnv("CLIP_SERVICE_URL", "http://clip-service:8083"),
 		TournamentServiceURL: getEnv("TOURNAMENT_SERVICE_URL", "http://tournament-service:8084"),
 		TVBaseURL:            getEnv("TV_BASE_URL", ""),
+		InternalToken:        getEnv("INTERNAL_TOKEN", ""),
 		PaymentCard:          getEnv("PAYMENT_CARD", ""),
 		PaymentPhone:    getEnv("PAYMENT_PHONE", ""),
 		SupportUsername: getEnv("SUPPORT_USERNAME", "@billiardkingadmin"),

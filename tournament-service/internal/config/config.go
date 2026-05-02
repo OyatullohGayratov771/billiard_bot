@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	DatabaseDSN string
-	Port        string
+	DatabaseDSN   string
+	Port          string
+	InternalToken string
 }
 
 var AppConfig Config
@@ -17,8 +18,9 @@ var AppConfig Config
 func LoadConfig() {
 	_ = godotenv.Load()
 	AppConfig = Config{
-		DatabaseDSN: mustEnv("DATABASE_DSN"),
-		Port:        getEnv("TOURNAMENT_SERVICE_PORT", "8084"),
+		DatabaseDSN:   mustEnv("DATABASE_DSN"),
+		Port:          getEnv("TOURNAMENT_SERVICE_PORT", "8084"),
+		InternalToken: getEnv("INTERNAL_TOKEN", ""),
 	}
 	log.Println("✅ tournament-service config yuklandi")
 }

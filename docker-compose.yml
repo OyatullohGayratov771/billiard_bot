@@ -3,6 +3,7 @@ services:
     image: postgres:15
     container_name: billiard_postgres
     restart: unless-stopped
+    command: postgres -c log_checkpoints=off -c log_connections=off -c log_disconnections=off
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
@@ -132,6 +133,7 @@ services:
     environment:
       DATABASE_DSN: "host=postgres port=5432 user=${DB_USER:-postgres} password=${DB_PASSWORD:-postgres} dbname=${DB_NAME:-billiard_bot} sslmode=disable"
       TOURNAMENT_SERVICE_PORT: "8084"
+      INTERNAL_TOKEN: "${INTERNAL_TOKEN}"
     expose:
       - "8084"
     security_opt:
@@ -170,6 +172,7 @@ services:
       CLIP_SERVICE_URL: "http://clip-service:8083"
       TOURNAMENT_SERVICE_URL: "http://tournament-service:8084"
       TV_BASE_URL: "${TV_BASE_URL:-}"
+      INTERNAL_TOKEN: "${INTERNAL_TOKEN}"
     volumes:
       - clips_data:/app/clips
     security_opt:

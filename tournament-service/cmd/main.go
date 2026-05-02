@@ -23,7 +23,7 @@ func main() {
 
 	repo := repository.New(database)
 	svc := service.New(database, repo)
-	h := handler.New(svc)
+	h := handler.New(svc, cfg.InternalToken)
 
 	mux := http.NewServeMux()
 	h.RegisterRoutes(mux)

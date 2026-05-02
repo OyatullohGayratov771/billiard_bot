@@ -14,12 +14,25 @@ import (
 var tvHTML string
 
 type Handler struct {
-	svc *service.Service
-	hub *Hub
+	svc           *service.Service
+	hub           *Hub
+	internalToken string
 }
 
-func New(svc *service.Service) *Handler {
-	return &Handler{svc: svc, hub: newHub()}
+func New(svc *service.Service, internalToken string) *Handler {
+	return &Handler{svc: svc, hub: newHub(), internalToken: internalToken}
+}
+
+// checkInternal returns false and writes 401 if INTERNAL_TOKEN is set and header doesn't match.
+func (h *Handler) checkInternal(w http.ResponseWriter, r *http.Request) bool {
+	if h.internalToken == "" {
+		return true
+	}
+	if r.Header.Get("X-Internal-Token") != h.internalToken {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return false
+	}
+	return true
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {

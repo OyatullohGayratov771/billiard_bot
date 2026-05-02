@@ -11,6 +11,9 @@ import (
 
 // POST /tv/token  {"tournament_id": N}
 func (h *Handler) tvGenerateToken(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	var req struct {
 		TournamentID int64 `json:"tournament_id"`
 	}
@@ -98,6 +101,9 @@ func (h *Handler) tvSSE(w http.ResponseWriter, r *http.Request) {
 
 // POST /tv/{token}/push  — barcha ulangan TVlarga refresh yuboradi
 func (h *Handler) tvPush(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	token := r.PathValue("token")
 	if _, err := h.svc.GetTVData(token); err != nil {
 		writeError(w, 404, "token topilmadi")
@@ -130,6 +136,9 @@ func (h *Handler) tvStatus(w http.ResponseWriter, r *http.Request) {
 
 // GET /tv/by-tournament?tournament_id=N  — bot-gateway uchun
 func (h *Handler) tvGetTokenByTournament(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	idStr := r.URL.Query().Get("tournament_id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil || id == 0 {

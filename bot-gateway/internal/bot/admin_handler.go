@@ -15,6 +15,19 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+func maskRTSP(url string) string {
+	if i := strings.Index(url, "://"); i >= 0 {
+		rest := url[i+3:]
+		if at := strings.Index(rest, "@"); at >= 0 {
+			creds := rest[:at]
+			if colon := strings.Index(creds, ":"); colon >= 0 {
+				return url[:i+3] + creds[:colon+1] + "***" + rest[at:]
+			}
+		}
+	}
+	return url
+}
+
 // ===================== START =====================
 
 func (h *Handler) cmdStart(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
@@ -697,7 +710,7 @@ func (h *Handler) handleTableRTSPInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Messa
 		"✅ <b>RTSP URL saqlandi!</b>\n\n"+
 			"🎱 Stol #%d\n"+
 			"<code>%s</code>",
-		tableID, rtspURL,
+		tableID, maskRTSP(rtspURL),
 	))
 }
 
