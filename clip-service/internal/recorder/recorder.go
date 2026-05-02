@@ -84,8 +84,6 @@ func searchAndVerify(nvrHost, nvrUser, nvrPass string, channel int, startTime, e
 			`<timeSpanList><timeSpan>`+
 			`<startTime>%s</startTime><endTime>%s</endTime>`+
 			`</timeSpan></timeSpanList>`+
-			`<maxResults>5</maxResults>`+
-			`<searchResultPostion>0</searchResultPostion>`+
 			`</CMSearchDescription>`,
 		channel,
 		startTime.UTC().Format("2006-01-02T15:04:05Z"),
@@ -256,7 +254,6 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 		"-loglevel", "warning",
 		"-fflags", "+genpts",
 		"-rtsp_transport", "tcp",
-		"-stimeout", "20000000",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
