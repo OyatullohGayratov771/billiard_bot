@@ -4,16 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/icholy/digest"
 )
 
 type Recorder struct {
@@ -60,64 +56,6 @@ func HikvisionRTSP(user, pass, host string, port, channel int) string {
 		user, pass, host, port, channel)
 }
 
-func newDigestClient(user, pass string, timeout time.Duration) *http.Client {
-	return &http.Client{
-		Transport: &digest.Transport{Username: user, Password: pass},
-		Timeout:   timeout,
-	}
-}
-
-// nvrHTTPBase — NVR HTTP base URL.
-// host ga port qo'shish kerak bo'lsa (port 80 emas), host ni "ip:port" formatida bering.
-func nvrHTTPBase(host string) string {
-	return "http://" + host
-}
-
-// searchAndVerify — NVR ISAPI search orqali yozuv borligini tekshiradi.
-// true: yozuv bor yoki tekshirib bo'lmadi (RTSP ga o'tish kerak).
-// false: yozuv aniq yo'q (darhol xato qaytar).
-func searchAndVerify(nvrHost, nvrUser, nvrPass string, channel int, startTime, endTime time.Time) bool {
-	xmlBody := fmt.Sprintf(
-		`<CMSearchDescription>`+
-			`<searchID>BILLIARD-CLIP</searchID>`+
-			`<trackIDList><trackID>%d01</trackID></trackIDList>`+
-			`<timeSpanList><timeSpan>`+
-			`<startTime>%s</startTime><endTime>%s</endTime>`+
-			`</timeSpan></timeSpanList>`+
-			`</CMSearchDescription>`,
-		channel,
-		startTime.UTC().Format("2006-01-02T15:04:05Z"),
-		endTime.UTC().Format("2006-01-02T15:04:05Z"),
-	)
-	client := newDigestClient(nvrUser, nvrPass, 30*time.Second)
-	req, err := http.NewRequest(http.MethodPost,
-		nvrHTTPBase(nvrHost)+"/ISAPI/ContentMgmt/search",
-		strings.NewReader(xmlBody))
-	if err != nil {
-		return true // tekshirib bo'lmadi, RTSP ga o'tsin
-	}
-	req.Header.Set("Content-Type", "application/xml")
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("[NVR search] %s: %v", nvrHost, err)
-		return true // tarmoq xatosi — RTSP ga o'tsin
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	bodyStr := string(body)
-	log.Printf("[NVR search] kanal=%d01 javob: %s", channel, bodyStr)
-
-	// NVR "numOfMatches>0" qaytarsa yozuv bor
-	if strings.Contains(bodyStr, "<numOfMatches>0</numOfMatches>") {
-		return false
-	}
-	// responseStatus false bo'lsa yoki bo'sh javob
-	if strings.Contains(bodyStr, "<responseStatusStrg>NO MATCHES</responseStatusStrg>") {
-		return false
-	}
-	return true
-}
 
 
 
@@ -213,10 +151,6 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 	log.Printf("[klip#%d] start: kanal=%d %s→%s (%ds)",
 		clipID, channel, startTime.Format("15:04:05"), endTime.Format("15:04:05"), durationSec)
 
-	if !searchAndVerify(nvrHost, nvrUser, nvrPass, channel, startTime, endTime) {
-		return "", fmt.Errorf("NVR da bu vaqt uchun yozuv topilmadi (kanal=%d, %s–%s). Kamera o'chgan yoki NVR yozmagan bo'lishi mumkin.",
-			channel, startTime.Format("15:04"), endTime.Format("15:04"))
-	}
 	path, err := r.recordRTSP(clipID, nvrHost, nvrUser, nvrPass, nvrPort, channel, startTime, endTime, durationSec, outPath)
 	if err != nil {
 		return "", err
