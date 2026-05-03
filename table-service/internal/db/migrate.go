@@ -143,9 +143,9 @@ func SeedBranches(db *sql.DB) error {
 		{
 			name:    "Toshmi",
 			address: "Toshkent, Yunusobod",
-			// D1=1-stol, D9=2-stol, D10=3-stol, D11=4-stol, 5-stol kamera yo'q,
-			// D12=6-stol, 7-stol kamera yo'q, D13=8-stol, D3=9-stol(VIP)
-			channels: []int{1, 9, 10, 11, 0, 12, 0, 13, 3},
+			// D1=1-stol, D9=2-stol, D10=3-stol, D12=4-stol, 5-stol kamera yo'q,
+			// D13=6-stol, 7-stol kamera yo'q, D14=8-stol, D3=9-stol(VIP)
+			channels: []int{1, 9, 10, 12, 0, 13, 0, 14, 3},
 		},
 	}
 
