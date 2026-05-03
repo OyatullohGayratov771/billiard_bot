@@ -150,18 +150,43 @@ func send(bot *tgbotapi.BotAPI, chatID int64, text string) {
 
 const tgMaxText = 4096
 
-func truncate(s string, max int) string {
-	runes := []rune(s)
-	if len(runes) <= max {
-		return s
+// stripHTML removes all HTML tags so truncated text is safe for plain-text mode.
+func stripHTML(s string) string {
+	out := make([]byte, 0, len(s))
+	inTag := false
+	for i := 0; i < len(s); i++ {
+		switch {
+		case s[i] == '<':
+			inTag = true
+		case s[i] == '>':
+			inTag = false
+		case !inTag:
+			out = append(out, s[i])
+		}
 	}
-	return string(runes[:max-1]) + "…"
+	return string(out)
 }
 
 // sendWithKeyboard — klaviatura bilan xabar
 func sendWithKeyboard(bot *tgbotapi.BotAPI, chatID int64, text string, kb interface{}) {
-	msg := tgbotapi.NewMessage(chatID, truncate(text, tgMaxText))
-	msg.ParseMode = "HTML"
+	var msgText, parseMode string
+	runes := []rune(text)
+	if len(runes) <= tgMaxText {
+		msgText = text
+		parseMode = "HTML"
+	} else {
+		// Strip HTML then truncate — prevents unclosed tag errors
+		plain := stripHTML(text)
+		pr := []rune(plain)
+		if len(pr) > tgMaxText-1 {
+			msgText = string(pr[:tgMaxText-1]) + "…"
+		} else {
+			msgText = plain
+		}
+		parseMode = ""
+	}
+	msg := tgbotapi.NewMessage(chatID, msgText)
+	msg.ParseMode = parseMode
 	switch k := kb.(type) {
 	case tgbotapi.InlineKeyboardMarkup:
 		msg.ReplyMarkup = k

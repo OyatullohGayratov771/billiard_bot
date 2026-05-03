@@ -186,7 +186,7 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 
 	err := runFFmpeg(outPath, timeout, []string{
 		"-loglevel", "warning",
-		"-fflags", "+genpts",
+		"-fflags", "+genpts+igndts",
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
@@ -194,7 +194,7 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 		"-threads", "2",
 		"-c:a", "aac", "-ar", "44100", "-b:a", "64k",
 		"-avoid_negative_ts", "make_zero",
-		"-max_muxing_queue_size", "1024",
+		"-max_muxing_queue_size", "9999",
 		"-movflags", "+faststart",
 		"-y", outPath,
 	})
