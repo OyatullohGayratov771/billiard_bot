@@ -70,7 +70,7 @@ func runFFmpeg(outPath string, timeout time.Duration, args []string) error {
 
 	if err := cmd.Run(); err != nil {
 		os.Remove(outPath)
-		out := strings.TrimSpace(stderr.String())
+		out := maskRTSP(strings.TrimSpace(stderr.String()))
 		if ctx.Err() != nil {
 			return fmt.Errorf("timeout(%v): %s", timeout, out)
 		}
