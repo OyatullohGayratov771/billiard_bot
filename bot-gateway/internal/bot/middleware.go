@@ -148,9 +148,19 @@ func send(bot *tgbotapi.BotAPI, chatID int64, text string) {
 	}
 }
 
+const tgMaxText = 4096
+
+func truncate(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+	return string(runes[:max-1]) + "…"
+}
+
 // sendWithKeyboard — klaviatura bilan xabar
 func sendWithKeyboard(bot *tgbotapi.BotAPI, chatID int64, text string, kb interface{}) {
-	msg := tgbotapi.NewMessage(chatID, text)
+	msg := tgbotapi.NewMessage(chatID, truncate(text, tgMaxText))
 	msg.ParseMode = "HTML"
 	switch k := kb.(type) {
 	case tgbotapi.InlineKeyboardMarkup:

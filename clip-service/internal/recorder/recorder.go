@@ -194,6 +194,7 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 		"-threads", "2",
 		"-c:a", "aac", "-ar", "44100", "-b:a", "64k",
 		"-avoid_negative_ts", "make_zero",
+		"-max_muxing_queue_size", "1024",
 		"-movflags", "+faststart",
 		"-y", outPath,
 	})
@@ -222,6 +223,7 @@ func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string
 		"-threads", "2",
 		"-c:a", "aac", "-ar", "44100", "-b:a", "64k",
 		"-avoid_negative_ts", "make_zero",
+		"-max_muxing_queue_size", "1024",
 		"-movflags", "+faststart",
 		"-y", outPath,
 	)
