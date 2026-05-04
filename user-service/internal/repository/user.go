@@ -56,6 +56,11 @@ func (r *UserRepo) SavePhone(tgID int64, phone string) error {
 	return err
 }
 
+func (r *UserRepo) UpdateName(tgID int64, firstName string) error {
+	_, err := r.db.Exec(`UPDATE users SET first_name = $1 WHERE telegram_id = $2`, firstName, tgID)
+	return err
+}
+
 func (r *UserRepo) SetRole(tgID int64, role string, branchID *int64) error {
 	_, err := r.db.Exec(
 		`UPDATE users SET role = $1, branch_id = $2 WHERE telegram_id = $3`,

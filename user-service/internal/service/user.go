@@ -68,6 +68,10 @@ func (s *UserService) SavePhone(tgID int64, phone string) error {
 	return s.repo.SavePhone(tgID, phone)
 }
 
+func (s *UserService) UpdateName(tgID int64, firstName string) error {
+	return s.repo.UpdateName(tgID, firstName)
+}
+
 func (s *UserService) isSuperadmin(tgID int64) bool {
 	for _, id := range s.superadmins {
 		if id == tgID {

@@ -300,6 +300,26 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 
 	switch state.State {
 
+	// --- Profil: ism o'zgartirish ---
+	case StateEditName:
+		name := safeText(msg.Text, 64)
+		if name == "" {
+			send(bot, chatID, "❗ Ism bo'sh bo'lmasin.")
+			return
+		}
+		h.states.Clear(tgID)
+		if err := h.userSvc.UpdateName(tgID, name); err != nil {
+			send(bot, chatID, fmt.Sprintf("❌ Saqlashda xatolik: %v", err))
+			return
+		}
+		h.userCache.Invalidate(tgID)
+		updated, err := h.userSvc.GetByTelegramID(tgID)
+		if err != nil {
+			send(bot, chatID, fmt.Sprintf("✅ Ism saqlandi: <b>%s</b>", name))
+			return
+		}
+		h.showMyProfile(bot, chatID, updated)
+
 	// --- Klip to'lov: screenshot ---
 	case StateClipPayment:
 		if msg.Photo == nil || len(msg.Photo) == 0 {
@@ -519,7 +539,17 @@ func (h *Handler) showMyProfile(bot *tgbotapi.BotAPI, chatID int64, user *models
 		config.AppConfig.SupportUsername,
 	)
 
-	send(bot, chatID, text)
+	kb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✏️ Ismni o'zgartirish", "profile:edit_name"),
+		),
+	)
+	sendWithKeyboard(bot, chatID, text, kb)
+}
+
+func (h *Handler) cbProfileEditName(bot *tgbotapi.BotAPI, chatID int64, tgID int64) {
+	h.states.Set(tgID, StateEditName)
+	send(bot, chatID, "✏️ Yangi ismingizni kiriting:\n\n<i>Bekor qilish uchun /cancel</i>")
 }
 
 // ===================== ADMINLARGA XABAR =====================

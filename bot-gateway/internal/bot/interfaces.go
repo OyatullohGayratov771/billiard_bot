@@ -14,6 +14,7 @@ type UserService interface {
 	ListStaff() ([]*models.User, error)
 	SetRole(adminTgID, targetTgID int64, role string, branchID *int64) error
 	SavePhone(tgID int64, phone string) error
+	UpdateName(tgID int64, firstName string) error
 }
 
 // TableService — table-service bilan ishlash interfeysi

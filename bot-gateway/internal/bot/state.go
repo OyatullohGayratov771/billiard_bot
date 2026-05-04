@@ -35,6 +35,9 @@ const (
 	StateTrnDateTime   = "trn:datetime"
 	StateTrnPrice      = "trn:price"
 	StateTrnMaxPlayers = "trn:max_players"
+
+	// Profil tahrirlash
+	StateEditName = "profile:edit_name"
 )
 
 // UserState — bitta foydalanuvchining joriy holati

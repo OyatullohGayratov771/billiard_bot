@@ -279,6 +279,11 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		deleteMessage(bot, chatID, msgID)
 		h.states.SetData(tgID, "menu_msg_id", 0)
 
+	case "profile":
+		if arg1 == "edit_name" {
+			h.cbProfileEditName(bot, chatID, tgID)
+		}
+
 	default:
 		log.Printf("unknown callback: %s", data)
 	}

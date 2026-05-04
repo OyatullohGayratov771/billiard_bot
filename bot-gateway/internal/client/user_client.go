@@ -61,6 +61,11 @@ func (c *UserClient) SavePhone(tgID int64, phone string) error {
 	return c.putNoResponse(fmt.Sprintf("/users/tg/%d/phone", tgID), body)
 }
 
+func (c *UserClient) UpdateName(tgID int64, firstName string) error {
+	body, _ := json.Marshal(map[string]any{"first_name": firstName})
+	return c.putNoResponse(fmt.Sprintf("/users/tg/%d/name", tgID), body)
+}
+
 func (c *UserClient) SetRole(adminTgID, targetTgID int64, role string, branchID *int64) error {
 	body, _ := json.Marshal(map[string]any{
 		"admin_tg_id": adminTgID,

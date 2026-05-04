@@ -23,6 +23,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /users/all", h.listAll)
 	mux.HandleFunc("PUT /users/tg/{id}/role", h.setRole)
 	mux.HandleFunc("PUT /users/tg/{id}/phone", h.savePhone)
+	mux.HandleFunc("PUT /users/tg/{id}/name", h.updateName)
 	mux.HandleFunc("GET /health", h.health)
 }
 
@@ -124,6 +125,27 @@ func (h *Handler) savePhone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.userSvc.SavePhone(tgID, req.Phone); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+// PUT /users/tg/{id}/name
+func (h *Handler) updateName(w http.ResponseWriter, r *http.Request) {
+	tgID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+	var req struct {
+		FirstName string `json:"first_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.FirstName == "" {
+		writeError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	if err := h.userSvc.UpdateName(tgID, req.FirstName); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
