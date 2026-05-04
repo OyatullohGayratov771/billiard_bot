@@ -30,6 +30,18 @@ func maskRTSP(url string) string {
 
 // ===================== START =====================
 
+func (h *Handler) requirePhone(bot *tgbotapi.BotAPI, chatID int64) {
+	kb := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButtonContact("📱 Telefon raqamni ulashish"),
+		),
+	)
+	kb.ResizeKeyboard = true
+	kb.OneTimeKeyboard = true
+	sendWithKeyboard(bot, chatID,
+		"📱 Davom etish uchun telefon raqamingizni ulashing:", kb)
+}
+
 func (h *Handler) cmdStart(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
 	// Telefon raqami yo'q bo'lsa — oldin so'raymiz
 	if user.Phone == "" {

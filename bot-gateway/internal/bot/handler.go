@@ -71,9 +71,15 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 		phone := msg.Contact.PhoneNumber
 		if err := h.userSvc.SavePhone(tgID, phone); err == nil {
 			user.Phone = phone
-			h.userCache.Invalidate(tgID) // cacheni yangilash uchun
+			h.userCache.Invalidate(tgID)
 		}
 		h.showMainMenu(bot, chatID, user)
+		return
+	}
+
+	// Telefon raqami bo'lmasa — barcha amallar bloklanadi
+	if user.Phone == "" {
+		h.requirePhone(bot, chatID)
 		return
 	}
 
