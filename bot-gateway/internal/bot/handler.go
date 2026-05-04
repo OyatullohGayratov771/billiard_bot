@@ -292,8 +292,16 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.states.SetData(tgID, "menu_msg_id", 0)
 
 	case "profile":
-		if arg1 == "edit_name" {
-			h.cbProfileEditName(bot, chatID, tgID)
+		switch arg1 {
+		case "edit_name":
+			h.cbProfileEditName(bot, chatID, msgID, tgID)
+		case "cancel_edit":
+			h.states.Clear(tgID)
+			user2 := h.authUser(tgID)
+			if user2 != nil {
+				kb := profileKeyboard()
+				editMessage(bot, chatID, msgID, profileText(user2), &kb)
+			}
 		}
 
 	default:

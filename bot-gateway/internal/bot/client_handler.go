@@ -307,6 +307,7 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 			send(bot, chatID, "❗ Ism bo'sh bo'lmasin.")
 			return
 		}
+		profileMsgID, _ := h.states.GetInt64(tgID, "profile_msg_id")
 		h.states.Clear(tgID)
 		if err := h.userSvc.UpdateName(tgID, name); err != nil {
 			send(bot, chatID, fmt.Sprintf("❌ Saqlashda xatolik: %v", err))
@@ -318,7 +319,13 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 			send(bot, chatID, fmt.Sprintf("✅ Ism saqlandi: <b>%s</b>", name))
 			return
 		}
-		h.showMyProfile(bot, chatID, updated)
+		h.userCache.set(tgID, updated)
+		if profileMsgID > 0 {
+			kb := profileKeyboard()
+			editMessage(bot, chatID, int(profileMsgID), profileText(updated), &kb)
+		} else {
+			h.showMyProfile(bot, chatID, updated)
+		}
 
 	// --- Klip to'lov: screenshot ---
 	case StateClipPayment:
@@ -505,23 +512,20 @@ func (h *Handler) cbShowMyClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID i
 
 // ===================== AKKAUNT =====================
 
-func (h *Handler) showMyProfile(bot *tgbotapi.BotAPI, chatID int64, user *models.User) {
+func profileText(user *models.User) string {
 	phone := user.Phone
 	if phone == "" {
 		phone = "📵 Ulashilmagan"
 	}
-
 	username := "—"
 	if user.Username != "" {
 		username = "@" + user.Username
 	}
-
 	since := "—"
 	if !user.CreatedAt.IsZero() {
 		since = user.CreatedAt.Format("02.01.2006")
 	}
-
-	text := fmt.Sprintf(
+	return fmt.Sprintf(
 		"👤 <b>Mening akkaunt</b>\n\n"+
 			"━━━━━━━━━━━━━━━━━━━\n"+
 			"🧑 Ism: <b>%s</b>\n"+
@@ -531,25 +535,41 @@ func (h *Handler) showMyProfile(bot *tgbotapi.BotAPI, chatID int64, user *models
 			"📅 A'zo bo'lgan: %s\n"+
 			"━━━━━━━━━━━━━━━━━━━\n\n"+
 			"❓ Savolingiz bo'lsa: %s",
-		user.DisplayName(),
-		username,
-		phone,
-		user.TelegramID,
-		since,
+		user.DisplayName(), username, phone, user.TelegramID, since,
 		config.AppConfig.SupportUsername,
 	)
+}
 
-	kb := tgbotapi.NewInlineKeyboardMarkup(
+func profileKeyboard() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("✏️ Ismni o'zgartirish", "profile:edit_name"),
 		),
 	)
-	sendWithKeyboard(bot, chatID, text, kb)
 }
 
-func (h *Handler) cbProfileEditName(bot *tgbotapi.BotAPI, chatID int64, tgID int64) {
+func (h *Handler) showMyProfile(bot *tgbotapi.BotAPI, chatID int64, user *models.User) {
+	kb := profileKeyboard()
+	sendWithKeyboard(bot, chatID, profileText(user), kb)
+}
+
+func (h *Handler) cbProfileEditName(bot *tgbotapi.BotAPI, chatID int64, msgID int, tgID int64) {
+	user := h.authUser(tgID)
+	currentName := "—"
+	if user != nil {
+		currentName = user.DisplayName()
+	}
 	h.states.Set(tgID, StateEditName)
-	send(bot, chatID, "✏️ Yangi ismingizni kiriting:\n\n<i>Bekor qilish uchun /cancel</i>")
+	h.states.SetData(tgID, "profile_msg_id", int64(msgID))
+
+	kb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("❌ Bekor qilish", "profile:cancel_edit"),
+		),
+	)
+	editMessage(bot, chatID, msgID,
+		fmt.Sprintf("✏️ <b>Ism o'zgartirish</b>\n\nHozirgi: <b>%s</b>\n\nYangi ismingizni yozing:", currentName),
+		&kb)
 }
 
 // ===================== ADMINLARGA XABAR =====================

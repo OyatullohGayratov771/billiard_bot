@@ -23,9 +23,7 @@ func (r *UserRepo) Upsert(tgID int64, username, firstName, lastName string) (*mo
 		INSERT INTO users (telegram_id, username, first_name, last_name)
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (telegram_id) DO UPDATE
-		  SET username   = EXCLUDED.username,
-		      first_name = EXCLUDED.first_name,
-		      last_name  = EXCLUDED.last_name
+		  SET username = EXCLUDED.username
 		RETURNING id, telegram_id, username, first_name, last_name, phone,
 		          role, branch_id, is_active, created_at
 	`, tgID, username, firstName, lastName).Scan(
