@@ -102,6 +102,7 @@ services:
       DATABASE_DSN: "host=postgres port=5432 user=${DB_USER:-postgres} password=${DB_PASSWORD:-postgres} dbname=${DB_NAME:-billiard_bot} sslmode=disable"
       CLIP_SERVICE_PORT: "8083"
       CLIPS_DIR: "/app/clips"
+      TZ: Asia/Tashkent
     expose:
       - "8083"
     volumes:
@@ -173,6 +174,7 @@ services:
       TOURNAMENT_SERVICE_URL: "http://tournament-service:8084"
       TV_BASE_URL: "${TV_BASE_URL:-}"
       INTERNAL_TOKEN: "${INTERNAL_TOKEN}"
+      TZ: Asia/Tashkent
     volumes:
       - clips_data:/app/clips
     security_opt:

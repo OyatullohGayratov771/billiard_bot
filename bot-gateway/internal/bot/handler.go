@@ -144,6 +144,12 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		return
 	}
 
+	if user.Phone == "" && !user.IsStaff() {
+		answerCallback(bot, cb.ID, "📱 Avval telefon raqamingizni ulashing")
+		h.requirePhone(bot, chatID)
+		return
+	}
+
 	answerCallback(bot, cb.ID, "")
 
 	parts := strings.SplitN(data, ":", 3)

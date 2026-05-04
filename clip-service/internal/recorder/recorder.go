@@ -213,7 +213,7 @@ func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string
 	outPath := r.ClipPath(clipID)
 	args := []string{
 		"-loglevel", "warning",
-		"-fflags", "+genpts",
+		"-fflags", "+genpts+igndts",
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 	}

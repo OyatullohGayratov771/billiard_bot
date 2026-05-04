@@ -337,8 +337,8 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 		startStr, _ := h.states.GetString(tgID, "start_time")
 		endStr, _ := h.states.GetString(tgID, "end_time")
 
-		startTime, _ := time.Parse("02.01.2006 15:04", startStr)
-		endTime, _ := time.Parse("02.01.2006 15:04", endStr)
+		startTime, _ := time.ParseInLocation("02.01.2006 15:04", startStr, time.Local)
+		endTime, _ := time.ParseInLocation("02.01.2006 15:04", endStr, time.Local)
 
 		cr, err := h.clipSvc.CreateRequest(models.ClipRequestInput{
 			ClientTgID: tgID,
