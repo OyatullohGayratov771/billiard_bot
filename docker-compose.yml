@@ -135,6 +135,7 @@ services:
       DATABASE_DSN: "host=postgres port=5432 user=${DB_USER:-postgres} password=${DB_PASSWORD:-postgres} dbname=${DB_NAME:-billiard_bot} sslmode=disable"
       TOURNAMENT_SERVICE_PORT: "8084"
       INTERNAL_TOKEN: "${INTERNAL_TOKEN}"
+      TZ: Asia/Tashkent
     expose:
       - "8084"
     security_opt:

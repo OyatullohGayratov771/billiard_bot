@@ -383,8 +383,8 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 				"⏳ Admin tekshirib, klipingizni tayyorlaydi\n\n"+
 				"📲 <i>Klip tayyor bo'lgach, shu yerga yuboriladi!</i>",
 			cr.BranchName, cr.TableNum,
-			cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"), durMin,
-			cr.StartTime.Format("02.01.2006"),
+			cr.StartTime.In(time.Local).Format("15:04"), cr.EndTime.In(time.Local).Format("15:04"), durMin,
+			cr.StartTime.In(time.Local).Format("02.01.2006"),
 		))
 
 		// Adminlarga xabar (screenshot bilan)
@@ -480,13 +480,13 @@ func (h *Handler) showMyClips(bot *tgbotapi.BotAPI, chatID int64, tgID int64) {
 		sb.WriteString(fmt.Sprintf(
 			"%s %s  %d-stol\n   🕐 %s – %s%s\n\n",
 			statusText(c.Status), c.BranchName, c.TableNum,
-			c.StartTime.Format("02.01.2006 15:04"),
-			c.EndTime.Format("15:04"),
+			c.StartTime.In(time.Local).Format("02.01.2006 15:04"),
+			c.EndTime.In(time.Local).Format("15:04"),
 			noteStr,
 		))
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(
-				fmt.Sprintf("%s %d-stol • %s", c.BranchName, c.TableNum, c.StartTime.Format("02.01 15:04")),
+				fmt.Sprintf("%s %d-stol • %s", c.BranchName, c.TableNum, c.StartTime.In(time.Local).Format("02.01 15:04")),
 				fmt.Sprintf("my_clip_detail:%d", c.ID),
 			),
 		))
@@ -517,8 +517,8 @@ func (h *Handler) cbShowMyClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID i
 			"🕐 Vaqt: %s – %s\n"+
 			"📊 Holat: <b>%s</b>%s",
 		cr.BranchName, cr.TableNum,
-		cr.StartTime.Format("02.01.2006 15:04"),
-		cr.EndTime.Format("15:04"),
+		cr.StartTime.In(time.Local).Format("02.01.2006 15:04"),
+		cr.EndTime.In(time.Local).Format("15:04"),
 		statusText(cr.Status), noteStr,
 	)
 
@@ -617,8 +617,8 @@ func (h *Handler) notifyAdminsNewClip(bot *tgbotapi.BotAPI, cr *models.ClipReque
 		cr.ID,
 		cr.ClientName, clientPhone,
 		cr.BranchName, cr.TableNum,
-		cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"), durMin,
-		cr.StartTime.Format("02.01.2006"),
+		cr.StartTime.In(time.Local).Format("15:04"), cr.EndTime.In(time.Local).Format("15:04"), durMin,
+		cr.StartTime.In(time.Local).Format("02.01.2006"),
 	)
 
 	kb := tgbotapi.NewInlineKeyboardMarkup(

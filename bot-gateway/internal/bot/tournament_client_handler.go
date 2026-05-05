@@ -3,6 +3,7 @@ package bot
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"bot-gateway/internal/models"
 
@@ -27,7 +28,7 @@ func (h *Handler) showClientTournamentList(bot *tgbotapi.BotAPI, chatID int64, t
 		for _, t := range tournaments {
 			label := fmt.Sprintf("🏆 %s — %s (%d/%d)",
 				t.Name,
-				t.ScheduledAt.Format("02.01 15:04"),
+				t.ScheduledAt.In(time.Local).Format("02.01 15:04"),
 				t.ApprovedCount, t.MaxPlayers,
 			)
 			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
@@ -69,7 +70,7 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		t.Name, lockIcon,
 		t.BranchName,
 		tableInfo,
-		t.ScheduledAt.Format("02.01.2006 15:04"),
+		t.ScheduledAt.In(time.Local).Format("02.01.2006 15:04"),
 		t.ApprovedCount, t.MaxPlayers,
 		tournamentStatusText(t.Status),
 	)
@@ -236,7 +237,7 @@ func (h *Handler) showMyTournaments(bot *tgbotapi.BotAPI, chatID int64, tgID int
 			name = fmt.Sprintf("Turnir #%d", r.TournamentID)
 		}
 		sb.WriteString(fmt.Sprintf("%s %s — %s\n",
-			icon, name, r.RegisteredAt.Format("02.01.2006")))
+			icon, name, r.RegisteredAt.In(time.Local).Format("02.01.2006")))
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%s %s", icon, name),
@@ -264,7 +265,7 @@ func (h *Handler) showTournamentHistory(bot *tgbotapi.BotAPI, chatID int64) {
 			continue
 		}
 		icon := tournamentStatusIcon(t.Status)
-		label := fmt.Sprintf("%s %s — %s", icon, t.Name, t.ScheduledAt.Format("02.01.2006"))
+		label := fmt.Sprintf("%s %s — %s", icon, t.Name, t.ScheduledAt.In(time.Local).Format("02.01.2006"))
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(label, fmt.Sprintf("trn_detail:%d", t.ID)),
 		))
