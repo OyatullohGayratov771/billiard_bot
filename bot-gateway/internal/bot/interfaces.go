@@ -29,12 +29,12 @@ type TableService interface {
 
 // TournamentService — tournament-service bilan ishlash interfeysi
 type TournamentService interface {
-	CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64) (*models.Tournament, error)
+	CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string) (*models.Tournament, error)
 	ListTournaments(status string) ([]*models.Tournament, error)
 	GetTournament(id int64) (*models.Tournament, error)
 	CancelTournament(id int64) error
 	UpdateTournament(id int64, name string, scheduledAt time.Time, maxPlayers int) error
-	Register(tournamentID, userTgID int64, userName string) (*models.TournamentRegistration, error)
+	Register(tournamentID, userTgID int64, userName, joinCode string) (*models.TournamentRegistration, error)
 	RegisterManual(tournamentID int64, playerName string) (*models.TournamentRegistration, error)
 	ListRegistrations(tournamentID int64) ([]*models.TournamentRegistration, error)
 	ApproveRegistration(tournamentID, regID int64) error

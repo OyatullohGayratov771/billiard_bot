@@ -208,11 +208,17 @@ func answerCallback(bot *tgbotapi.BotAPI, callbackID, text string) {
 	}
 }
 
-// deleteMessage — xabarni o'chiradi (xato bo'lsa log qiladi)
+// deleteMessage — xabarni o'chiradi (allaqachon yo'q bo'lsa jim o'tkazadi)
 func deleteMessage(bot *tgbotapi.BotAPI, chatID int64, msgID int) {
+	if msgID == 0 {
+		return
+	}
 	del := tgbotapi.NewDeleteMessage(chatID, msgID)
 	if _, err := bot.Request(del); err != nil {
-		log.Printf("deleteMessage error: %v", err)
+		if !strings.Contains(err.Error(), "message to delete not found") &&
+			!strings.Contains(err.Error(), "message can't be deleted") {
+			log.Printf("deleteMessage error: %v", err)
+		}
 	}
 }
 

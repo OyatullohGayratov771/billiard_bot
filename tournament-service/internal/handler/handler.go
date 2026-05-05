@@ -73,13 +73,14 @@ func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) createTournament(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Name        string  `json:"name"`
-		BranchID    int64   `json:"branch_id"`
-		TableID     *int64  `json:"table_id"`
-		ScheduledAt string  `json:"scheduled_at"`
-		Price       int64   `json:"price"`
-		MaxPlayers  int     `json:"max_players"`
-		AdminTgID   int64   `json:"admin_tg_id"`
+		Name        string `json:"name"`
+		BranchID    int64  `json:"branch_id"`
+		TableID     *int64 `json:"table_id"`
+		ScheduledAt string `json:"scheduled_at"`
+		Price       int64  `json:"price"`
+		MaxPlayers  int    `json:"max_players"`
+		AdminTgID   int64  `json:"admin_tg_id"`
+		JoinCode    string `json:"join_code"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, 400, "invalid request")
@@ -90,7 +91,7 @@ func (h *Handler) createTournament(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "invalid scheduled_at (RFC3339)")
 		return
 	}
-	tournament, err := h.svc.CreateTournament(req.Name, req.BranchID, req.TableID, t, req.Price, req.MaxPlayers, req.AdminTgID)
+	tournament, err := h.svc.CreateTournament(req.Name, req.BranchID, req.TableID, t, req.Price, req.MaxPlayers, req.AdminTgID, req.JoinCode)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return
@@ -171,12 +172,13 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		UserTgID int64  `json:"user_tg_id"`
 		UserName string `json:"user_name"`
+		JoinCode string `json:"join_code"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, 400, "invalid request")
 		return
 	}
-	reg, err := h.svc.Register(id, req.UserTgID, req.UserName)
+	reg, err := h.svc.Register(id, req.UserTgID, req.UserName, req.JoinCode)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return

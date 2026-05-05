@@ -55,15 +55,18 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		tableInfo = fmt.Sprintf("%d-stol", t.TableNum)
 	}
 
+	lockIcon := ""
+	if t.JoinCode != "" {
+		lockIcon = " 🔒"
+	}
 	text := fmt.Sprintf(
-		"🏆 <b>%s</b>\n\n"+
+		"🏆 <b>%s</b>%s\n\n"+
 			"📍 Filial: %s\n"+
 			"🎱 Stol: %s\n"+
 			"📅 Sana: <b>%s</b>\n"+
 			"👥 O'rinlar: <b>%d / %d</b>\n"+
-			"📊 Holat: %s\n"+
-			"💸 Qatnashish: <b>Bepul</b>",
-		t.Name,
+			"📊 Holat: %s",
+		t.Name, lockIcon,
 		t.BranchName,
 		tableInfo,
 		t.ScheduledAt.Format("02.01.2006 15:04"),
@@ -77,7 +80,10 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 
 	switch t.Status {
 	case models.TournamentStatusRegistration:
-		if reg == nil {
+		if reg == nil || reg.Status == models.RegStatusRejected {
+			if reg != nil && reg.Status == models.RegStatusRejected {
+				text += "\n\n❌ <i>Sizning so'rovingiz rad etildi.</i>"
+			}
 			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("✅ Ro'yxatdan o'tish",
 					fmt.Sprintf("trn_register:%d", trnID)),
@@ -88,18 +94,14 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 				text += "\n\n⏳ <i>Sizning so'rovingiz tekshirilmoqda...</i>"
 			case models.RegStatusApproved:
 				text += "\n\n✅ <i>Siz ro'yxatdan o'tgansiz!</i>"
-			case models.RegStatusRejected:
-				text += "\n\n❌ <i>Sizning so'rovingiz rad etildi.</i>"
 			}
 		}
 
 	case models.TournamentStatusInProgress:
-		if reg != nil && reg.Status == models.RegStatusApproved {
-			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("🏆 Bracket ko'rish",
-					fmt.Sprintf("trn_bracket:%d", trnID)),
-			))
-		}
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🏆 Bracket ko'rish",
+				fmt.Sprintf("trn_bracket:%d", trnID)),
+		))
 
 	case models.TournamentStatusFinished:
 		text += "\n\n🏆 <i>Turnir yakunlandi!</i>"
@@ -127,9 +129,45 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 func (h *Handler) cbClientRegister(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, trnIDStr string) {
 	trnID := mustParseInt64(trnIDStr)
 
-	_, err := h.tournamentSvc.Register(trnID, user.TelegramID, user.DisplayName())
+	t, err := h.tournamentSvc.GetTournament(trnID)
 	if err != nil {
-		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		send(bot, chatID, "❌ Turnir topilmadi.")
+		return
+	}
+
+	if t.JoinCode != "" {
+		h.states.Set(user.TelegramID, StateTrnJoinCode)
+		h.states.SetData(user.TelegramID, "trn_join_id", trnID)
+		kb := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("❌ Bekor", fmt.Sprintf("trn_detail:%d", trnID)),
+			),
+		)
+		editMessage(bot, chatID, msgID,
+			"🔑 <b>Bu turnir maxfiy kod bilan himoyalangan.</b>\n\nKodni kiriting:", &kb)
+		return
+	}
+
+	h.finishTrnRegister(bot, chatID, msgID, user, trnID, "")
+}
+
+func (h *Handler) handleTrnJoinCodeInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
+	tgID := msg.From.ID
+	chatID := msg.Chat.ID
+	code := strings.TrimSpace(msg.Text)
+	trnID, _ := h.states.GetInt64(tgID, "trn_join_id")
+	h.states.Clear(tgID)
+	h.finishTrnRegister(bot, chatID, 0, user, trnID, code)
+}
+
+func (h *Handler) finishTrnRegister(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, trnID int64, joinCode string) {
+	_, err := h.tournamentSvc.Register(trnID, user.TelegramID, user.DisplayName(), joinCode)
+	if err != nil {
+		if msgID > 0 {
+			send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		} else {
+			send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		}
 		return
 	}
 
@@ -153,19 +191,24 @@ func (h *Handler) cbClientRegister(bot *tgbotapi.BotAPI, chatID int64, msgID int
 		}
 	}
 
+	confirmText := fmt.Sprintf(
+		"✅ <b>So'rovingiz yuborildi!</b>\n\n"+
+			"🏆 %s\n\n"+
+			"⏳ Admin tasdiqlashini kuting.\n"+
+			"Natija haqida sizga xabar beriladi.",
+		trnName,
+	)
 	kb := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🔙 Turnirga qaytish",
 				fmt.Sprintf("trn_detail:%d", trnID)),
 		),
 	)
-	editMessage(bot, chatID, msgID, fmt.Sprintf(
-		"✅ <b>So'rovingiz yuborildi!</b>\n\n"+
-			"🏆 %s\n\n"+
-			"⏳ Admin tasdiqlashini kuting.\n"+
-			"Natija haqida sizga xabar beriladi.",
-		trnName,
-	), &kb)
+	if msgID > 0 {
+		editMessage(bot, chatID, msgID, confirmText, &kb)
+	} else {
+		sendWithKeyboard(bot, chatID, confirmText, kb)
+	}
 }
 
 func (h *Handler) showMyTournaments(bot *tgbotapi.BotAPI, chatID int64, tgID int64) {

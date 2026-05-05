@@ -39,6 +39,12 @@ const (
 	// Turnirga qo'lda o'yinchi qo'shish (admin)
 	StateTrnAddPlayer = "trn:add_player"
 
+	// Turnir yaratishda maxfiy kod o'rnatish (admin)
+	StateTrnSetCode = "trn:set_code"
+
+	// Turnirga kirish uchun maxfiy kod kiritish (client)
+	StateTrnJoinCode = "trn:join_code"
+
 	// Turnir tahrirlash oqimi (admin)
 	StateTrnEditName = "trn:edit_name"
 	StateTrnEditDate = "trn:edit_date"

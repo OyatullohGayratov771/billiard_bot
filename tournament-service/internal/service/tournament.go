@@ -24,7 +24,7 @@ func New(db *sql.DB, repo *repository.Repo) *Service {
 
 // ===================== TOURNAMENTS =====================
 
-func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64) (*models.Tournament, error) {
+func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string) (*models.Tournament, error) {
 	if name == "" {
 		return nil, errors.New("turnir nomi bo'sh bo'lmasin")
 	}
@@ -37,7 +37,7 @@ func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, 
 	if scheduledAt.Before(time.Now()) {
 		return nil, errors.New("turnir sanasi o'tib ketgan")
 	}
-	return s.repo.CreateTournament(name, branchID, tableID, scheduledAt, price, maxPlayers, adminTgID)
+	return s.repo.CreateTournament(name, branchID, tableID, scheduledAt, price, maxPlayers, adminTgID, joinCode)
 }
 
 func (s *Service) GetTournament(id int64) (*models.Tournament, error) {
@@ -138,7 +138,7 @@ func (s *Service) RegisterManual(tournamentID int64, playerName string) (*models
 	return s.repo.RegisterManual(tournamentID, playerName)
 }
 
-func (s *Service) Register(tournamentID, userTgID int64, userName string) (*models.Registration, error) {
+func (s *Service) Register(tournamentID, userTgID int64, userName, joinCode string) (*models.Registration, error) {
 	t, err := s.repo.GetTournament(tournamentID)
 	if err != nil {
 		return nil, errors.New("turnir topilmadi")
@@ -148,6 +148,9 @@ func (s *Service) Register(tournamentID, userTgID int64, userName string) (*mode
 	}
 	if t.ApprovedCount >= t.MaxPlayers {
 		return nil, fmt.Errorf("turnir to'lgan (%d/%d)", t.ApprovedCount, t.MaxPlayers)
+	}
+	if t.JoinCode != "" && joinCode != t.JoinCode {
+		return nil, errors.New("noto'g'ri maxfiy kod")
 	}
 	return s.repo.Register(tournamentID, userTgID, userName)
 }

@@ -173,6 +173,7 @@ type Tournament struct {
 	Status        string    `json:"status"`
 	CreatedBy     int64     `json:"created_by"`
 	CreatedAt     time.Time `json:"created_at"`
+	JoinCode      string    `json:"join_code"`
 	BranchName    string    `json:"branch_name"`
 	TableNum      int       `json:"table_num"`
 	ApprovedCount int       `json:"approved_count"`

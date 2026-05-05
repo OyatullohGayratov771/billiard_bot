@@ -19,10 +19,23 @@ func New(dsn string) (*sql.DB, error) {
 	db.SetMaxIdleConns(3)
 	log.Println("✅ tournament-service: PostgreSQL ulandi")
 
+	if err := alterMigrate(db); err != nil {
+		return nil, err
+	}
 	if err := migrate(db); err != nil {
 		return nil, err
 	}
 	return db, nil
+}
+
+func alterMigrate(db *sql.DB) error {
+	_, err := db.Exec(`
+		ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS join_code TEXT NOT NULL DEFAULT '';
+	`)
+	if err != nil {
+		log.Printf("❌ alterMigrate xatosi: %v", err)
+	}
+	return err
 }
 
 func migrate(db *sql.DB) error {

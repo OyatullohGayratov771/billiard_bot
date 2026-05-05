@@ -20,7 +20,7 @@ func NewTournamentClient(baseURL string, httpClient *http.Client, internalToken 
 	return &TournamentClient{baseURL: baseURL, http: httpClient, internalToken: internalToken}
 }
 
-func (c *TournamentClient) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64) (*models.Tournament, error) {
+func (c *TournamentClient) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string) (*models.Tournament, error) {
 	body, _ := json.Marshal(map[string]any{
 		"name":         name,
 		"branch_id":    branchID,
@@ -29,6 +29,7 @@ func (c *TournamentClient) CreateTournament(name string, branchID int64, tableID
 		"price":        price,
 		"max_players":  maxPlayers,
 		"admin_tg_id":  adminTgID,
+		"join_code":    joinCode,
 	})
 	var t models.Tournament
 	return &t, c.post("/tournaments", body, &t)
@@ -61,8 +62,12 @@ func (c *TournamentClient) UpdateTournament(id int64, name string, scheduledAt t
 	return c.putNoResponse(fmt.Sprintf("/tournaments/%d", id), body)
 }
 
-func (c *TournamentClient) Register(tournamentID, userTgID int64, userName string) (*models.TournamentRegistration, error) {
-	body, _ := json.Marshal(map[string]any{"user_tg_id": userTgID, "user_name": userName})
+func (c *TournamentClient) Register(tournamentID, userTgID int64, userName, joinCode string) (*models.TournamentRegistration, error) {
+	body, _ := json.Marshal(map[string]any{
+		"user_tg_id": userTgID,
+		"user_name":  userName,
+		"join_code":  joinCode,
+	})
 	var reg models.TournamentRegistration
 	return &reg, c.post(fmt.Sprintf("/tournaments/%d/register", tournamentID), body, &reg)
 }

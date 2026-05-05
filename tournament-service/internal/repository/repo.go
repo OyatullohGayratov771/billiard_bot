@@ -20,14 +20,14 @@ func New(db *sql.DB) *Repo {
 
 // ===================== TOURNAMENTS =====================
 
-func (r *Repo) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, createdBy int64) (*models.Tournament, error) {
+func (r *Repo) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, createdBy int64, joinCode string) (*models.Tournament, error) {
 	t := &models.Tournament{}
 	err := r.db.QueryRow(`
-		INSERT INTO tournaments (name, branch_id, table_id, scheduled_at, price, max_players, created_by)
-		VALUES ($1,$2,$3,$4,$5,$6,$7)
-		RETURNING id, name, branch_id, table_id, scheduled_at, price, max_players, status, created_by, created_at`,
-		name, branchID, tableID, scheduledAt, price, maxPlayers, createdBy,
-	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.CreatedBy, &t.CreatedAt)
+		INSERT INTO tournaments (name, branch_id, table_id, scheduled_at, price, max_players, created_by, join_code)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+		RETURNING id, name, branch_id, table_id, scheduled_at, price, max_players, status, created_by, created_at, join_code`,
+		name, branchID, tableID, scheduledAt, price, maxPlayers, createdBy, joinCode,
+	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.CreatedBy, &t.CreatedAt, &t.JoinCode)
 	if err != nil {
 		return nil, err
 	}
@@ -38,9 +38,9 @@ func (r *Repo) CreateTournament(name string, branchID int64, tableID *int64, sch
 func (r *Repo) GetTournament(id int64) (*models.Tournament, error) {
 	t := &models.Tournament{}
 	err := r.db.QueryRow(`
-		SELECT id, name, branch_id, table_id, scheduled_at, price, max_players, status, created_by, created_at
+		SELECT id, name, branch_id, table_id, scheduled_at, price, max_players, status, created_by, created_at, join_code
 		FROM tournaments WHERE id=$1`, id,
-	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.CreatedBy, &t.CreatedAt)
+	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.CreatedBy, &t.CreatedAt, &t.JoinCode)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -52,7 +52,7 @@ func (r *Repo) GetTournament(id int64) (*models.Tournament, error) {
 }
 
 func (r *Repo) ListTournaments(status string) ([]*models.Tournament, error) {
-	q := `SELECT id, name, branch_id, table_id, scheduled_at, price, max_players, status, created_by, created_at
+	q := `SELECT id, name, branch_id, table_id, scheduled_at, price, max_players, status, created_by, created_at, join_code
 		  FROM tournaments`
 	var args []any
 	if status != "" {
@@ -70,7 +70,7 @@ func (r *Repo) ListTournaments(status string) ([]*models.Tournament, error) {
 	var list []*models.Tournament
 	for rows.Next() {
 		t := &models.Tournament{}
-		if err := rows.Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.CreatedBy, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.CreatedBy, &t.CreatedAt, &t.JoinCode); err != nil {
 			return nil, err
 		}
 		r.fillTournamentJoins(t)
@@ -120,7 +120,9 @@ func (r *Repo) Register(tournamentID, userTgID int64, userName string) (*models.
 	err := r.db.QueryRow(`
 		INSERT INTO tournament_registrations (tournament_id, user_tg_id, user_name)
 		VALUES ($1,$2,$3)
-		ON CONFLICT (tournament_id, user_tg_id) DO NOTHING
+		ON CONFLICT (tournament_id, user_tg_id) DO UPDATE
+		  SET status='pending', decided_at=NULL, user_name=EXCLUDED.user_name
+		  WHERE tournament_registrations.status='rejected'
 		RETURNING id, tournament_id, user_tg_id, user_name, status, registered_at, decided_at`,
 		tournamentID, userTgID, userName,
 	).Scan(&reg.ID, &reg.TournamentID, &reg.UserTgID, &reg.UserName, &reg.Status, &reg.RegisteredAt, &reg.DecidedAt)

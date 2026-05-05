@@ -713,29 +713,54 @@ func (h *Handler) handleTrnMaxPlayersInput(bot *tgbotapi.BotAPI, msg *tgbotapi.M
 		return
 	}
 
+	h.states.SetData(tgID, "trn_max_players", int64(maxPlayers))
+	h.states.Set(tgID, StateTrnSetCode)
+	send(bot, chatID,
+		"4️⃣ <b>Maxfiy kod (ixtiyoriy):</b>\n\n"+
+			"Turnirga faqat siz bergan kodni bilganlar kira oladi.\n\n"+
+			"Kod o'rnatmaslik uchun <code>-</code> yuboring.")
+}
+
+func (h *Handler) handleTrnSetCodeInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
+	tgID := msg.From.ID
+	chatID := msg.Chat.ID
+
+	raw := strings.TrimSpace(msg.Text)
+	joinCode := ""
+	if raw != "-" {
+		joinCode = safeText(raw, 32)
+	}
+
 	name, _ := h.states.GetString(tgID, "trn_name")
 	branchID, _ := h.states.GetInt64(tgID, "trn_branch_id")
+	maxVal, _ := h.states.GetInt64(tgID, "trn_max_players")
 	dtVal, _ := h.states.GetData(tgID, "trn_datetime")
-
 	h.states.Clear(tgID)
 
 	dt, _ := dtVal.(time.Time)
+	maxPlayers := int(maxVal)
 
-	t, err := h.tournamentSvc.CreateTournament(name, branchID, nil, dt, 0, maxPlayers, tgID)
+	t, err := h.tournamentSvc.CreateTournament(name, branchID, nil, dt, 0, maxPlayers, tgID, joinCode)
 	if err != nil {
 		send(bot, chatID, fmt.Sprintf("❌ %v", err))
 		return
 	}
 
+	codeInfo := "🔓 Kodsiz (ochiq)"
+	if t.JoinCode != "" {
+		codeInfo = fmt.Sprintf("🔑 Maxfiy kod: <code>%s</code>", t.JoinCode)
+	}
 	send(bot, chatID, fmt.Sprintf(
 		"✅ <b>Turnir yaratildi!</b>\n\n"+
 			"🏆 %s\n"+
 			"📅 %s\n"+
-			"👥 Max: %d ishtirokchi\n\n"+
+			"👥 Max: %d ishtirokchi\n"+
+			"%s\n\n"+
 			"Ro'yxatga olish boshlandi.",
 		t.Name,
 		t.ScheduledAt.Format("02.01.2006 15:04"),
 		t.MaxPlayers,
+		codeInfo,
 	))
 }
 

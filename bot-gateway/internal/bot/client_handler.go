@@ -436,6 +436,14 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 	case StateTrnAddPlayer:
 		h.handleTrnAddPlayerInput(bot, msg, user)
 
+	// --- Turnir yaratishda maxfiy kod ---
+	case StateTrnSetCode:
+		h.handleTrnSetCodeInput(bot, msg)
+
+	// --- Turnirga kirish uchun maxfiy kod ---
+	case StateTrnJoinCode:
+		h.handleTrnJoinCodeInput(bot, msg, user)
+
 	// --- Turnir tahrirlash FSM ---
 	case StateTrnEditName:
 		h.handleTrnEditNameInput(bot, msg)
