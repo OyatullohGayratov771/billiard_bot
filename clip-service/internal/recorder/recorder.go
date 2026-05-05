@@ -27,27 +27,26 @@ func (r *Recorder) ClipPath(clipID int64) string {
 	return filepath.Join(r.clipsDir, fmt.Sprintf("clip_%d.mp4", clipID))
 }
 
-// HikvisionPlaybackRTSP — NVR arxiv RTSP URL (Hikvision standart format).
-// NVR starttime/endtime parametrlarini mahalliy vaqt sifatida qabul qiladi (Z ni hisobga olmaydi).
+// HikvisionPlaybackRTSP — NVR arxiv RTSP URL (Hikvision standart format, UTC).
 func HikvisionPlaybackRTSP(user, pass, host string, port, channel int, startTime, endTime time.Time) string {
 	if port == 0 {
 		port = 554
 	}
 	return fmt.Sprintf(
-		"rtsp://%s:%s@%s:%d/Streaming/tracks/%d01?starttime=%s&endtime=%s",
+		"rtsp://%s:%s@%s:%d/Streaming/tracks/%d01?starttime=%sZ&endtime=%sZ",
 		user, pass, host, port, channel,
-		startTime.In(tashkentTZ).Format("20060102T150405"),
-		endTime.In(tashkentTZ).Format("20060102T150405"),
+		startTime.UTC().Format("20060102T150405"),
+		endTime.UTC().Format("20060102T150405"),
 	)
 }
 
 // PlaybackRTSP — mavjud live RTSP URL dan playback URL yasaydi (RTSPUrl stollar uchun).
 func PlaybackRTSP(liveURL string, startTime, endTime time.Time) string {
 	playback := strings.Replace(liveURL, "/Streaming/Channels/", "/Streaming/tracks/", 1)
-	return fmt.Sprintf("%s?starttime=%s&endtime=%s",
+	return fmt.Sprintf("%s?starttime=%sZ&endtime=%sZ",
 		playback,
-		startTime.In(tashkentTZ).Format("20060102T150405"),
-		endTime.In(tashkentTZ).Format("20060102T150405"),
+		startTime.UTC().Format("20060102T150405"),
+		endTime.UTC().Format("20060102T150405"),
 	)
 }
 
@@ -153,7 +152,7 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 	}
 
 	log.Printf("[klip#%d] start: kanal=%d %s→%s (%ds)",
-		clipID, channel, startTime.Format("15:04:05"), endTime.Format("15:04:05"), durationSec)
+		clipID, channel, startTime.In(tashkentTZ).Format("15:04:05"), endTime.In(tashkentTZ).Format("15:04:05"), durationSec)
 
 	path, err := r.recordRTSP(clipID, nvrHost, nvrUser, nvrPass, nvrPort, channel, startTime, endTime, durationSec, outPath)
 	if err != nil {

@@ -11,6 +11,8 @@ import (
 	"clip-service/internal/repository"
 )
 
+var tashkentTZ = time.FixedZone("Asia/Tashkent", 5*60*60)
+
 type ClipService struct {
 	clipRepo   *repository.ClipRepo
 	branchRepo *repository.BranchRepo
@@ -124,7 +126,7 @@ func (s *ClipService) RecordClip(clipID int64) error {
 	go func() {
 		log.Printf("📥 Klip #%d yuklanmoqda: stol=%d kanal=%d [%s-%s] (%ds)",
 			clipID, cr.TableID, table.CameraChannel,
-			cr.StartTime.Format("15:04"), cr.EndTime.Format("15:04"), durationSec)
+			cr.StartTime.In(tashkentTZ).Format("15:04"), cr.EndTime.In(tashkentTZ).Format("15:04"), durationSec)
 
 		var outPath string
 		var recErr error
