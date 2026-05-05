@@ -27,7 +27,8 @@ func (r *Recorder) ClipPath(clipID int64) string {
 	return filepath.Join(r.clipsDir, fmt.Sprintf("clip_%d.mp4", clipID))
 }
 
-// HikvisionPlaybackRTSP — NVR arxiv RTSP URL (Hikvision standart format, UTC).
+// HikvisionPlaybackRTSP — NVR arxiv RTSP URL.
+// Bu NVR "Z" ni UTC sifatida emas, majburiy suffix sifatida qabul qiladi — vaqt local.
 func HikvisionPlaybackRTSP(user, pass, host string, port, channel int, startTime, endTime time.Time) string {
 	if port == 0 {
 		port = 554
@@ -35,8 +36,8 @@ func HikvisionPlaybackRTSP(user, pass, host string, port, channel int, startTime
 	return fmt.Sprintf(
 		"rtsp://%s:%s@%s:%d/Streaming/tracks/%d01?starttime=%sZ&endtime=%sZ",
 		user, pass, host, port, channel,
-		startTime.UTC().Format("20060102T150405"),
-		endTime.UTC().Format("20060102T150405"),
+		startTime.In(tashkentTZ).Format("20060102T150405"),
+		endTime.In(tashkentTZ).Format("20060102T150405"),
 	)
 }
 
@@ -45,8 +46,8 @@ func PlaybackRTSP(liveURL string, startTime, endTime time.Time) string {
 	playback := strings.Replace(liveURL, "/Streaming/Channels/", "/Streaming/tracks/", 1)
 	return fmt.Sprintf("%s?starttime=%sZ&endtime=%sZ",
 		playback,
-		startTime.UTC().Format("20060102T150405"),
-		endTime.UTC().Format("20060102T150405"),
+		startTime.In(tashkentTZ).Format("20060102T150405"),
+		endTime.In(tashkentTZ).Format("20060102T150405"),
 	)
 }
 
