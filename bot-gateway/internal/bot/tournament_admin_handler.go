@@ -34,7 +34,7 @@ func (h *Handler) showAdminTournamentList(bot *tgbotapi.BotAPI, chatID int64, us
 			icon := tournamentStatusIcon(t.Status)
 			label := fmt.Sprintf("%s %s  •  %s  •  %d/%d",
 				icon, t.Name,
-				t.ScheduledAt.In(time.Local).Format("02.01 15:04"),
+				t.ScheduledAt.In(localTZ).Format("02.01 15:04"),
 				t.ApprovedCount, t.MaxPlayers,
 			)
 			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
@@ -91,7 +91,7 @@ func (h *Handler) cbAdminTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID int
 		t.Name,
 		t.BranchName,
 		tableInfo,
-		t.ScheduledAt.In(time.Local).Format("02.01.2006 15:04"),
+		t.ScheduledAt.In(localTZ).Format("02.01.2006 15:04"),
 		t.ApprovedCount, t.MaxPlayers,
 		tournamentStatusText(t.Status),
 	)
@@ -153,7 +153,7 @@ func (h *Handler) cbAdminTrnCancelConfirm(bot *tgbotapi.BotAPI, chatID int64, us
 					"📅 %s\n\n"+
 					"Kechirasiz! Boshqa turnirlarni kuzatib boring.",
 				t.Name,
-				t.ScheduledAt.In(time.Local).Format("02.01.2006 15:04"),
+				t.ScheduledAt.In(localTZ).Format("02.01.2006 15:04"),
 			))
 			notified++
 		}
@@ -260,7 +260,7 @@ func (h *Handler) cbAdminTrnApproveReg(bot *tgbotapi.BotAPI, chatID int64, msgID
 			trnName,
 			func() string {
 				if t != nil {
-					return t.ScheduledAt.In(time.Local).Format("02.01.2006 15:04")
+					return t.ScheduledAt.In(localTZ).Format("02.01.2006 15:04")
 				}
 				return ""
 			}(),
@@ -541,7 +541,7 @@ func (h *Handler) cbAdminTrnEdit(bot *tgbotapi.BotAPI, chatID int64, msgID int, 
 			"👥 Max: %d ishtirokchi\n\n"+
 			"Nima o'zgartirasiz?",
 		t.Name, t.Name,
-		t.ScheduledAt.In(time.Local).Format("02.01.2006 15:04"),
+		t.ScheduledAt.In(localTZ).Format("02.01.2006 15:04"),
 		t.MaxPlayers,
 	)
 	kb := tgbotapi.NewInlineKeyboardMarkup(
@@ -609,7 +609,7 @@ func (h *Handler) handleTrnEditDateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mes
 	tgID := msg.From.ID
 	chatID := msg.Chat.ID
 	text := strings.TrimSpace(msg.Text)
-	dt, err := time.ParseInLocation("02.01.2006 15:04", text, time.Local)
+	dt, err := time.ParseInLocation("02.01.2006 15:04", text, localTZ)
 	if err != nil {
 		send(bot, chatID, "⚠️ Format noto'g'ri.\n\nMisol: <code>27.04.2026 18:00</code>")
 		return
@@ -689,7 +689,7 @@ func (h *Handler) handleTrnDateTimeInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mes
 	chatID := msg.Chat.ID
 	text := strings.TrimSpace(msg.Text)
 
-	dt, err := time.ParseInLocation("02.01.2006 15:04", text, time.Local)
+	dt, err := time.ParseInLocation("02.01.2006 15:04", text, localTZ)
 	if err != nil {
 		send(bot, chatID, "⚠️ Format noto'g'ri.\n\nMisol: <code>27.04.2026 18:00</code>")
 		return
@@ -758,7 +758,7 @@ func (h *Handler) handleTrnSetCodeInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mess
 			"%s\n\n"+
 			"Ro'yxatga olish boshlandi.",
 		t.Name,
-		t.ScheduledAt.In(time.Local).Format("02.01.2006 15:04"),
+		t.ScheduledAt.In(localTZ).Format("02.01.2006 15:04"),
 		t.MaxPlayers,
 		codeInfo,
 	))

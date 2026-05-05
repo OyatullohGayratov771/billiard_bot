@@ -154,7 +154,7 @@ func (h *Handler) cbClipTimeOK(bot *tgbotapi.BotAPI, chatID int64, msgID int, tg
 	dateStr, _ := h.states.GetString(tgID, "date")
 
 	startTime, _ := time.ParseInLocation("02.01.2006 15:04",
-		fmt.Sprintf("%s %02d:%02d", dateStr, hour, minute), time.Local)
+		fmt.Sprintf("%s %02d:%02d", dateStr, hour, minute), localTZ)
 	if startTime.After(time.Now()) {
 		kb := clipTimeSpinnerKeyboard(hour, minute)
 		editMessage(bot, chatID, msgID,
@@ -209,7 +209,7 @@ func (h *Handler) cbClipSelectDuration(bot *tgbotapi.BotAPI, chatID int64, msgID
 	minute, _ := minVal.(int)
 
 	startTime, _ := time.ParseInLocation("02.01.2006 15:04",
-		fmt.Sprintf("%s %02d:%02d", dateStr, hour, minute), time.Local)
+		fmt.Sprintf("%s %02d:%02d", dateStr, hour, minute), localTZ)
 	endTime := startTime.Add(time.Duration(durMin) * time.Minute)
 
 	// Tugash vaqti kelajakda bo'lmasligi kerak
@@ -344,8 +344,8 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 		startStr, _ := h.states.GetString(tgID, "start_time")
 		endStr, _ := h.states.GetString(tgID, "end_time")
 
-		startTime, _ := time.ParseInLocation("02.01.2006 15:04", startStr, time.Local)
-		endTime, _ := time.ParseInLocation("02.01.2006 15:04", endStr, time.Local)
+		startTime, _ := time.ParseInLocation("02.01.2006 15:04", startStr, localTZ)
+		endTime, _ := time.ParseInLocation("02.01.2006 15:04", endStr, localTZ)
 
 		cr, err := h.clipSvc.CreateRequest(models.ClipRequestInput{
 			ClientTgID: tgID,
@@ -383,8 +383,8 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 				"⏳ Admin tekshirib, klipingizni tayyorlaydi\n\n"+
 				"📲 <i>Klip tayyor bo'lgach, shu yerga yuboriladi!</i>",
 			cr.BranchName, cr.TableNum,
-			cr.StartTime.In(time.Local).Format("15:04"), cr.EndTime.In(time.Local).Format("15:04"), durMin,
-			cr.StartTime.In(time.Local).Format("02.01.2006"),
+			cr.StartTime.In(localTZ).Format("15:04"), cr.EndTime.In(localTZ).Format("15:04"), durMin,
+			cr.StartTime.In(localTZ).Format("02.01.2006"),
 		))
 
 		// Adminlarga xabar (screenshot bilan)
@@ -480,13 +480,13 @@ func (h *Handler) showMyClips(bot *tgbotapi.BotAPI, chatID int64, tgID int64) {
 		sb.WriteString(fmt.Sprintf(
 			"%s %s  %d-stol\n   🕐 %s – %s%s\n\n",
 			statusText(c.Status), c.BranchName, c.TableNum,
-			c.StartTime.In(time.Local).Format("02.01.2006 15:04"),
-			c.EndTime.In(time.Local).Format("15:04"),
+			c.StartTime.In(localTZ).Format("02.01.2006 15:04"),
+			c.EndTime.In(localTZ).Format("15:04"),
 			noteStr,
 		))
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(
-				fmt.Sprintf("%s %d-stol • %s", c.BranchName, c.TableNum, c.StartTime.In(time.Local).Format("02.01 15:04")),
+				fmt.Sprintf("%s %d-stol • %s", c.BranchName, c.TableNum, c.StartTime.In(localTZ).Format("02.01 15:04")),
 				fmt.Sprintf("my_clip_detail:%d", c.ID),
 			),
 		))
@@ -517,8 +517,8 @@ func (h *Handler) cbShowMyClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID i
 			"🕐 Vaqt: %s – %s\n"+
 			"📊 Holat: <b>%s</b>%s",
 		cr.BranchName, cr.TableNum,
-		cr.StartTime.In(time.Local).Format("02.01.2006 15:04"),
-		cr.EndTime.In(time.Local).Format("15:04"),
+		cr.StartTime.In(localTZ).Format("02.01.2006 15:04"),
+		cr.EndTime.In(localTZ).Format("15:04"),
 		statusText(cr.Status), noteStr,
 	)
 
@@ -617,8 +617,8 @@ func (h *Handler) notifyAdminsNewClip(bot *tgbotapi.BotAPI, cr *models.ClipReque
 		cr.ID,
 		cr.ClientName, clientPhone,
 		cr.BranchName, cr.TableNum,
-		cr.StartTime.In(time.Local).Format("15:04"), cr.EndTime.In(time.Local).Format("15:04"), durMin,
-		cr.StartTime.In(time.Local).Format("02.01.2006"),
+		cr.StartTime.In(localTZ).Format("15:04"), cr.EndTime.In(localTZ).Format("15:04"), durMin,
+		cr.StartTime.In(localTZ).Format("02.01.2006"),
 	)
 
 	kb := tgbotapi.NewInlineKeyboardMarkup(

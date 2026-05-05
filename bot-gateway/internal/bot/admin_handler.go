@@ -108,7 +108,7 @@ func (h *Handler) showPendingClips(bot *tgbotapi.BotAPI, chatID int64, user *mod
 			icon := statusIcon(c.Status)
 			label := fmt.Sprintf("%s #%d — %s %d-stol  %s",
 				icon, c.ID, c.BranchName, c.TableNum,
-				c.StartTime.In(time.Local).Format("02.01 15:04"))
+				c.StartTime.In(localTZ).Format("02.01 15:04"))
 			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(label, fmt.Sprintf("clip_detail:%d", c.ID)),
 			))
@@ -141,7 +141,7 @@ func (h *Handler) showAllClips(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 			icon := statusIcon(c.Status)
 			label := fmt.Sprintf("%s #%d — %s %d-stol  %s",
 				icon, c.ID, c.BranchName, c.TableNum,
-				c.StartTime.In(time.Local).Format("02.01 15:04"))
+				c.StartTime.In(localTZ).Format("02.01 15:04"))
 			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(label, fmt.Sprintf("clip_detail:%d", c.ID)),
 			))
@@ -190,8 +190,8 @@ func (h *Handler) cbShowClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID int
 		cr.ID, statusText(cr.Status),
 		cr.ClientName, clientPhone,
 		cr.BranchName, cr.TableNum,
-		cr.StartTime.In(time.Local).Format("15:04"), cr.EndTime.In(time.Local).Format("15:04"), durMin,
-		cr.StartTime.In(time.Local).Format("02.01.2006"),
+		cr.StartTime.In(localTZ).Format("15:04"), cr.EndTime.In(localTZ).Format("15:04"), durMin,
+		cr.StartTime.In(localTZ).Format("02.01.2006"),
 		noteStr,
 	)
 
@@ -227,8 +227,8 @@ func (h *Handler) cbAdminConfirmPayment(bot *tgbotapi.BotAPI, chatID int64, msgI
 				"🎯 <i>O'yiningizning eng yaxshi lahzalari saqlanmoqda...</i>\n"+
 				"🎱 <i>Billiard Club — har bir zarbda g'alaba!</i> 🏆",
 			cr.BranchName, cr.TableNum,
-			cr.StartTime.In(time.Local).Format("15:04"), cr.EndTime.In(time.Local).Format("15:04"), durMin,
-			cr.StartTime.In(time.Local).Format("02.01.2006"),
+			cr.StartTime.In(localTZ).Format("15:04"), cr.EndTime.In(localTZ).Format("15:04"), durMin,
+			cr.StartTime.In(localTZ).Format("02.01.2006"),
 		))
 
 		// Boshqa adminlarga xabar
@@ -239,7 +239,7 @@ func (h *Handler) cbAdminConfirmPayment(bot *tgbotapi.BotAPI, chatID int64, msgI
 				"👤 Mijoz: %s",
 			user.DisplayName(),
 			cr.ID, cr.BranchName, cr.TableNum,
-			cr.StartTime.In(time.Local).Format("15:04"), cr.EndTime.In(time.Local).Format("15:04"), durMin,
+			cr.StartTime.In(localTZ).Format("15:04"), cr.EndTime.In(localTZ).Format("15:04"), durMin,
 			cr.ClientName,
 		))
 	}
@@ -283,7 +283,7 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 
 	editMessage(bot, chatID, msgID,
 		fmt.Sprintf("⏳ <b>Klip #%d yozilmoqda...</b>\n\n%s — %s\nTayyor bo'lganda avtomatik yuboriladi.",
-			clipID, cr.StartTime.In(time.Local).Format("15:04"), cr.EndTime.In(time.Local).Format("15:04")), nil)
+			clipID, cr.StartTime.In(localTZ).Format("15:04"), cr.EndTime.In(localTZ).Format("15:04")), nil)
 
 	// Fon goroutine — klip tayyor bo'lganda mijozga yuboradi
 	go func() {
@@ -319,7 +319,7 @@ func (h *Handler) cbRecordClip(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 				caption := fmt.Sprintf(
 					"🎬 <b>Sizning klipingiz tayyor!</b>\n🏢 %s  •  🎱 %d-stol\n🕐 %s – %s",
 					cr.BranchName, cr.TableNum,
-					cr.StartTime.In(time.Local).Format("15:04"), cr.EndTime.In(time.Local).Format("15:04"),
+					cr.StartTime.In(localTZ).Format("15:04"), cr.EndTime.In(localTZ).Format("15:04"),
 				)
 				f, err := os.Open(cur.ClipPath)
 				if err != nil {
@@ -437,8 +437,8 @@ func (h *Handler) handleAdminNoteInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Messa
 				"📝 <b>Sabab:</b> %s\n\n"+
 				"❓ Savollar bo'lsa: %s",
 			cr.BranchName, cr.TableNum,
-			cr.StartTime.In(time.Local).Format("02.01.2006 15:04"),
-			cr.EndTime.In(time.Local).Format("15:04"),
+			cr.StartTime.In(localTZ).Format("02.01.2006 15:04"),
+			cr.EndTime.In(localTZ).Format("15:04"),
 			note, support,
 		)
 	} else {
@@ -452,8 +452,8 @@ func (h *Handler) handleAdminNoteInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Messa
 				"🔄 Yangi so'rov yuborishingiz mumkin.\n"+
 				"❓ Muammo bo'lsa: %s",
 			cr.BranchName, cr.TableNum,
-			cr.StartTime.In(time.Local).Format("02.01.2006 15:04"),
-			cr.EndTime.In(time.Local).Format("15:04"),
+			cr.StartTime.In(localTZ).Format("02.01.2006 15:04"),
+			cr.EndTime.In(localTZ).Format("15:04"),
 			note, support,
 		)
 	}
@@ -748,8 +748,8 @@ func (h *Handler) cbAdminManualUpload(bot *tgbotapi.BotAPI, chatID int64, tgID i
 			"🕐 %s — %s\n\n"+
 			"📹 Endi video faylni yuboring:",
 		cr.ID, cr.ClientName,
-		cr.StartTime.In(time.Local).Format("02.01.2006 15:04"),
-		cr.EndTime.In(time.Local).Format("15:04"),
+		cr.StartTime.In(localTZ).Format("02.01.2006 15:04"),
+		cr.EndTime.In(localTZ).Format("15:04"),
 	))
 }
 
@@ -779,8 +779,8 @@ func (h *Handler) handleAdminUploadInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mes
 	caption := fmt.Sprintf(
 		"🎬 <b>Sizning klipingiz tayyor!</b>\n🏢 %s  •  🎱 %d-stol\n🕐 %s – %s",
 		cr.BranchName, cr.TableNum,
-		cr.StartTime.In(time.Local).Format("02.01.2006 15:04"),
-		cr.EndTime.In(time.Local).Format("15:04"),
+		cr.StartTime.In(localTZ).Format("02.01.2006 15:04"),
+		cr.EndTime.In(localTZ).Format("15:04"),
 	)
 	var sendErr error
 

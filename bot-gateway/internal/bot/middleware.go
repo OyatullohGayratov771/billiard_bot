@@ -12,6 +12,9 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+// localTZ — O'zbekiston vaqt zonasi (UTC+5). time.Local yoki TZ env var ga bog'liq emas.
+var localTZ = time.FixedZone("Asia/Tashkent", 5*60*60)
+
 // authUser — foydalanuvchini cache dan yoki user-service dan oladi.
 func (h *Handler) authUser(tgID int64) *models.User {
 	if u, ok := h.userCache.get(tgID); ok {
