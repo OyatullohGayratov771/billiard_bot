@@ -36,6 +36,9 @@ const (
 	StateTrnPrice      = "trn:price"
 	StateTrnMaxPlayers = "trn:max_players"
 
+	// Turnirga qo'lda o'yinchi qo'shish (admin)
+	StateTrnAddPlayer = "trn:add_player"
+
 	// Turnir tahrirlash oqimi (admin)
 	StateTrnEditName = "trn:edit_name"
 	StateTrnEditDate = "trn:edit_date"

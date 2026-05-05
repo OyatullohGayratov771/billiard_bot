@@ -35,6 +35,7 @@ type TournamentService interface {
 	CancelTournament(id int64) error
 	UpdateTournament(id int64, name string, scheduledAt time.Time, maxPlayers int) error
 	Register(tournamentID, userTgID int64, userName string) (*models.TournamentRegistration, error)
+	RegisterManual(tournamentID int64, playerName string) (*models.TournamentRegistration, error)
 	ListRegistrations(tournamentID int64) ([]*models.TournamentRegistration, error)
 	ApproveRegistration(tournamentID, regID int64) error
 	RejectRegistration(tournamentID, regID int64) error

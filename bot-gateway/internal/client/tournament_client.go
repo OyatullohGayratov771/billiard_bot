@@ -67,6 +67,12 @@ func (c *TournamentClient) Register(tournamentID, userTgID int64, userName strin
 	return &reg, c.post(fmt.Sprintf("/tournaments/%d/register", tournamentID), body, &reg)
 }
 
+func (c *TournamentClient) RegisterManual(tournamentID int64, playerName string) (*models.TournamentRegistration, error) {
+	body, _ := json.Marshal(map[string]any{"player_name": playerName})
+	var reg models.TournamentRegistration
+	return &reg, c.post(fmt.Sprintf("/tournaments/%d/register-manual", tournamentID), body, &reg)
+}
+
 func (c *TournamentClient) ListRegistrations(tournamentID int64) ([]*models.TournamentRegistration, error) {
 	var list []*models.TournamentRegistration
 	return list, c.get(fmt.Sprintf("/tournaments/%d/registrations", tournamentID), &list)

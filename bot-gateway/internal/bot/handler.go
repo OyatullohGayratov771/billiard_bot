@@ -248,6 +248,8 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbAdminTrnCreate(bot, chatID, tgID, user)
 	case "admin_trn_detail":
 		h.cbAdminTrnDetail(bot, chatID, msgID, user, arg1)
+	case "admin_trn_add_player":
+		h.cbAdminTrnAddPlayer(bot, chatID, tgID, user, arg1)
 	case "admin_trn_edit":
 		h.cbAdminTrnEdit(bot, chatID, msgID, tgID, user, arg1)
 	case "admin_trn_edit_field":

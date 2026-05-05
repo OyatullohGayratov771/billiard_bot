@@ -45,6 +45,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /tournaments/{id}/cancel", h.cancelTournament)
 
 	mux.HandleFunc("POST /tournaments/{id}/register", h.register)
+	mux.HandleFunc("POST /tournaments/{id}/register-manual", h.registerManual)
 	mux.HandleFunc("GET /tournaments/{id}/registrations", h.listRegistrations)
 	mux.HandleFunc("PUT /tournaments/{id}/registrations/{reg_id}/approve", h.approveReg)
 	mux.HandleFunc("PUT /tournaments/{id}/registrations/{reg_id}/reject", h.rejectReg)
@@ -176,6 +177,27 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	reg, err := h.svc.Register(id, req.UserTgID, req.UserName)
+	if err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	writeJSON(w, 200, reg)
+}
+
+func (h *Handler) registerManual(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, 400, "invalid id")
+		return
+	}
+	var req struct {
+		PlayerName string `json:"player_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, 400, "invalid request")
+		return
+	}
+	reg, err := h.svc.RegisterManual(id, req.PlayerName)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return

@@ -273,6 +273,10 @@ func adminTournamentDetailKeyboard(t *models.Tournament) tgbotapi.InlineKeyboard
 					fmt.Sprintf("admin_trn_edit:%d", t.ID)),
 			),
 			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("➕ O'yinchi qo'shish",
+					fmt.Sprintf("admin_trn_add_player:%d", t.ID)),
+			),
+			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("⚡ Bracket yaratish",
 					fmt.Sprintf("admin_trn_bracket:%d", t.ID)),
 			),

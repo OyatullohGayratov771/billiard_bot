@@ -121,6 +121,23 @@ func (s *Service) GetTVData(token string) (*models.TVData, error) {
 
 // ===================== REGISTRATIONS =====================
 
+func (s *Service) RegisterManual(tournamentID int64, playerName string) (*models.Registration, error) {
+	if playerName == "" {
+		return nil, errors.New("o'yinchi nomi bo'sh bo'lmasin")
+	}
+	t, err := s.repo.GetTournament(tournamentID)
+	if err != nil {
+		return nil, errors.New("turnir topilmadi")
+	}
+	if t.Status != models.TournamentStatusRegistration {
+		return nil, errors.New("turnirga ro'yxat yopilgan")
+	}
+	if t.ApprovedCount >= t.MaxPlayers {
+		return nil, fmt.Errorf("turnir to'lgan (%d/%d)", t.ApprovedCount, t.MaxPlayers)
+	}
+	return s.repo.RegisterManual(tournamentID, playerName)
+}
+
 func (s *Service) Register(tournamentID, userTgID int64, userName string) (*models.Registration, error) {
 	t, err := s.repo.GetTournament(tournamentID)
 	if err != nil {

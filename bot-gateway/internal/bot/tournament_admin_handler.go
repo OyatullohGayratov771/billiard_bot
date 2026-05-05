@@ -146,7 +146,7 @@ func (h *Handler) cbAdminTrnCancelConfirm(bot *tgbotapi.BotAPI, chatID int64, us
 
 	notified := 0
 	for _, r := range regs {
-		if r.Status == models.RegStatusPending || r.Status == models.RegStatusApproved {
+		if (r.Status == models.RegStatusPending || r.Status == models.RegStatusApproved) && r.UserTgID > 0 {
 			send(bot, r.UserTgID, fmt.Sprintf(
 				"❌ <b>Turnir bekor qilindi</b>\n\n"+
 					"🏆 %s\n"+
@@ -324,7 +324,7 @@ func (h *Handler) cbAdminGenBracket(bot *tgbotapi.BotAPI, chatID int64, msgID in
 
 	regs, _ := h.tournamentSvc.ListRegistrations(trnID)
 	for _, r := range regs {
-		if r.Status == models.RegStatusApproved {
+		if r.Status == models.RegStatusApproved && r.UserTgID > 0 {
 			send(bot, r.UserTgID, fmt.Sprintf(
 				"⚡ <b>%s — Turnir boshlanmoqda!</b>\n\n"+
 					"Bracket tayyor. Turnir ro'yxatidan o'z o'yiningizni ko'ring.",
@@ -333,13 +333,17 @@ func (h *Handler) cbAdminGenBracket(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		}
 	}
 
-	// Round-1 tayyor o'yinlarda raqiblar haqida xabar
+	// Round-1 tayyor o'yinlarda raqiblar haqida xabar (faqat haqiqiy Telegram foydalanuvchilar)
 	for _, m := range matches {
 		if m.Round == 1 && m.Status == models.MatchStatusReady && m.Player1TgID != nil && m.Player2TgID != nil {
-			send(bot, *m.Player1TgID, fmt.Sprintf(
-				"⚔️ <b>Sizning birinchi o'yiningiz!</b>\n\nRaqibingiz: <b>%s</b>", m.Player2Name))
-			send(bot, *m.Player2TgID, fmt.Sprintf(
-				"⚔️ <b>Sizning birinchi o'yiningiz!</b>\n\nRaqibingiz: <b>%s</b>", m.Player1Name))
+			if *m.Player1TgID > 0 {
+				send(bot, *m.Player1TgID, fmt.Sprintf(
+					"⚔️ <b>Sizning birinchi o'yiningiz!</b>\n\nRaqibingiz: <b>%s</b>", m.Player2Name))
+			}
+			if *m.Player2TgID > 0 {
+				send(bot, *m.Player2TgID, fmt.Sprintf(
+					"⚔️ <b>Sizning birinchi o'yiningiz!</b>\n\nRaqibingiz: <b>%s</b>", m.Player1Name))
+			}
 		}
 	}
 
@@ -434,7 +438,9 @@ func (h *Handler) cbAdminTrnWinner(bot *tgbotapi.BotAPI, chatID int64, msgID int
 		return
 	}
 
-	send(bot, winnerTgID, "🏆 <b>Tabriklaymiz! Siz g'olib bo'ldingiz!</b>\n\nKeyingi bosqichga o'tdingiz.")
+	if winnerTgID > 0 {
+		send(bot, winnerTgID, "🏆 <b>Tabriklaymiz! Siz g'olib bo'ldingiz!</b>\n\nKeyingi bosqichga o'tdingiz.")
+	}
 
 	if finished {
 		t, _ := h.tournamentSvc.GetTournament(trnID)
@@ -448,10 +454,14 @@ func (h *Handler) cbAdminTrnWinner(bot *tgbotapi.BotAPI, chatID int64, msgID int
 		allMatches, _ := h.tournamentSvc.GetBracket(trnID)
 		for _, m := range allMatches {
 			if m.ID == nextMatchID && m.Status == models.MatchStatusReady && m.Player1TgID != nil && m.Player2TgID != nil {
-				send(bot, *m.Player1TgID, fmt.Sprintf(
-					"⚔️ <b>Keyingi o'yiningiz tayyor!</b>\n\nRaqibingiz: <b>%s</b>", m.Player2Name))
-				send(bot, *m.Player2TgID, fmt.Sprintf(
-					"⚔️ <b>Keyingi o'yiningiz tayyor!</b>\n\nRaqibingiz: <b>%s</b>", m.Player1Name))
+				if *m.Player1TgID > 0 {
+					send(bot, *m.Player1TgID, fmt.Sprintf(
+						"⚔️ <b>Keyingi o'yiningiz tayyor!</b>\n\nRaqibingiz: <b>%s</b>", m.Player2Name))
+				}
+				if *m.Player2TgID > 0 {
+					send(bot, *m.Player2TgID, fmt.Sprintf(
+						"⚔️ <b>Keyingi o'yiningiz tayyor!</b>\n\nRaqibingiz: <b>%s</b>", m.Player1Name))
+				}
 				break
 			}
 		}
@@ -459,6 +469,52 @@ func (h *Handler) cbAdminTrnWinner(bot *tgbotapi.BotAPI, chatID int64, msgID int
 
 	// Show updated result screen
 	h.cbAdminTrnResult(bot, chatID, msgID, user, trnIDStr)
+}
+
+// ===================== TURNIRGA QOLDA O'YINCHI QO'SHISH (admin) =====================
+
+func (h *Handler) cbAdminTrnAddPlayer(bot *tgbotapi.BotAPI, chatID int64, tgID int64, user *models.User, trnIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	trnID := mustParseInt64(trnIDStr)
+	t, err := h.tournamentSvc.GetTournament(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Turnir topilmadi.")
+		return
+	}
+	if t.Status != models.TournamentStatusRegistration {
+		send(bot, chatID, "❌ Faqat ro'yxatga olish holatidagi turnirga o'yinchi qo'shish mumkin.")
+		return
+	}
+	h.states.Set(tgID, StateTrnAddPlayer)
+	h.states.SetData(tgID, "trn_add_player_id", trnID)
+	send(bot, chatID, fmt.Sprintf(
+		"➕ <b>%s</b> — O'yinchi qo'shish\n\n"+
+			"O'yinchi ismini kiriting:\n"+
+			"<i>(Masalan: Azizbek, Ivan yoki istalgan nom)</i>",
+		t.Name,
+	))
+}
+
+func (h *Handler) handleTrnAddPlayerInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
+	tgID := msg.From.ID
+	chatID := msg.Chat.ID
+	name := safeText(msg.Text, 64)
+	if name == "" {
+		send(bot, chatID, "⚠️ Ism bo'sh bo'lishi mumkin emas.")
+		return
+	}
+	trnID, _ := h.states.GetInt64(tgID, "trn_add_player_id")
+	h.states.Clear(tgID)
+
+	reg, err := h.tournamentSvc.RegisterManual(trnID, name)
+	if err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		return
+	}
+	h.logAction(user, "manual_player_added", fmt.Sprintf("trn:%d player:%s reg:%d", trnID, name, reg.ID))
+	send(bot, chatID, fmt.Sprintf("✅ <b>%s</b> turnirga qo'shildi va tasdiqlandi.", name))
 }
 
 // ===================== TURNIR TAHRIRLASH (admin) =====================

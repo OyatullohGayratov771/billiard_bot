@@ -432,6 +432,10 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 	case StateTrnMaxPlayers:
 		h.handleTrnMaxPlayersInput(bot, msg)
 
+	// --- Qo'lda o'yinchi qo'shish FSM ---
+	case StateTrnAddPlayer:
+		h.handleTrnAddPlayerInput(bot, msg, user)
+
 	// --- Turnir tahrirlash FSM ---
 	case StateTrnEditName:
 		h.handleTrnEditNameInput(bot, msg)

@@ -102,6 +102,19 @@ func (r *Repo) fillTournamentJoins(t *models.Tournament) {
 
 // ===================== REGISTRATIONS =====================
 
+func (r *Repo) RegisterManual(tournamentID int64, playerName string) (*models.Registration, error) {
+	// Negative nano-timestamp as a unique dummy tg_id (never clashes with real Telegram IDs)
+	dummyTgID := -time.Now().UnixNano()
+	reg := &models.Registration{}
+	err := r.db.QueryRow(`
+		INSERT INTO tournament_registrations (tournament_id, user_tg_id, user_name, status, decided_at)
+		VALUES ($1, $2, $3, 'approved', NOW())
+		RETURNING id, tournament_id, user_tg_id, user_name, status, registered_at, decided_at`,
+		tournamentID, dummyTgID, playerName,
+	).Scan(&reg.ID, &reg.TournamentID, &reg.UserTgID, &reg.UserName, &reg.Status, &reg.RegisteredAt, &reg.DecidedAt)
+	return reg, err
+}
+
 func (r *Repo) Register(tournamentID, userTgID int64, userName string) (*models.Registration, error) {
 	reg := &models.Registration{}
 	err := r.db.QueryRow(`
