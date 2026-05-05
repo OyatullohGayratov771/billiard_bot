@@ -431,6 +431,14 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 		h.handleTrnDateTimeInput(bot, msg)
 	case StateTrnMaxPlayers:
 		h.handleTrnMaxPlayersInput(bot, msg)
+
+	// --- Turnir tahrirlash FSM ---
+	case StateTrnEditName:
+		h.handleTrnEditNameInput(bot, msg)
+	case StateTrnEditDate:
+		h.handleTrnEditDateInput(bot, msg)
+	case StateTrnEditMax:
+		h.handleTrnEditMaxInput(bot, msg)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"clip-service/internal/models"
 	"clip-service/internal/recorder"
@@ -175,6 +176,25 @@ func (s *ClipService) TestCamera(branchID int64, channel int) (string, error) {
 }
 
 // GetClipFile — klip faylini o'qib qaytaradi
+func (s *ClipService) CleanupOldFiles() int {
+	cutoff := time.Now().Add(-24 * time.Hour)
+	clips, err := s.clipRepo.ListDoneOlderThan(cutoff)
+	if err != nil {
+		log.Printf("CleanupOldFiles: %v", err)
+		return 0
+	}
+	removed := 0
+	for _, cr := range clips {
+		if err := os.Remove(cr.ClipPath); err != nil && !os.IsNotExist(err) {
+			log.Printf("CleanupOldFiles: remove %s: %v", cr.ClipPath, err)
+			continue
+		}
+		_ = s.clipRepo.SetClipPath(cr.ID, "")
+		removed++
+	}
+	return removed
+}
+
 func (s *ClipService) GetClipFile(clipID int64) ([]byte, string, error) {
 	cr, err := s.clipRepo.GetByID(clipID)
 	if err != nil {

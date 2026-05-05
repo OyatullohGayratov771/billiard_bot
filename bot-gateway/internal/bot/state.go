@@ -36,6 +36,11 @@ const (
 	StateTrnPrice      = "trn:price"
 	StateTrnMaxPlayers = "trn:max_players"
 
+	// Turnir tahrirlash oqimi (admin)
+	StateTrnEditName = "trn:edit_name"
+	StateTrnEditDate = "trn:edit_date"
+	StateTrnEditMax  = "trn:edit_max"
+
 	// Profil tahrirlash
 	StateEditName = "profile:edit_name"
 )

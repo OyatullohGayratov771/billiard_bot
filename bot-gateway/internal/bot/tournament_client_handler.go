@@ -206,6 +206,35 @@ func (h *Handler) showMyTournaments(bot *tgbotapi.BotAPI, chatID int64, tgID int
 	sendWithKeyboard(bot, chatID, sb.String(), kb)
 }
 
+func (h *Handler) showTournamentHistory(bot *tgbotapi.BotAPI, chatID int64) {
+	tournaments, err := h.tournamentSvc.ListTournaments("")
+	if err != nil {
+		send(bot, chatID, "❌ Xatolik.")
+		return
+	}
+
+	header := "📋 <b>Turnir tarixi</b>\n\n"
+	var rows [][]tgbotapi.InlineKeyboardButton
+
+	for _, t := range tournaments {
+		if t.Status == models.TournamentStatusRegistration {
+			continue
+		}
+		icon := tournamentStatusIcon(t.Status)
+		label := fmt.Sprintf("%s %s — %s", icon, t.Name, t.ScheduledAt.Format("02.01.2006"))
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(label, fmt.Sprintf("trn_detail:%d", t.ID)),
+		))
+	}
+
+	if len(rows) == 0 {
+		header += "Hali yakunlangan yoki bekor qilingan turnirlar yo'q."
+	}
+
+	kb := tgbotapi.NewInlineKeyboardMarkup(rows...)
+	sendWithKeyboard(bot, chatID, header, kb)
+}
+
 func (h *Handler) cbClientBracket(bot *tgbotapi.BotAPI, chatID int64, msgID int, tgID int64, trnIDStr string) {
 	trnID := mustParseInt64(trnIDStr)
 

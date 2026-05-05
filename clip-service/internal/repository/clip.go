@@ -170,6 +170,27 @@ func (r *ClipRepo) ConfirmPayment(clipRequestID int64) error {
 }
 
 // ClaimProcessing atomically transitions paid→processing; returns error if another admin already claimed it.
+func (r *ClipRepo) ListDoneOlderThan(cutoff time.Time) ([]*models.ClipRequest, error) {
+	rows, err := r.db.Query(`
+		SELECT id, COALESCE(clip_path,'')
+		FROM clip_requests
+		WHERE status='done' AND clip_path != '' AND created_at < $1
+	`, cutoff)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var list []*models.ClipRequest
+	for rows.Next() {
+		cr := &models.ClipRequest{}
+		if err := rows.Scan(&cr.ID, &cr.ClipPath); err != nil {
+			return nil, err
+		}
+		list = append(list, cr)
+	}
+	return list, rows.Err()
+}
+
 func (r *ClipRepo) ClaimProcessing(clipID int64) error {
 	res, err := r.db.Exec(
 		`UPDATE clip_requests SET status='processing' WHERE id=$1 AND status='paid'`,

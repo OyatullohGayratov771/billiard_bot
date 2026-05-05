@@ -248,6 +248,10 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbAdminTrnCreate(bot, chatID, tgID, user)
 	case "admin_trn_detail":
 		h.cbAdminTrnDetail(bot, chatID, msgID, user, arg1)
+	case "admin_trn_edit":
+		h.cbAdminTrnEdit(bot, chatID, msgID, tgID, user, arg1)
+	case "admin_trn_edit_field":
+		h.cbAdminTrnEditField(bot, chatID, tgID, arg1, arg2)
 	case "admin_trn_cancel":
 		h.cbAdminTrnCancel(bot, chatID, user, arg1)
 	case "admin_trn_cancel_confirm":
@@ -266,6 +270,9 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbAdminTrnWinner(bot, chatID, msgID, user, arg1, arg2)
 
 	// ── TURNIR: client ──
+	case "trn_history":
+		deleteMessage(bot, chatID, msgID)
+		h.showTournamentHistory(bot, chatID)
 	case "trn_list", "trn_menu_list":
 		deleteMessage(bot, chatID, msgID)
 		h.showClientTournamentList(bot, chatID, tgID)

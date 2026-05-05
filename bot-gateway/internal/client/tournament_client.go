@@ -52,6 +52,15 @@ func (c *TournamentClient) CancelTournament(id int64) error {
 	return c.putNoResponse(fmt.Sprintf("/tournaments/%d/cancel", id), []byte("{}"))
 }
 
+func (c *TournamentClient) UpdateTournament(id int64, name string, scheduledAt time.Time, maxPlayers int) error {
+	body, _ := json.Marshal(map[string]any{
+		"name":         name,
+		"scheduled_at": scheduledAt.Format(time.RFC3339),
+		"max_players":  maxPlayers,
+	})
+	return c.putNoResponse(fmt.Sprintf("/tournaments/%d", id), body)
+}
+
 func (c *TournamentClient) Register(tournamentID, userTgID int64, userName string) (*models.TournamentRegistration, error) {
 	body, _ := json.Marshal(map[string]any{"user_tg_id": userTgID, "user_name": userName})
 	var reg models.TournamentRegistration

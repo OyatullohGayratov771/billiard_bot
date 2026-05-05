@@ -333,6 +333,16 @@ func (h *Handler) cbAdminGenBracket(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		}
 	}
 
+	// Round-1 tayyor o'yinlarda raqiblar haqida xabar
+	for _, m := range matches {
+		if m.Round == 1 && m.Status == models.MatchStatusReady && m.Player1TgID != nil && m.Player2TgID != nil {
+			send(bot, *m.Player1TgID, fmt.Sprintf(
+				"⚔️ <b>Sizning birinchi o'yiningiz!</b>\n\nRaqibingiz: <b>%s</b>", m.Player2Name))
+			send(bot, *m.Player2TgID, fmt.Sprintf(
+				"⚔️ <b>Sizning birinchi o'yiningiz!</b>\n\nRaqibingiz: <b>%s</b>", m.Player1Name))
+		}
+	}
+
 	text := fmt.Sprintf("✅ Bracket yaratildi! <b>%d</b> o'yin.\n", len(matches))
 	text += formatBracket(matches)
 
@@ -435,10 +445,157 @@ func (h *Handler) cbAdminTrnWinner(bot *tgbotapi.BotAPI, chatID int64, msgID int
 		send(bot, chatID, fmt.Sprintf("🏆 <b>%s yakunlandi! G'olib aniqlandi.</b>", trnName))
 	} else if nextMatchID > 0 {
 		send(bot, chatID, fmt.Sprintf("✅ Natija kiritildi. Keyingi o'yin #%d tayyor bo'ldi.", nextMatchID))
+		allMatches, _ := h.tournamentSvc.GetBracket(trnID)
+		for _, m := range allMatches {
+			if m.ID == nextMatchID && m.Status == models.MatchStatusReady && m.Player1TgID != nil && m.Player2TgID != nil {
+				send(bot, *m.Player1TgID, fmt.Sprintf(
+					"⚔️ <b>Keyingi o'yiningiz tayyor!</b>\n\nRaqibingiz: <b>%s</b>", m.Player2Name))
+				send(bot, *m.Player2TgID, fmt.Sprintf(
+					"⚔️ <b>Keyingi o'yiningiz tayyor!</b>\n\nRaqibingiz: <b>%s</b>", m.Player1Name))
+				break
+			}
+		}
 	}
 
 	// Show updated result screen
 	h.cbAdminTrnResult(bot, chatID, msgID, user, trnIDStr)
+}
+
+// ===================== TURNIR TAHRIRLASH (admin) =====================
+
+func (h *Handler) cbAdminTrnEdit(bot *tgbotapi.BotAPI, chatID int64, msgID int, tgID int64, user *models.User, trnIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	trnID := mustParseInt64(trnIDStr)
+	t, err := h.tournamentSvc.GetTournament(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Turnir topilmadi.")
+		return
+	}
+	if t.Status != models.TournamentStatusRegistration {
+		send(bot, chatID, "❌ Faqat ro'yxatga olish holatidagi turnirni tahrirlash mumkin.")
+		return
+	}
+
+	text := fmt.Sprintf(
+		"✏️ <b>%s — Tahrirlash</b>\n\n"+
+			"📝 Nom: %s\n"+
+			"📅 Sana: %s\n"+
+			"👥 Max: %d ishtirokchi\n\n"+
+			"Nima o'zgartirasiz?",
+		t.Name, t.Name,
+		t.ScheduledAt.Format("02.01.2006 15:04"),
+		t.MaxPlayers,
+	)
+	kb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("📝 Nom",
+				fmt.Sprintf("admin_trn_edit_field:%d:name", trnID)),
+			tgbotapi.NewInlineKeyboardButtonData("📅 Sana",
+				fmt.Sprintf("admin_trn_edit_field:%d:date", trnID)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("👥 Max o'yinchilar",
+				fmt.Sprintf("admin_trn_edit_field:%d:max", trnID)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga",
+				fmt.Sprintf("admin_trn_detail:%d", trnID)),
+		),
+	)
+	if msgID > 0 {
+		editMessage(bot, chatID, msgID, text, &kb)
+	} else {
+		sendWithKeyboard(bot, chatID, text, kb)
+	}
+}
+
+func (h *Handler) cbAdminTrnEditField(bot *tgbotapi.BotAPI, chatID int64, tgID int64, trnIDStr, field string) {
+	trnID := mustParseInt64(trnIDStr)
+	h.states.SetData(tgID, "trn_edit_id", trnID)
+	switch field {
+	case "name":
+		h.states.Set(tgID, StateTrnEditName)
+		send(bot, chatID, "📝 Yangi turnir nomini kiriting:")
+	case "date":
+		h.states.Set(tgID, StateTrnEditDate)
+		send(bot, chatID, "📅 Yangi sana va vaqtni kiriting:\n\nFormat: <code>27.04.2026 18:00</code>")
+	case "max":
+		h.states.Set(tgID, StateTrnEditMax)
+		send(bot, chatID, "👥 Yangi maksimal ishtirokchilar sonini kiriting:")
+	}
+}
+
+func (h *Handler) handleTrnEditNameInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
+	tgID := msg.From.ID
+	chatID := msg.Chat.ID
+	name := safeText(msg.Text, 100)
+	if name == "" {
+		send(bot, chatID, "⚠️ Nom bo'sh bo'lishi mumkin emas.")
+		return
+	}
+	trnID, _ := h.states.GetInt64(tgID, "trn_edit_id")
+	h.states.Clear(tgID)
+	t, err := h.tournamentSvc.GetTournament(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Turnir topilmadi.")
+		return
+	}
+	if err := h.tournamentSvc.UpdateTournament(trnID, name, t.ScheduledAt, t.MaxPlayers); err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		return
+	}
+	send(bot, chatID, "✅ Turnir nomi yangilandi: <b>"+name+"</b>")
+}
+
+func (h *Handler) handleTrnEditDateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
+	tgID := msg.From.ID
+	chatID := msg.Chat.ID
+	text := strings.TrimSpace(msg.Text)
+	dt, err := time.ParseInLocation("02.01.2006 15:04", text, time.Local)
+	if err != nil {
+		send(bot, chatID, "⚠️ Format noto'g'ri.\n\nMisol: <code>27.04.2026 18:00</code>")
+		return
+	}
+	if dt.Before(time.Now()) {
+		send(bot, chatID, "⚠️ Sana o'tib ketgan. Kelajak sanani kiriting.")
+		return
+	}
+	trnID, _ := h.states.GetInt64(tgID, "trn_edit_id")
+	h.states.Clear(tgID)
+	t, err := h.tournamentSvc.GetTournament(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Turnir topilmadi.")
+		return
+	}
+	if err := h.tournamentSvc.UpdateTournament(trnID, t.Name, dt, t.MaxPlayers); err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		return
+	}
+	send(bot, chatID, fmt.Sprintf("✅ Turnir sanasi yangilandi: <b>%s</b>", dt.Format("02.01.2006 15:04")))
+}
+
+func (h *Handler) handleTrnEditMaxInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
+	tgID := msg.From.ID
+	chatID := msg.Chat.ID
+	maxPlayers := int(mustParseInt64(strings.TrimSpace(msg.Text)))
+	if maxPlayers < 2 {
+		send(bot, chatID, "⚠️ Kamida 2 ta ishtirokchi bo'lishi kerak.")
+		return
+	}
+	trnID, _ := h.states.GetInt64(tgID, "trn_edit_id")
+	h.states.Clear(tgID)
+	t, err := h.tournamentSvc.GetTournament(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Turnir topilmadi.")
+		return
+	}
+	if err := h.tournamentSvc.UpdateTournament(trnID, t.Name, t.ScheduledAt, maxPlayers); err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		return
+	}
+	send(bot, chatID, fmt.Sprintf("✅ Max ishtirokchilar yangilandi: <b>%d</b>", maxPlayers))
 }
 
 // ===================== TURNIR STATE HANDLERS (admin creation FSM) =====================

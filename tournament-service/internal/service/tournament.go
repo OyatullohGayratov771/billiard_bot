@@ -48,6 +48,29 @@ func (s *Service) ListTournaments(status string) ([]*models.Tournament, error) {
 	return s.repo.ListTournaments(status)
 }
 
+func (s *Service) UpdateTournament(id int64, name string, scheduledAt time.Time, maxPlayers int) error {
+	t, err := s.repo.GetTournament(id)
+	if err != nil {
+		return err
+	}
+	if t.Status != models.TournamentStatusRegistration {
+		return errors.New("faqat ro'yxatga olish holatidagi turnirni tahrirlash mumkin")
+	}
+	if name == "" {
+		return errors.New("turnir nomi bo'sh bo'lmasin")
+	}
+	if scheduledAt.Before(time.Now()) {
+		return errors.New("turnir sanasi o'tib ketgan")
+	}
+	if maxPlayers < 2 {
+		return errors.New("max ishtirokchilar kamida 2 bo'lishi kerak")
+	}
+	if maxPlayers < t.ApprovedCount {
+		return fmt.Errorf("max o'yinchilar %d ta tasdiqlangan ishtirokchidan kam bo'lishi mumkin emas", t.ApprovedCount)
+	}
+	return s.repo.UpdateTournament(id, name, scheduledAt, maxPlayers)
+}
+
 func (s *Service) CancelTournament(id int64) error {
 	t, err := s.repo.GetTournament(id)
 	if err != nil {

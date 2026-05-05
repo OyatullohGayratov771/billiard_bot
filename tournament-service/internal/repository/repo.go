@@ -84,6 +84,14 @@ func (r *Repo) SetTournamentStatus(id int64, status string) error {
 	return err
 }
 
+func (r *Repo) UpdateTournament(id int64, name string, scheduledAt time.Time, maxPlayers int) error {
+	_, err := r.db.Exec(
+		`UPDATE tournaments SET name=$1, scheduled_at=$2, max_players=$3 WHERE id=$4`,
+		name, scheduledAt, maxPlayers, id,
+	)
+	return err
+}
+
 func (r *Repo) fillTournamentJoins(t *models.Tournament) {
 	_ = r.db.QueryRow(`SELECT name FROM branches WHERE id=$1`, t.BranchID).Scan(&t.BranchName)
 	if t.TableID != nil {

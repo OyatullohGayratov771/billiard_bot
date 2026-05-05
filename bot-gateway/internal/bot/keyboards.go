@@ -269,6 +269,8 @@ func adminTournamentDetailKeyboard(t *models.Tournament) tgbotapi.InlineKeyboard
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("👥 Ro'yxat",
 					fmt.Sprintf("admin_trn_regs:%d", t.ID)),
+				tgbotapi.NewInlineKeyboardButtonData("✏️ Tahrirlash",
+					fmt.Sprintf("admin_trn_edit:%d", t.ID)),
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("⚡ Bracket yaratish",
@@ -317,6 +319,9 @@ func tournamentClientSubmenu() tgbotapi.InlineKeyboardMarkup {
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🏆 Faol turnirlar", "trn_menu_list"),
 			tgbotapi.NewInlineKeyboardButtonData("🥇 Mening turnirlar", "trn_menu_my"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("📋 Tarix", "trn_history"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🔙 Yopish", "client_menu_close"),

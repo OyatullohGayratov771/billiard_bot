@@ -41,6 +41,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /tournaments", h.createTournament)
 	mux.HandleFunc("GET /tournaments", h.listTournaments)
 	mux.HandleFunc("GET /tournaments/{id}", h.getTournament)
+	mux.HandleFunc("PUT /tournaments/{id}", h.updateTournament)
 	mux.HandleFunc("PUT /tournaments/{id}/cancel", h.cancelTournament)
 
 	mux.HandleFunc("POST /tournaments/{id}/register", h.register)
@@ -118,6 +119,33 @@ func (h *Handler) getTournament(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 200, t)
+}
+
+func (h *Handler) updateTournament(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, 400, "invalid id")
+		return
+	}
+	var req struct {
+		Name        string `json:"name"`
+		ScheduledAt string `json:"scheduled_at"`
+		MaxPlayers  int    `json:"max_players"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, 400, "invalid request")
+		return
+	}
+	t, err := time.Parse(time.RFC3339, req.ScheduledAt)
+	if err != nil {
+		writeError(w, 400, "invalid scheduled_at (RFC3339)")
+		return
+	}
+	if err := h.svc.UpdateTournament(id, req.Name, t, req.MaxPlayers); err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
 func (h *Handler) cancelTournament(w http.ResponseWriter, r *http.Request) {

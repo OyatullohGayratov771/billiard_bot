@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"clip-service/internal/config"
@@ -32,29 +31,6 @@ func main() {
 	}
 	log.Printf("📁 Kliplar saqlash joyi: %s", clipsDir)
 
-	// Eski klip fayllarni tozalash (har 30 daqiqada, 2 soatdan eski .mp4 fayllar)
-	go func() {
-		for {
-			time.Sleep(30 * time.Minute)
-			cutoff := time.Now().Add(-2 * time.Hour)
-			removed := 0
-			_ = filepath.Walk(clipsDir, func(path string, info os.FileInfo, err error) error {
-				if err != nil || info.IsDir() {
-					return nil
-				}
-				if filepath.Ext(path) == ".mp4" && info.ModTime().Before(cutoff) {
-					if removeErr := os.Remove(path); removeErr == nil {
-						removed++
-					}
-				}
-				return nil
-			})
-			if removed > 0 {
-				log.Printf("🧹 Eski kliplar tozalandi: %d fayl o'chirildi", removed)
-			}
-		}
-	}()
-
 	clipRepo := repository.NewClipRepo(database)
 	branchRepo := repository.NewBranchRepo(database)
 	tableRepo := repository.NewTableRepo(database)
@@ -62,6 +38,20 @@ func main() {
 
 	rec := recorder.New(clipsDir)
 	clipSvc := service.NewClipService(clipRepo, branchRepo, tableRepo, auditRepo, rec)
+
+	// Har kecha soat 03:00 da 24 soatdan eski done kliplarni o'chiradi
+	go func() {
+		for {
+			now := time.Now()
+			next := time.Date(now.Year(), now.Month(), now.Day(), 3, 0, 0, 0, time.Local)
+			if !next.After(now) {
+				next = next.Add(24 * time.Hour)
+			}
+			time.Sleep(time.Until(next))
+			n := clipSvc.CleanupOldFiles()
+			log.Printf("🗑️  Eski kliplar tozalandi: %d ta fayl o'chirildi", n)
+		}
+	}()
 
 	h := handler.New(clipSvc)
 	mux := http.NewServeMux()
