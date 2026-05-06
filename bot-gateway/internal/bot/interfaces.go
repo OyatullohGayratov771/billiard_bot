@@ -29,7 +29,7 @@ type TableService interface {
 
 // TournamentService — tournament-service bilan ishlash interfeysi
 type TournamentService interface {
-	CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string) (*models.Tournament, error)
+	CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string, tournamentType string) (*models.Tournament, error)
 	ListTournaments(status string) ([]*models.Tournament, error)
 	GetTournament(id int64) (*models.Tournament, error)
 	CancelTournament(id int64) error
@@ -41,7 +41,7 @@ type TournamentService interface {
 	RejectRegistration(tournamentID, regID int64) error
 	GenerateBracket(tournamentID int64) ([]*models.TournamentMatch, error)
 	GetBracket(tournamentID int64) ([]*models.TournamentMatch, error)
-	SetResult(matchID, winnerTgID int64) (nextMatchID int64, finished bool, err error)
+	SetResult(matchID, winnerTgID int64) (winnerNextID int64, loserNextID int64, finished bool, err error)
 	GetUserTournaments(tgID int64) ([]*models.TournamentRegistration, error)
 	GetUserRegistration(tournamentID, userTgID int64) (*models.TournamentRegistration, error)
 	GenerateTVToken(tournamentID int64) (string, error)

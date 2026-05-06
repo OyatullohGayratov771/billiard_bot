@@ -240,6 +240,8 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 
 	case "admin_trn_sel_branch":
 		h.cbAdminTrnSelBranch(bot, chatID, tgID, arg1)
+	case "admin_trn_sel_type":
+		h.cbAdminTrnSelType(bot, chatID, tgID, arg1)
 
 	// ── TURNIR: admin ──
 	case "admin_trn_list":

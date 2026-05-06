@@ -24,7 +24,7 @@ func New(db *sql.DB, repo *repository.Repo) *Service {
 
 // ===================== TOURNAMENTS =====================
 
-func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string) (*models.Tournament, error) {
+func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string, tournamentType string) (*models.Tournament, error) {
 	if name == "" {
 		return nil, errors.New("turnir nomi bo'sh bo'lmasin")
 	}
@@ -37,7 +37,14 @@ func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, 
 	if scheduledAt.Before(time.Now()) {
 		return nil, errors.New("turnir sanasi o'tib ketgan")
 	}
-	return s.repo.CreateTournament(name, branchID, tableID, scheduledAt, price, maxPlayers, adminTgID, joinCode)
+	switch tournamentType {
+	case models.TournamentTypeSingleElim, models.TournamentTypeDoubleElim, models.TournamentTypeRoundRobin:
+	case "":
+		tournamentType = models.TournamentTypeSingleElim
+	default:
+		return nil, fmt.Errorf("noto'g'ri turnir turi: %s", tournamentType)
+	}
+	return s.repo.CreateTournament(name, branchID, tableID, scheduledAt, price, maxPlayers, adminTgID, joinCode, tournamentType)
 }
 
 func (s *Service) GetTournament(id int64) (*models.Tournament, error) {
@@ -88,7 +95,6 @@ func (s *Service) GenerateTVToken(tournamentID int64) (string, error) {
 	if _, err := s.repo.GetTournament(tournamentID); err != nil {
 		return "", err
 	}
-	// Return existing token if already generated
 	if tok, err := s.repo.GetTVTokenByTournament(tournamentID); err == nil {
 		return tok, nil
 	}
@@ -223,7 +229,19 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 	if t.Status != models.TournamentStatusRegistration {
 		return nil, errors.New("bracket allaqachon yaratilgan yoki turnir tugagan")
 	}
+	switch t.Type {
+	case models.TournamentTypeDoubleElim:
+		return s.generateDoubleElimBracket(tournamentID)
+	case models.TournamentTypeRoundRobin:
+		return s.generateRoundRobinBracket(tournamentID)
+	default:
+		return s.generateSingleElimBracket(tournamentID)
+	}
+}
 
+// --- Single Elimination ---
+
+func (s *Service) generateSingleElimBracket(tournamentID int64) ([]*models.Match, error) {
 	regs, err := s.repo.ListApprovedRegistrations(tournamentID)
 	if err != nil {
 		return nil, err
@@ -233,7 +251,6 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 		return nil, errors.New("bracket uchun kamida 2 tasdiqlangan ishtirokchi kerak")
 	}
 
-	// Shuffle
 	rand.Shuffle(N, func(i, j int) { regs[i], regs[j] = regs[j], regs[i] })
 
 	size := nextPow2(N)
@@ -245,18 +262,16 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 	}
 	defer tx.Rollback()
 
-	// Pre-create ALL matches as pending
-	// matchID[round][matchNum] → db id
 	type key struct{ r, m int }
 	matchID := map[key]int64{}
 
 	for r := 1; r <= rounds; r++ {
-		count := size >> r // size / 2^r
+		count := size >> r
 		if count == 0 {
 			count = 1
 		}
 		for m := 1; m <= count; m++ {
-			id, err := s.repo.InsertMatch(tx, tournamentID, r, m)
+			id, err := s.repo.InsertMatch(tx, tournamentID, r, m, models.MatchTypeWinners)
 			if err != nil {
 				return nil, fmt.Errorf("match yaratishda xato (r=%d m=%d): %v", r, m, err)
 			}
@@ -264,7 +279,6 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 		}
 	}
 
-	// Fill round-1 slots from shuffled players
 	slots := make([]*int64, size)
 	for i := range regs {
 		tg := regs[i].UserTgID
@@ -290,7 +304,7 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 		}
 	}
 
-	// Cascade byes and voids upward round by round
+	// Cascade byes and voids upward
 	for r := 1; r < rounds; r++ {
 		count := size >> r
 		if count == 0 {
@@ -313,7 +327,6 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 
 			switch match.Status {
 			case models.MatchStatusBye:
-				// auto-advance the single player
 				var winner int64
 				if match.Player1TgID != nil {
 					winner = *match.Player1TgID
@@ -326,30 +339,23 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 				if err := s.fillSlotTx(tx, nextID, slot, winner); err != nil {
 					return nil, fmt.Errorf("slot to'ldirishda xato (r=%d m=%d): %v", r, m, err)
 				}
-
 			case models.MatchStatusVoid:
-				// nothing to advance — sibling match may cascade parent to bye/void
 				_ = id
 			}
 		}
 
-		// After processing, recompute any next-round matches that might now be bye/void
 		nextCount := size >> (r + 1)
 		if nextCount == 0 {
 			nextCount = 1
 		}
 		for m := 1; m <= nextCount; m++ {
 			nextID := matchID[key{r + 1, m}]
-			c1ID := matchID[key{r, 2*m - 1}]
-			c2ID := matchID[key{r, 2*m}]
 			c1, _ := s.repo.GetMatchByRoundNum(tx, tournamentID, r, 2*m-1)
 			c2, _ := s.repo.GetMatchByRoundNum(tx, tournamentID, r, 2*m)
 			nm, _ := s.repo.GetMatchByRoundNum(tx, tournamentID, r+1, m)
 			if c1 == nil || c2 == nil || nm == nil {
 				continue
 			}
-			_ = c1ID
-			_ = c2ID
 
 			switch {
 			case c1.Status == models.MatchStatusVoid && c2.Status == models.MatchStatusVoid:
@@ -373,6 +379,201 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 	return s.repo.GetBracket(tournamentID)
 }
 
+// --- Round Robin ---
+
+func (s *Service) generateRoundRobinBracket(tournamentID int64) ([]*models.Match, error) {
+	regs, err := s.repo.ListApprovedRegistrations(tournamentID)
+	if err != nil {
+		return nil, err
+	}
+	N := len(regs)
+	if N < 2 {
+		return nil, errors.New("Round Robin uchun kamida 2 tasdiqlangan ishtirokchi kerak")
+	}
+
+	rand.Shuffle(N, func(i, j int) { regs[i], regs[j] = regs[j], regs[i] })
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	matchNum := 1
+	for i := 0; i < N-1; i++ {
+		for j := i + 1; j < N; j++ {
+			id, err := s.repo.InsertMatch(tx, tournamentID, 1, matchNum, models.MatchTypeRoundRobin)
+			if err != nil {
+				return nil, fmt.Errorf("RR match yaratishda xato (%d vs %d): %v", i, j, err)
+			}
+			p1 := regs[i].UserTgID
+			p2 := regs[j].UserTgID
+			if err := s.repo.UpdateMatchPlayers(tx, id, &p1, &p2, models.MatchStatusReady); err != nil {
+				return nil, err
+			}
+			matchNum++
+		}
+	}
+
+	if err := s.repo.SetTournamentStatus(tournamentID, models.TournamentStatusInProgress); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("RR bracket saqlashda xato: %v", err)
+	}
+	return s.repo.GetBracket(tournamentID)
+}
+
+// --- Double Elimination ---
+
+func (s *Service) generateDoubleElimBracket(tournamentID int64) ([]*models.Match, error) {
+	regs, err := s.repo.ListApprovedRegistrations(tournamentID)
+	if err != nil {
+		return nil, err
+	}
+	N := len(regs)
+	size := nextPow2(N)
+	if size != N || N < 4 {
+		return nil, fmt.Errorf("Double Elimination uchun ishtirokchilar soni 4, 8 yoki 16 bo'lishi kerak (hozir: %d)", N)
+	}
+	k := totalRounds(size) // log2(size)
+
+	rand.Shuffle(N, func(i, j int) { regs[i], regs[j] = regs[j], regs[i] })
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	type key struct{ r, m int }
+	ids := map[key]int64{}
+
+	// Create WB matches (rounds 1..k)
+	for r := 1; r <= k; r++ {
+		count := size >> r
+		if count == 0 {
+			count = 1
+		}
+		for m := 1; m <= count; m++ {
+			id, err := s.repo.InsertMatch(tx, tournamentID, r, m, models.MatchTypeWinners)
+			if err != nil {
+				return nil, fmt.Errorf("WB match yaratishda xato (r=%d m=%d): %v", r, m, err)
+			}
+			ids[key{r, m}] = id
+		}
+	}
+
+	// Create LB matches (lbRoundOffset+1 .. lbRoundOffset+2*(k-1))
+	lbRounds := 2 * (k - 1)
+	for lr := 1; lr <= lbRounds; lr++ {
+		count := size >> ((lr + 3) / 2)
+		if count == 0 {
+			count = 1
+		}
+		for m := 1; m <= count; m++ {
+			id, err := s.repo.InsertMatch(tx, tournamentID, models.LBRoundOffset+lr, m, models.MatchTypeLosers)
+			if err != nil {
+				return nil, fmt.Errorf("LB match yaratishda xato (lr=%d m=%d): %v", lr, m, err)
+			}
+			ids[key{models.LBRoundOffset + lr, m}] = id
+		}
+	}
+
+	// Create Grand Final
+	gfID, err := s.repo.InsertMatch(tx, tournamentID, models.GFRound, 1, models.MatchTypeGrandFinal)
+	if err != nil {
+		return nil, fmt.Errorf("Grand Final yaratishda xato: %v", err)
+	}
+	ids[key{models.GFRound, 1}] = gfID
+
+	// Fill WB R1 with all N players (no byes since N = power of 2)
+	for i := 0; i < size/2; i++ {
+		p1 := regs[2*i].UserTgID
+		p2 := regs[2*i+1].UserTgID
+		if err := s.repo.UpdateMatchPlayers(tx, ids[key{1, i + 1}], &p1, &p2, models.MatchStatusReady); err != nil {
+			return nil, err
+		}
+	}
+
+	// WB winner routing: WB Rr Mm → WB R(r+1) M⌈m/2⌉
+	for r := 1; r < k; r++ {
+		count := size >> r
+		if count == 0 {
+			count = 1
+		}
+		for m := 1; m <= count; m++ {
+			nextM := (m + 1) / 2
+			if err := s.repo.SetWinnerNextMatch(tx, ids[key{r, m}], ids[key{r + 1, nextM}]); err != nil {
+				return nil, err
+			}
+		}
+	}
+	// WB final → GF
+	if err := s.repo.SetWinnerNextMatch(tx, ids[key{k, 1}], gfID); err != nil {
+		return nil, err
+	}
+
+	// WB R1 loser routing → LB R1: W1Mm loser → L1M⌈m/2⌉
+	wbR1Count := size / 2
+	for m := 1; m <= wbR1Count; m++ {
+		lbM := (m + 1) / 2
+		if err := s.repo.SetLoserNextMatch(tx, ids[key{1, m}], ids[key{models.LBRoundOffset + 1, lbM}]); err != nil {
+			return nil, err
+		}
+	}
+	// WB Rr (r=2..k) loser routing → LB R(2r-2) Mm
+	for r := 2; r <= k; r++ {
+		count := size >> r
+		if count == 0 {
+			count = 1
+		}
+		lbR := 2 * (r - 1)
+		for m := 1; m <= count; m++ {
+			if err := s.repo.SetLoserNextMatch(tx, ids[key{r, m}], ids[key{models.LBRoundOffset + lbR, m}]); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// LB winner routing
+	for lr := 1; lr <= lbRounds; lr++ {
+		count := size >> ((lr + 3) / 2)
+		if count == 0 {
+			count = 1
+		}
+		if lr == lbRounds {
+			// LB final → GF
+			if err := s.repo.SetWinnerNextMatch(tx, ids[key{models.LBRoundOffset + lr, 1}], gfID); err != nil {
+				return nil, err
+			}
+		} else {
+			nextLR := lr + 1
+			for m := 1; m <= count; m++ {
+				var nextM int
+				if nextLR%2 == 0 {
+					// Even LB (drop round): same match number
+					nextM = m
+				} else {
+					// Odd LB (consolidation): pair up
+					nextM = (m + 1) / 2
+				}
+				if err := s.repo.SetWinnerNextMatch(tx, ids[key{models.LBRoundOffset + lr, m}], ids[key{models.LBRoundOffset + nextLR, nextM}]); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	if err := s.repo.SetTournamentStatus(tournamentID, models.TournamentStatusInProgress); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("DE bracket saqlashda xato: %v", err)
+	}
+	return s.repo.GetBracket(tournamentID)
+}
+
 func (s *Service) fillSlotTx(tx *sql.Tx, matchID int64, slot int, playerTgID int64) error {
 	var err error
 	if slot == 1 {
@@ -389,25 +590,51 @@ func (s *Service) GetBracket(tournamentID int64) ([]*models.Match, error) {
 
 // ===================== MATCH RESULT =====================
 
-// SetResult records winner, advances to next round. Returns nextMatchID (0 if final).
-func (s *Service) SetResult(matchID, winnerTgID int64) (nextMatchID int64, finished bool, err error) {
+// SetResult records winner, advances players. Returns (winnerNextID, loserNextID, finished, err).
+// loserNextID is non-zero only for Double Elimination WB matches.
+func (s *Service) SetResult(matchID, winnerTgID int64) (winnerNextID int64, loserNextID int64, finished bool, err error) {
 	m, err := s.repo.GetMatch(matchID)
 	if err != nil {
-		return 0, false, errors.New("o'yin topilmadi")
+		return 0, 0, false, errors.New("o'yin topilmadi")
 	}
 	if m.Status != models.MatchStatusReady {
-		return 0, false, fmt.Errorf("o'yin hali tayyor emas (holat: %s)", m.Status)
+		return 0, 0, false, fmt.Errorf("o'yin hali tayyor emas (holat: %s)", m.Status)
 	}
 	isP1 := m.Player1TgID != nil && *m.Player1TgID == winnerTgID
 	isP2 := m.Player2TgID != nil && *m.Player2TgID == winnerTgID
 	if !isP1 && !isP2 {
-		return 0, false, errors.New("bu o'yinchi ushbu o'yinda yo'q")
+		return 0, 0, false, errors.New("bu o'yinchi ushbu o'yinda yo'q")
 	}
 
 	if err := s.repo.SetMatchWinner(matchID, winnerTgID); err != nil {
-		return 0, false, err
+		return 0, 0, false, err
 	}
 
+	t, err := s.repo.GetTournament(m.TournamentID)
+	if err != nil {
+		return 0, 0, false, err
+	}
+
+	switch t.Type {
+	case models.TournamentTypeRoundRobin:
+		allDone, _ := s.repo.AllMatchesDone(m.TournamentID)
+		if allDone {
+			_ = s.repo.SetTournamentStatus(m.TournamentID, models.TournamentStatusFinished)
+			return 0, 0, true, nil
+		}
+		return 0, 0, false, nil
+
+	case models.TournamentTypeDoubleElim:
+		wn, ln, fin, advErr := s.advanceDEResult(m, winnerTgID)
+		return wn, ln, fin, advErr
+
+	default: // single_elimination
+		wn, fin, advErr := s.advanceSEResult(m, winnerTgID)
+		return wn, 0, fin, advErr
+	}
+}
+
+func (s *Service) advanceSEResult(m *models.Match, winnerTgID int64) (nextMatchID int64, finished bool, err error) {
 	maxRound, _ := s.repo.GetMaxRound(m.TournamentID)
 	nextRound := m.Round + 1
 
@@ -422,7 +649,6 @@ func (s *Service) SetResult(matchID, winnerTgID int64) (nextMatchID int64, finis
 		slot = 2
 	}
 
-	// Get next match ID
 	var nmID int64
 	if err := s.db.QueryRow(
 		`SELECT id FROM tournament_matches WHERE tournament_id=$1 AND round=$2 AND match_num=$3`,
@@ -435,16 +661,77 @@ func (s *Service) SetResult(matchID, winnerTgID int64) (nextMatchID int64, finis
 		return 0, false, err
 	}
 
-	// Check if next match is now ready
 	var p1, p2 *int64
-	if err := s.db.QueryRow(`SELECT player1_tg_id, player2_tg_id FROM tournament_matches WHERE id=$1`, nmID).Scan(&p1, &p2); err != nil {
-		return 0, false, fmt.Errorf("keyingi o'yin tekshirishda xato: %v", err)
-	}
+	_ = s.db.QueryRow(`SELECT player1_tg_id, player2_tg_id FROM tournament_matches WHERE id=$1`, nmID).Scan(&p1, &p2)
 	if p1 != nil && p2 != nil {
-		if _, err := s.db.Exec(`UPDATE tournament_matches SET status='ready' WHERE id=$1`, nmID); err != nil {
-			return 0, false, fmt.Errorf("keyingi o'yin holatini yangilashda xato: %v", err)
-		}
+		_, _ = s.db.Exec(`UPDATE tournament_matches SET status='ready' WHERE id=$1`, nmID)
 	}
 
 	return nmID, false, nil
+}
+
+func (s *Service) advanceDEResult(m *models.Match, winnerTgID int64) (winnerNextID int64, loserNextID int64, finished bool, err error) {
+	if m.MatchType == models.MatchTypeGrandFinal {
+		_ = s.repo.SetTournamentStatus(m.TournamentID, models.TournamentStatusFinished)
+		return 0, 0, true, nil
+	}
+
+	// Determine loser
+	var loserTgID int64
+	if m.Player1TgID != nil && m.Player2TgID != nil {
+		if *m.Player1TgID == winnerTgID {
+			loserTgID = *m.Player2TgID
+		} else {
+			loserTgID = *m.Player1TgID
+		}
+	}
+
+	// Advance winner via winner_next_match_id
+	if m.WinnerNextMatchID != nil {
+		nmID := *m.WinnerNextMatchID
+		if err := s.fillAvailableSlot(nmID, winnerTgID); err != nil {
+			return 0, 0, false, err
+		}
+		s.checkAndSetReady(nmID)
+		winnerNextID = nmID
+	}
+
+	// Advance loser to LB (only for WB matches)
+	if m.MatchType == models.MatchTypeWinners && m.LoserNextMatchID != nil && loserTgID != 0 {
+		lbID := *m.LoserNextMatchID
+		if err := s.fillAvailableSlot(lbID, loserTgID); err != nil {
+			return winnerNextID, 0, false, fmt.Errorf("LB slot fill error: %v", err)
+		}
+		s.checkAndSetReady(lbID)
+		loserNextID = lbID
+	}
+
+	return winnerNextID, loserNextID, false, nil
+}
+
+func (s *Service) fillAvailableSlot(matchID int64, playerTgID int64) error {
+	var p1, p2 *int64
+	if err := s.db.QueryRow(`SELECT player1_tg_id, player2_tg_id FROM tournament_matches WHERE id=$1`, matchID).Scan(&p1, &p2); err != nil {
+		return err
+	}
+	if p1 == nil {
+		_, err := s.db.Exec(`UPDATE tournament_matches SET player1_tg_id=$1 WHERE id=$2`, playerTgID, matchID)
+		return err
+	}
+	if p2 == nil {
+		_, err := s.db.Exec(`UPDATE tournament_matches SET player2_tg_id=$1 WHERE id=$2`, playerTgID, matchID)
+		return err
+	}
+	return fmt.Errorf("match %d ikki o'rni ham to'lgan", matchID)
+}
+
+func (s *Service) checkAndSetReady(matchID int64) {
+	var p1, p2 *int64
+	var status string
+	if err := s.db.QueryRow(`SELECT player1_tg_id, player2_tg_id, status FROM tournament_matches WHERE id=$1`, matchID).Scan(&p1, &p2, &status); err != nil {
+		return
+	}
+	if status == models.MatchStatusPending && p1 != nil && p2 != nil {
+		_, _ = s.db.Exec(`UPDATE tournament_matches SET status='ready' WHERE id=$1`, matchID)
+	}
 }

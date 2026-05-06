@@ -149,6 +149,12 @@ const (
 )
 
 const (
+	TournamentTypeSingleElim = "single_elimination"
+	TournamentTypeDoubleElim = "double_elimination"
+	TournamentTypeRoundRobin = "round_robin"
+)
+
+const (
 	RegStatusPending  = "pending"
 	RegStatusApproved = "approved"
 	RegStatusRejected = "rejected"
@@ -162,6 +168,19 @@ const (
 	MatchStatusDone    = "done"
 )
 
+const (
+	MatchTypeWinners    = "winners"
+	MatchTypeLosers     = "losers"
+	MatchTypeGrandFinal = "grand_final"
+	MatchTypeRoundRobin = "round_robin"
+)
+
+// LBRoundOffset and GFRound mirror tournament-service constants for bracket display.
+const (
+	MatchLBRoundOffset = 1000
+	MatchGFRound       = 2000
+)
+
 type Tournament struct {
 	ID            int64     `json:"id"`
 	Name          string    `json:"name"`
@@ -171,6 +190,7 @@ type Tournament struct {
 	Price         int64     `json:"price"`
 	MaxPlayers    int       `json:"max_players"`
 	Status        string    `json:"status"`
+	Type          string    `json:"type"`
 	CreatedBy     int64     `json:"created_by"`
 	CreatedAt     time.Time `json:"created_at"`
 	JoinCode      string    `json:"join_code"`
@@ -199,6 +219,7 @@ type TournamentMatch struct {
 	Player2TgID  *int64 `json:"player2_tg_id"`
 	WinnerTgID   *int64 `json:"winner_tg_id"`
 	Status       string `json:"status"`
+	MatchType    string `json:"match_type"`
 	Player1Name  string `json:"player1_name"`
 	Player2Name  string `json:"player2_name"`
 	WinnerName   string `json:"winner_name"`

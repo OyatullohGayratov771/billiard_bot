@@ -10,6 +10,12 @@ const (
 )
 
 const (
+	TournamentTypeSingleElim = "single_elimination"
+	TournamentTypeDoubleElim = "double_elimination"
+	TournamentTypeRoundRobin = "round_robin"
+)
+
+const (
 	RegStatusPending  = "pending"
 	RegStatusApproved = "approved"
 	RegStatusRejected = "rejected"
@@ -23,6 +29,17 @@ const (
 	MatchStatusDone    = "done"    // winner recorded
 )
 
+const (
+	MatchTypeWinners    = "winners"
+	MatchTypeLosers     = "losers"
+	MatchTypeGrandFinal = "grand_final"
+	MatchTypeRoundRobin = "round_robin"
+)
+
+// LBRoundOffset — losers bracket rounds are stored as lbRoundOffset+lr to avoid UNIQUE constraint conflicts.
+const LBRoundOffset = 1000
+const GFRound = 2000
+
 type Tournament struct {
 	ID          int64     `json:"id"`
 	Name        string    `json:"name"`
@@ -32,6 +49,7 @@ type Tournament struct {
 	Price       int64     `json:"price"`
 	MaxPlayers  int       `json:"max_players"`
 	Status      string    `json:"status"`
+	Type        string    `json:"type"`
 	CreatedBy   int64     `json:"created_by"`
 	CreatedAt   time.Time `json:"created_at"`
 
@@ -74,6 +92,10 @@ type Match struct {
 	Player2TgID  *int64 `json:"player2_tg_id"`
 	WinnerTgID   *int64 `json:"winner_tg_id"`
 	Status       string `json:"status"`
+	MatchType    string `json:"match_type"`
+
+	LoserNextMatchID  *int64 `json:"-"`
+	WinnerNextMatchID *int64 `json:"-"`
 
 	Player1Name string `json:"player1_name"`
 	Player2Name string `json:"player2_name"`

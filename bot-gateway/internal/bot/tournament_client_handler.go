@@ -65,12 +65,14 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 			"🎱 Stol: %s\n"+
 			"📅 Sana: <b>%s</b>\n"+
 			"👥 O'rinlar: <b>%d / %d</b>\n"+
+			"🎮 Tur: %s\n"+
 			"📊 Holat: %s",
 		t.Name, lockIcon,
 		t.BranchName,
 		tableInfo,
 		t.ScheduledAt.In(localTZ).Format("02.01.2006 15:04"),
 		t.ApprovedCount, t.MaxPlayers,
+		tournamentTypeText(t.Type),
 		tournamentStatusText(t.Status),
 	)
 

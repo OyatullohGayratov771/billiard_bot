@@ -81,6 +81,7 @@ func (h *Handler) createTournament(w http.ResponseWriter, r *http.Request) {
 		MaxPlayers  int    `json:"max_players"`
 		AdminTgID   int64  `json:"admin_tg_id"`
 		JoinCode    string `json:"join_code"`
+		Type        string `json:"type"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, 400, "invalid request")
@@ -91,7 +92,7 @@ func (h *Handler) createTournament(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "invalid scheduled_at (RFC3339)")
 		return
 	}
-	tournament, err := h.svc.CreateTournament(req.Name, req.BranchID, req.TableID, t, req.Price, req.MaxPlayers, req.AdminTgID, req.JoinCode)
+	tournament, err := h.svc.CreateTournament(req.Name, req.BranchID, req.TableID, t, req.Price, req.MaxPlayers, req.AdminTgID, req.JoinCode, req.Type)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return
@@ -290,12 +291,16 @@ func (h *Handler) setResult(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "invalid request")
 		return
 	}
-	nextID, finished, err := h.svc.SetResult(id, req.WinnerTgID)
+	winnerNextID, loserNextID, finished, err := h.svc.SetResult(id, req.WinnerTgID)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return
 	}
-	writeJSON(w, 200, map[string]any{"next_match_id": nextID, "finished": finished})
+	writeJSON(w, 200, map[string]any{
+		"next_match_id":       winnerNextID,
+		"loser_next_match_id": loserNextID,
+		"finished":            finished,
+	})
 }
 
 func (h *Handler) userTournaments(w http.ResponseWriter, r *http.Request) {

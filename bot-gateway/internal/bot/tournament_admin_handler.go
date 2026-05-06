@@ -87,12 +87,14 @@ func (h *Handler) cbAdminTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID int
 			"🎱 Stol: %s\n"+
 			"📅 Sana: <b>%s</b>\n"+
 			"👥 Ishtirokchilar: <b>%d / %d</b>\n"+
+			"🎮 Tur: %s\n"+
 			"📊 Holat: %s",
 		t.Name,
 		t.BranchName,
 		tableInfo,
 		t.ScheduledAt.In(localTZ).Format("02.01.2006 15:04"),
 		t.ApprovedCount, t.MaxPlayers,
+		tournamentTypeText(t.Type),
 		tournamentStatusText(t.Status),
 	)
 
@@ -432,7 +434,7 @@ func (h *Handler) cbAdminTrnWinner(bot *tgbotapi.BotAPI, chatID int64, msgID int
 	matchID := mustParseInt64(innerParts[0])
 	winnerTgID := mustParseInt64(innerParts[1])
 
-	nextMatchID, finished, err := h.tournamentSvc.SetResult(matchID, winnerTgID)
+	winnerNextID, loserNextID, finished, err := h.tournamentSvc.SetResult(matchID, winnerTgID)
 	if err != nil {
 		send(bot, chatID, fmt.Sprintf("❌ %v", err))
 		return
@@ -449,21 +451,27 @@ func (h *Handler) cbAdminTrnWinner(bot *tgbotapi.BotAPI, chatID int64, msgID int
 			trnName = t.Name
 		}
 		send(bot, chatID, fmt.Sprintf("🏆 <b>%s yakunlandi! G'olib aniqlandi.</b>", trnName))
-	} else if nextMatchID > 0 {
-		send(bot, chatID, fmt.Sprintf("✅ Natija kiritildi. Keyingi o'yin #%d tayyor bo'ldi.", nextMatchID))
+	} else {
 		allMatches, _ := h.tournamentSvc.GetBracket(trnID)
-		for _, m := range allMatches {
-			if m.ID == nextMatchID && m.Status == models.MatchStatusReady && m.Player1TgID != nil && m.Player2TgID != nil {
-				if *m.Player1TgID > 0 {
-					send(bot, *m.Player1TgID, fmt.Sprintf(
-						"⚔️ <b>Keyingi o'yiningiz tayyor!</b>\n\nRaqibingiz: <b>%s</b>", m.Player2Name))
+		notifyMatch := func(nmID int64, label string) {
+			for _, m := range allMatches {
+				if m.ID == nmID && m.Status == models.MatchStatusReady && m.Player1TgID != nil && m.Player2TgID != nil {
+					if *m.Player1TgID > 0 {
+						send(bot, *m.Player1TgID, fmt.Sprintf("⚔️ <b>%s tayyor!</b>\n\nRaqibingiz: <b>%s</b>", label, m.Player2Name))
+					}
+					if *m.Player2TgID > 0 {
+						send(bot, *m.Player2TgID, fmt.Sprintf("⚔️ <b>%s tayyor!</b>\n\nRaqibingiz: <b>%s</b>", label, m.Player1Name))
+					}
+					break
 				}
-				if *m.Player2TgID > 0 {
-					send(bot, *m.Player2TgID, fmt.Sprintf(
-						"⚔️ <b>Keyingi o'yiningiz tayyor!</b>\n\nRaqibingiz: <b>%s</b>", m.Player1Name))
-				}
-				break
 			}
+		}
+		if winnerNextID > 0 {
+			send(bot, chatID, fmt.Sprintf("✅ Natija kiritildi. Keyingi o'yin #%d.", winnerNextID))
+			notifyMatch(winnerNextID, "Keyingi o'yiningiz")
+		}
+		if loserNextID > 0 {
+			notifyMatch(loserNextID, "Losers bracket o'yiningiz")
 		}
 	}
 
@@ -714,9 +722,31 @@ func (h *Handler) handleTrnMaxPlayersInput(bot *tgbotapi.BotAPI, msg *tgbotapi.M
 	}
 
 	h.states.SetData(tgID, "trn_max_players", int64(maxPlayers))
+
+	kb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🎯 Single Elimination", "admin_trn_sel_type:single_elimination"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔄 Double Elimination", "admin_trn_sel_type:double_elimination"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔁 Round Robin", "admin_trn_sel_type:round_robin"),
+		),
+	)
+	sendWithKeyboard(bot, chatID,
+		"4️⃣ <b>Turnir turini tanlang:</b>\n\n"+
+			"🎯 <b>Single Elimination</b> — mag'lub bo'lsa turnirdan chiqadi\n"+
+			"🔄 <b>Double Elimination</b> — ikkinchi imkoniyat bor (4/8/16 o'yinchi)\n"+
+			"🔁 <b>Round Robin</b> — hamma hammaga qarshi o'ynaydi",
+		kb)
+}
+
+func (h *Handler) cbAdminTrnSelType(bot *tgbotapi.BotAPI, chatID int64, tgID int64, typeName string) {
+	h.states.SetData(tgID, "trn_type", typeName)
 	h.states.Set(tgID, StateTrnSetCode)
 	send(bot, chatID,
-		"4️⃣ <b>Maxfiy kod (ixtiyoriy):</b>\n\n"+
+		"5️⃣ <b>Maxfiy kod (ixtiyoriy):</b>\n\n"+
 			"Turnirga faqat siz bergan kodni bilganlar kira oladi.\n\n"+
 			"Kod o'rnatmaslik uchun <code>-</code> yuboring.")
 }
@@ -735,12 +765,16 @@ func (h *Handler) handleTrnSetCodeInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mess
 	branchID, _ := h.states.GetInt64(tgID, "trn_branch_id")
 	maxVal, _ := h.states.GetInt64(tgID, "trn_max_players")
 	dtVal, _ := h.states.GetData(tgID, "trn_datetime")
+	trnType, _ := h.states.GetString(tgID, "trn_type")
 	h.states.Clear(tgID)
 
 	dt, _ := dtVal.(time.Time)
 	maxPlayers := int(maxVal)
+	if trnType == "" {
+		trnType = models.TournamentTypeSingleElim
+	}
 
-	t, err := h.tournamentSvc.CreateTournament(name, branchID, nil, dt, 0, maxPlayers, tgID, joinCode)
+	t, err := h.tournamentSvc.CreateTournament(name, branchID, nil, dt, 0, maxPlayers, tgID, joinCode, trnType)
 	if err != nil {
 		send(bot, chatID, fmt.Sprintf("❌ %v", err))
 		return
@@ -765,6 +799,17 @@ func (h *Handler) handleTrnSetCodeInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mess
 }
 
 // ===================== HELPERS =====================
+
+func tournamentTypeText(t string) string {
+	switch t {
+	case models.TournamentTypeDoubleElim:
+		return "🔄 Double Elimination"
+	case models.TournamentTypeRoundRobin:
+		return "🔁 Round Robin"
+	default:
+		return "🎯 Single Elimination"
+	}
+}
 
 func tournamentStatusIcon(status string) string {
 	switch status {
@@ -885,6 +930,44 @@ func (h *Handler) cmdTVUpdate(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user 
 }
 
 func formatBracket(matches []*models.TournamentMatch) string {
+	if len(matches) == 0 {
+		return ""
+	}
+	// Detect tournament type from first match's match_type
+	first := matches[0]
+	switch first.MatchType {
+	case models.MatchTypeRoundRobin:
+		return formatRRBracket(matches)
+	}
+	// Check if any match is DE-specific
+	for _, m := range matches {
+		if m.MatchType == models.MatchTypeLosers || m.MatchType == models.MatchTypeGrandFinal {
+			return formatDEBracket(matches)
+		}
+	}
+	return formatSEBracket(matches)
+}
+
+func formatMatchLine(m *models.TournamentMatch) string {
+	switch m.Status {
+	case models.MatchStatusBye:
+		name := m.Player1Name
+		if name == "" {
+			name = m.Player2Name
+		}
+		return fmt.Sprintf("  • %s → keyingi bosqich\n", name)
+	case models.MatchStatusVoid:
+		return fmt.Sprintf("  • O'yin %d (bo'sh)\n", m.MatchNum)
+	case models.MatchStatusDone:
+		return fmt.Sprintf("  • %s vs %s → 🏆 %s\n", m.Player1Name, m.Player2Name, m.WinnerName)
+	case models.MatchStatusReady:
+		return fmt.Sprintf("  ⚡ %s vs %s\n", m.Player1Name, m.Player2Name)
+	default:
+		return fmt.Sprintf("  • O'yin %d (kutilmoqda)\n", m.MatchNum)
+	}
+}
+
+func formatSEBracket(matches []*models.TournamentMatch) string {
 	var sb strings.Builder
 	curRound := 0
 	for _, m := range matches {
@@ -892,19 +975,110 @@ func formatBracket(matches []*models.TournamentMatch) string {
 			curRound = m.Round
 			sb.WriteString(fmt.Sprintf("\n<b>📍 %d-bosqich</b>\n", curRound))
 		}
-		switch m.Status {
-		case models.MatchStatusBye:
-			sb.WriteString(fmt.Sprintf("  • %s → keyingi bosqich\n", m.Player1Name))
-		case models.MatchStatusVoid:
-			sb.WriteString(fmt.Sprintf("  • O'yin %d (bo'sh)\n", m.MatchNum))
-		case models.MatchStatusDone:
-			sb.WriteString(fmt.Sprintf("  • %s vs %s → 🏆 %s\n",
-				m.Player1Name, m.Player2Name, m.WinnerName))
-		case models.MatchStatusReady:
-			sb.WriteString(fmt.Sprintf("  ⚡ %s vs %s\n", m.Player1Name, m.Player2Name))
+		sb.WriteString(formatMatchLine(m))
+	}
+	return sb.String()
+}
+
+func formatDEBracket(matches []*models.TournamentMatch) string {
+	var sb strings.Builder
+	var wb, lb, gf []*models.TournamentMatch
+	for _, m := range matches {
+		switch m.MatchType {
+		case models.MatchTypeLosers:
+			lb = append(lb, m)
+		case models.MatchTypeGrandFinal:
+			gf = append(gf, m)
 		default:
-			sb.WriteString(fmt.Sprintf("  • O'yin %d (kutilmoqda)\n", m.MatchNum))
+			wb = append(wb, m)
 		}
+	}
+
+	sb.WriteString("\n🏆 <b>Winners Bracket</b>\n")
+	curRound := 0
+	for _, m := range wb {
+		if m.Round != curRound {
+			curRound = m.Round
+			sb.WriteString(fmt.Sprintf("<b>R%d</b>\n", curRound))
+		}
+		sb.WriteString(formatMatchLine(m))
+	}
+
+	if len(lb) > 0 {
+		sb.WriteString("\n⬇️ <b>Losers Bracket</b>\n")
+		curRound = 0
+		for _, m := range lb {
+			lr := m.Round - models.MatchLBRoundOffset
+			if lr != curRound {
+				curRound = lr
+				sb.WriteString(fmt.Sprintf("<b>LR%d</b>\n", curRound))
+			}
+			sb.WriteString(formatMatchLine(m))
+		}
+	}
+
+	if len(gf) > 0 {
+		sb.WriteString("\n🥇 <b>Grand Final</b>\n")
+		for _, m := range gf {
+			sb.WriteString(formatMatchLine(m))
+		}
+	}
+	return sb.String()
+}
+
+func formatRRBracket(matches []*models.TournamentMatch) string {
+	var sb strings.Builder
+	sb.WriteString("\n🔁 <b>Round Robin — O'yinlar</b>\n\n")
+
+	// Build standings map: tgID → {name, wins}
+	type standing struct {
+		name string
+		wins int
+	}
+	standings := map[int64]*standing{}
+	ensure := func(tgID int64, name string) {
+		if _, ok := standings[tgID]; !ok {
+			standings[tgID] = &standing{name: name}
+		}
+	}
+
+	for i, m := range matches {
+		if m.Player1TgID != nil {
+			ensure(*m.Player1TgID, m.Player1Name)
+		}
+		if m.Player2TgID != nil {
+			ensure(*m.Player2TgID, m.Player2Name)
+		}
+		if m.Status == models.MatchStatusDone && m.WinnerTgID != nil {
+			if s, ok := standings[*m.WinnerTgID]; ok {
+				s.wins++
+			}
+		}
+		sb.WriteString(fmt.Sprintf("%d. ", i+1))
+		sb.WriteString(formatMatchLine(m))
+	}
+
+	// Standings
+	sb.WriteString("\n📊 <b>Jadvali</b>\n")
+	type row struct {
+		tgID int64
+		name string
+		wins int
+	}
+	var rows []row
+	for id, s := range standings {
+		rows = append(rows, row{id, s.name, s.wins})
+	}
+	// Sort by wins descending
+	for i := 0; i < len(rows); i++ {
+		for j := i + 1; j < len(rows); j++ {
+			if rows[j].wins > rows[i].wins {
+				rows[i], rows[j] = rows[j], rows[i]
+			}
+		}
+	}
+	for i, r := range rows {
+		sb.WriteString(fmt.Sprintf("%d. %s — %d g'alaba\n", i+1, r.name, r.wins))
 	}
 	return sb.String()
 }

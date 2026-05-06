@@ -20,7 +20,7 @@ func NewTournamentClient(baseURL string, httpClient *http.Client, internalToken 
 	return &TournamentClient{baseURL: baseURL, http: httpClient, internalToken: internalToken}
 }
 
-func (c *TournamentClient) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string) (*models.Tournament, error) {
+func (c *TournamentClient) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string, tournamentType string) (*models.Tournament, error) {
 	body, _ := json.Marshal(map[string]any{
 		"name":         name,
 		"branch_id":    branchID,
@@ -30,6 +30,7 @@ func (c *TournamentClient) CreateTournament(name string, branchID int64, tableID
 		"max_players":  maxPlayers,
 		"admin_tg_id":  adminTgID,
 		"join_code":    joinCode,
+		"type":         tournamentType,
 	})
 	var t models.Tournament
 	return &t, c.post("/tournaments", body, &t)
@@ -101,16 +102,17 @@ func (c *TournamentClient) GetBracket(tournamentID int64) ([]*models.TournamentM
 	return matches, c.get(fmt.Sprintf("/tournaments/%d/bracket", tournamentID), &matches)
 }
 
-func (c *TournamentClient) SetResult(matchID, winnerTgID int64) (nextMatchID int64, finished bool, err error) {
+func (c *TournamentClient) SetResult(matchID, winnerTgID int64) (winnerNextID int64, loserNextID int64, finished bool, err error) {
 	body, _ := json.Marshal(map[string]any{"winner_tg_id": winnerTgID})
 	var resp struct {
-		NextMatchID int64 `json:"next_match_id"`
-		Finished    bool  `json:"finished"`
+		NextMatchID     int64 `json:"next_match_id"`
+		LoserNextMatchID int64 `json:"loser_next_match_id"`
+		Finished        bool  `json:"finished"`
 	}
 	if err := c.put(fmt.Sprintf("/matches/%d/result", matchID), body, &resp); err != nil {
-		return 0, false, err
+		return 0, 0, false, err
 	}
-	return resp.NextMatchID, resp.Finished, nil
+	return resp.NextMatchID, resp.LoserNextMatchID, resp.Finished, nil
 }
 
 func (c *TournamentClient) GetUserTournaments(tgID int64) ([]*models.TournamentRegistration, error) {
