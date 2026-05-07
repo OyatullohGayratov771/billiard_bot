@@ -3,6 +3,7 @@ package handler
 import (
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -52,6 +53,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 
 	mux.HandleFunc("POST /tournaments/{id}/bracket", h.generateBracket)
 	mux.HandleFunc("GET /tournaments/{id}/bracket", h.getBracket)
+	mux.HandleFunc("GET /tournaments/{id}/sse", h.tournamentSSE)
 
 	mux.HandleFunc("PUT /matches/{id}/result", h.setResult)
 
@@ -291,11 +293,12 @@ func (h *Handler) setResult(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "invalid request")
 		return
 	}
-	winnerNextID, loserNextID, finished, err := h.svc.SetResult(id, req.WinnerTgID)
+	winnerNextID, loserNextID, finished, trnID, err := h.svc.SetResult(id, req.WinnerTgID)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return
 	}
+	h.hub.Broadcast(fmt.Sprintf("trn:%d", trnID))
 	writeJSON(w, 200, map[string]any{
 		"next_match_id":       winnerNextID,
 		"loser_next_match_id": loserNextID,

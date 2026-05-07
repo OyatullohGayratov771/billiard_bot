@@ -590,29 +590,29 @@ func (s *Service) GetBracket(tournamentID int64) ([]*models.Match, error) {
 
 // ===================== MATCH RESULT =====================
 
-// SetResult records winner, advances players. Returns (winnerNextID, loserNextID, finished, err).
+// SetResult records winner, advances players. Returns (winnerNextID, loserNextID, finished, trnID, err).
 // loserNextID is non-zero only for Double Elimination WB matches.
-func (s *Service) SetResult(matchID, winnerTgID int64) (winnerNextID int64, loserNextID int64, finished bool, err error) {
+func (s *Service) SetResult(matchID, winnerTgID int64) (winnerNextID int64, loserNextID int64, finished bool, trnID int64, err error) {
 	m, err := s.repo.GetMatch(matchID)
 	if err != nil {
-		return 0, 0, false, errors.New("o'yin topilmadi")
+		return 0, 0, false, 0, errors.New("o'yin topilmadi")
 	}
 	if m.Status != models.MatchStatusReady {
-		return 0, 0, false, fmt.Errorf("o'yin hali tayyor emas (holat: %s)", m.Status)
+		return 0, 0, false, 0, fmt.Errorf("o'yin hali tayyor emas (holat: %s)", m.Status)
 	}
 	isP1 := m.Player1TgID != nil && *m.Player1TgID == winnerTgID
 	isP2 := m.Player2TgID != nil && *m.Player2TgID == winnerTgID
 	if !isP1 && !isP2 {
-		return 0, 0, false, errors.New("bu o'yinchi ushbu o'yinda yo'q")
+		return 0, 0, false, 0, errors.New("bu o'yinchi ushbu o'yinda yo'q")
 	}
 
 	if err := s.repo.SetMatchWinner(matchID, winnerTgID); err != nil {
-		return 0, 0, false, err
+		return 0, 0, false, 0, err
 	}
 
 	t, err := s.repo.GetTournament(m.TournamentID)
 	if err != nil {
-		return 0, 0, false, err
+		return 0, 0, false, 0, err
 	}
 
 	switch t.Type {
@@ -620,17 +620,17 @@ func (s *Service) SetResult(matchID, winnerTgID int64) (winnerNextID int64, lose
 		allDone, _ := s.repo.AllMatchesDone(m.TournamentID)
 		if allDone {
 			_ = s.repo.SetTournamentStatus(m.TournamentID, models.TournamentStatusFinished)
-			return 0, 0, true, nil
+			return 0, 0, true, m.TournamentID, nil
 		}
-		return 0, 0, false, nil
+		return 0, 0, false, m.TournamentID, nil
 
 	case models.TournamentTypeDoubleElim:
 		wn, ln, fin, advErr := s.advanceDEResult(m, winnerTgID)
-		return wn, ln, fin, advErr
+		return wn, ln, fin, m.TournamentID, advErr
 
 	default: // single_elimination
 		wn, fin, advErr := s.advanceSEResult(m, winnerTgID)
-		return wn, 0, fin, advErr
+		return wn, 0, fin, m.TournamentID, advErr
 	}
 }
 
