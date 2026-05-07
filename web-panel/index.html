@@ -3,103 +3,133 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎱 Billiard King — Turnirlar</title>
+<title>Billiard King — Turnirlar</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+:root{
+  --gold:#d4a012;--gold-light:#f0c030;--gold-dim:#8b6910;
+  --felt:#1a4a22;--felt-dim:rgba(26,74,34,.18);
+  --bg:#06090a;--bg2:#0a0f0b;--card-bg:rgba(10,16,11,.97);
+  --border:#1a2a1c;--border-gold:rgba(212,160,18,.3);
+  --text:#dde8d8;--text-dim:#4a5e4a;--text-muted:#28382a;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(26,74,34,.12),transparent)}
 
-/* HEADER */
+/* ── HEADER ── */
 .hdr{
-  background:linear-gradient(135deg,#0b0b1e,#0f0f28,#0b0b1e);
-  border-bottom:2px solid #d4a012;
-  padding:18px 28px;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#040b05 0%,#060d07 60%,var(--bg) 100%);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
 }
-.logo{display:flex;align-items:center;gap:12px}
-.logo-icon{font-size:2rem;filter:drop-shadow(0 0 12px rgba(240,192,48,.5))}
-.logo-text h1{font-size:1.4rem;font-weight:800;color:#f0c030;letter-spacing:.5px}
-.logo-text p{font-size:.72rem;color:#5050a0;text-transform:uppercase;letter-spacing:2px;margin-top:2px}
-.hdr-right{font-size:.75rem;color:#404080}
+.hdr::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(212,160,18,.04) 50%,transparent 100%);
+  pointer-events:none;
+}
+.hdr-inner{
+  max-width:960px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  padding:20px 0 18px;
+}
+.logo{display:flex;align-items:center;gap:14px}
+.ball{
+  position:relative;width:50px;height:50px;flex-shrink:0;
+  background:radial-gradient(circle at 35% 30%,#2a2a2a,#000 60%);
+  border-radius:50%;
+  box-shadow:0 0 0 2px var(--gold-dim),0 0 20px rgba(212,160,18,.25),inset -4px -4px 12px rgba(255,255,255,.04);
+}
+.ball::after{
+  content:'8';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:1.25rem;font-weight:900;color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.8);
+}
+.ball .crown{position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:1.1rem;filter:drop-shadow(0 0 6px rgba(212,160,18,.7))}
+.brand h1{font-size:1.6rem;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;line-height:1;
+  background:linear-gradient(135deg,#f0c030 0%,#d4a012 50%,#a07010 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.brand p{font-size:.62rem;letter-spacing:4px;text-transform:uppercase;color:var(--text-dim);margin-top:4px}
+.hdr-right{font-size:.72rem;color:var(--text-dim)}
 
-/* MAIN */
-.main{max-width:960px;margin:0 auto;padding:28px 20px 60px}
+/* ── GOLD DIVIDER ── */
+.divider{height:2px;background:linear-gradient(90deg,transparent,var(--gold) 30%,var(--gold-light) 50%,var(--gold) 70%,transparent);opacity:.6}
 
-/* SECTION */
-.section-title{
-  font-size:.65rem;text-transform:uppercase;letter-spacing:3px;color:#404080;
-  margin-bottom:14px;margin-top:32px;
+/* ── MAIN ── */
+.main{max-width:960px;margin:0 auto;padding:28px 20px 72px}
+
+/* ── SECTION ── */
+.sec-title{
   display:flex;align-items:center;gap:10px;
+  font-size:.6rem;text-transform:uppercase;letter-spacing:3.5px;
+  color:var(--text-dim);margin-bottom:14px;margin-top:32px;
 }
-.section-title::after{content:'';flex:1;height:1px;background:#1a1a38}
-.section-title:first-child{margin-top:0}
+.sec-title:first-child{margin-top:0}
+.sec-title .line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
 
-/* TOURNAMENT CARD */
+/* ── CARD GRID ── */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
 
 .card{
-  border-radius:14px;border:1px solid #1a1a38;
-  background:linear-gradient(160deg,#0d0d22,#0a0a1a);
-  padding:18px 20px;
-  cursor:pointer;
-  transition:border-color .2s,box-shadow .2s,transform .15s;
-  text-decoration:none;color:inherit;display:block;
+  display:block;text-decoration:none;color:inherit;
+  border-radius:14px;padding:18px 20px;
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  transition:border-color .25s,box-shadow .25s,transform .18s;
+  position:relative;overflow:hidden;
 }
-.card:hover{
-  border-color:#d4a012;
-  box-shadow:0 0 24px rgba(212,160,18,.2);
-  transform:translateY(-2px);
+.card::before{
+  content:'';position:absolute;inset:0;border-radius:14px;opacity:0;transition:opacity .3s;
+  background:linear-gradient(135deg,rgba(26,74,34,.12),transparent 60%,rgba(212,160,18,.05));
 }
-.card.active{border-color:#2a4a2a}
-.card.finished{opacity:.65}
+.card:hover{border-color:var(--border-gold);box-shadow:0 4px 32px rgba(212,160,18,.18),0 0 0 1px rgba(212,160,18,.1);transform:translateY(-2px)}
+.card:hover::before{opacity:1}
+.card.active{border-color:rgba(26,100,36,.5)}
+.card.finished{opacity:.6}
 
 .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
-.card-name{font-size:1rem;font-weight:700;color:#e0e0f0;line-height:1.3}
-.status-badge{
-  flex-shrink:0;font-size:.65rem;padding:3px 9px;border-radius:10px;font-weight:600;
-  white-space:nowrap;letter-spacing:.5px;
-}
-.badge-reg{background:rgba(48,180,48,.12);border:1px solid rgba(48,180,48,.3);color:#40c040}
-.badge-live{background:rgba(212,160,18,.15);border:1px solid rgba(212,160,18,.4);color:#f0c030;animation:pulse-b 1.5s infinite}
-.badge-done{background:rgba(80,80,160,.12);border:1px solid rgba(80,80,160,.3);color:#8080c0}
-.badge-cancel{background:rgba(160,40,40,.1);border:1px solid rgba(160,40,40,.25);color:#c06060}
-@keyframes pulse-b{0%,100%{opacity:1}50%{opacity:.6}}
+.card-name{font-size:1rem;font-weight:700;color:var(--text);line-height:1.3}
+.badge{flex-shrink:0;font-size:.62rem;padding:3px 9px;border-radius:8px;font-weight:700;white-space:nowrap;letter-spacing:.5px}
+.b-reg{background:rgba(30,120,50,.14);border:1px solid rgba(30,160,60,.25);color:#30c060}
+.b-live{background:rgba(212,160,18,.12);border:1px solid rgba(212,160,18,.35);color:var(--gold-light);animation:bpulse 1.6s infinite}
+.b-done{background:rgba(60,60,80,.12);border:1px solid rgba(80,80,120,.25);color:#6070a0}
+.b-cancel{background:rgba(120,30,30,.1);border:1px solid rgba(160,40,40,.2);color:#a05050}
+@keyframes bpulse{0%,100%{opacity:1}50%{opacity:.55}}
 
-.card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.meta-tag{
-  font-size:.72rem;color:#5050a0;background:rgba(255,255,255,.04);
-  border-radius:5px;padding:2px 8px;
-}
+.card-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.tag{font-size:.7rem;color:var(--text-dim);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:5px;padding:2px 8px}
 
-.card-footer{display:flex;align-items:center;justify-content:space-between}
-.players-bar{flex:1;margin-right:12px}
-.players-label{font-size:.68rem;color:#404070;margin-bottom:4px}
-.bar-track{height:4px;background:#111128;border-radius:2px;overflow:hidden}
-.bar-fill{height:100%;background:linear-gradient(90deg,#2a4a8a,#d4a012);border-radius:2px;transition:width .4s}
-.players-count{font-size:.72rem;color:#6060a0}
-.arrow{color:#303060;font-size:.9rem;flex-shrink:0}
-.card:hover .arrow{color:#d4a012}
+.card-footer{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bar-wrap{flex:1}
+.bar-lbl{font-size:.65rem;color:var(--text-muted);margin-bottom:4px}
+.bar{height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,rgba(26,74,34,.8),var(--gold));border-radius:2px;transition:width .5s}
+.pcount{font-size:.72rem;color:var(--text-dim)}
+.arr{color:var(--text-muted);font-size:1rem;transition:color .2s,transform .2s}
+.card:hover .arr{color:var(--gold);transform:translateX(2px)}
 
-/* EMPTY */
-.empty{text-align:center;color:#282858;padding:40px 20px;font-size:.9rem}
-.empty .big{font-size:2.5rem;display:block;margin-bottom:8px;opacity:.4}
+/* ── LOADING / EMPTY ── */
+.loader{display:flex;align-items:center;justify-content:center;gap:14px;padding:70px;color:var(--text-muted)}
+.spin{width:26px;height:26px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:rot .7s linear infinite;flex-shrink:0}
+@keyframes rot{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:50px 20px;color:var(--text-muted);font-size:.9rem}
+.empty .ico{font-size:2.8rem;display:block;margin-bottom:10px;opacity:.35}
 
-/* LOADING */
-.loader{display:flex;align-items:center;justify-content:center;padding:60px;gap:12px;color:#303060}
-.spin{width:28px;height:28px;border:2px solid #1a1a38;border-top-color:#d4a012;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* FOOTER */
+/* ── FOOTER ── */
 .foot{
   position:fixed;bottom:0;left:0;right:0;
-  background:#04040c;border-top:1px solid #0e0e20;
-  padding:7px 22px;display:flex;justify-content:space-between;
-  font-size:.68rem;color:#282850;
+  background:rgba(4,7,4,.96);backdrop-filter:blur(8px);
+  border-top:1px solid var(--border);
+  padding:7px 24px;display:flex;justify-content:space-between;align-items:center;
+  font-size:.68rem;color:var(--text-muted);
 }
+.foot-logo{display:flex;align-items:center;gap:5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-dim);font-size:.65rem}
 
-/* MOBILE */
+/* ── MOBILE ── */
 @media(max-width:600px){
-  .hdr{padding:14px 16px}
-  .main{padding:20px 14px 60px}
+  .hdr-inner{padding:16px 0 14px}
+  .brand h1{font-size:1.3rem}
+  .main{padding:20px 14px 72px}
   .cards{grid-template-columns:1fr}
 }
 </style>
@@ -107,15 +137,18 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
 <body>
 
 <header class="hdr">
-  <div class="logo">
-    <span class="logo-icon">🎱</span>
-    <div class="logo-text">
-      <h1>Billiard King</h1>
-      <p>Turnirlar</p>
+  <div class="hdr-inner">
+    <div class="logo">
+      <div class="ball"><span class="crown">👑</span></div>
+      <div class="brand">
+        <h1>Billiard King</h1>
+        <p>Turnirlar</p>
+      </div>
     </div>
+    <div class="hdr-right" id="upd">—</div>
   </div>
-  <div class="hdr-right" id="upd">—</div>
 </header>
+<div class="divider"></div>
 
 <main class="main" id="main">
   <div class="loader"><div class="spin"></div>Yuklanmoqda…</div>
@@ -123,7 +156,7 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
 
 <footer class="foot">
   <span>billiardking.uz</span>
-  <span>🎱 Billiard King</span>
+  <div class="foot-logo">🎱 Billiard King</div>
 </footer>
 
 <script>
@@ -139,7 +172,7 @@ async function load() {
       'Yangilandi: ' + new Date().toLocaleTimeString('uz-UZ');
   } catch(e) {
     document.getElementById('main').innerHTML =
-      '<div class="empty"><span class="big">⚠️</span>Serverga ulanib bo\'lmadi</div>';
+      '<div class="empty"><span class="ico">⚠️</span>Serverga ulanib bo\'lmadi</div>';
   }
 }
 
@@ -153,78 +186,76 @@ function render(all) {
   main.innerHTML = '';
 
   if (!all.length) {
-    main.innerHTML = '<div class="empty"><span class="big">🏆</span>Hozircha turnirlar yo\'q</div>';
+    main.innerHTML = '<div class="empty"><span class="ico">🏆</span>Hozircha turnirlar yo\'q</div>';
     return;
   }
 
   if (active.length) {
-    main.appendChild(mkSection('⚡ Faol turnirlar'));
+    main.appendChild(mkSec('⚡ Faol turnirlar'));
     main.appendChild(mkCards(active));
   }
-
   if (finished.length) {
-    main.appendChild(mkSection('📋 Turnirlar tarixi'));
+    main.appendChild(mkSec('📋 Turnirlar tarixi'));
     main.appendChild(mkCards(finished));
   }
 }
 
-function mkSection(title) {
+function mkSec(title) {
   const d = document.createElement('div');
-  d.className = 'section-title';
-  d.textContent = title;
+  d.className = 'sec-title';
+  d.innerHTML = title + '<span class="line"></span>';
   return d;
 }
 
 function mkCards(list) {
-  const grid = document.createElement('div');
-  grid.className = 'cards';
-  for (const t of list) grid.appendChild(mkCard(t));
-  return grid;
+  const g = document.createElement('div');
+  g.className = 'cards';
+  for (const t of list) g.appendChild(mkCard(t));
+  return g;
 }
 
 function mkCard(t) {
   const a = document.createElement('a');
   a.href = '/tournament.html?id=' + t.id;
   const isActive = t.status === 'registration' || t.status === 'in_progress';
-  a.className = 'card' + (isActive ? ' active' : ' finished');
+  a.className = 'card ' + (isActive ? 'active' : 'finished');
 
   const pct = t.max_players > 0
-    ? Math.min(100, Math.round((t.approved_count / t.max_players) * 100))
-    : 0;
+    ? Math.min(100, Math.round((t.approved_count / t.max_players) * 100)) : 0;
 
   a.innerHTML =
     '<div class="card-top">' +
       '<div class="card-name">' + esc(t.name) + '</div>' +
-      statusBadge(t.status) +
+      badge(t.status) +
     '</div>' +
     '<div class="card-meta">' +
-      (t.branch_name ? '<span class="meta-tag">📍 ' + esc(t.branch_name) + '</span>' : '') +
-      '<span class="meta-tag">📅 ' + fmtDate(t.scheduled_at) + '</span>' +
-      '<span class="meta-tag">' + typeIcon(t.type) + ' ' + typeName(t.type) + '</span>' +
+      (t.branch_name ? '<span class="tag">📍 ' + esc(t.branch_name) + '</span>' : '') +
+      '<span class="tag">📅 ' + fmtDate(t.scheduled_at) + '</span>' +
+      '<span class="tag">' + typeIco(t.type) + ' ' + typeName(t.type) + '</span>' +
     '</div>' +
     '<div class="card-footer">' +
-      '<div class="players-bar">' +
-        '<div class="players-label">O\'yinchilar</div>' +
-        '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="bar-wrap">' +
+        '<div class="bar-lbl">O\'yinchilar</div>' +
+        '<div class="bar"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
       '</div>' +
-      '<span class="players-count">' + (t.approved_count||0) + '/' + (t.max_players||0) + '</span>' +
-      '<span class="arrow">›</span>' +
+      '<span class="pcount">' + (t.approved_count||0) + '/' + (t.max_players||0) + '</span>' +
+      '<span class="arr">›</span>' +
     '</div>';
   return a;
 }
 
-function statusBadge(s) {
+function badge(s) {
   const m = {
-    registration: ['badge-reg',  "📋 Ro'yxat"],
-    in_progress:  ['badge-live', '⚡ Jarayonda'],
-    finished:     ['badge-done', '🏆 Yakunlandi'],
-    cancelled:    ['badge-cancel','❌ Bekor'],
+    registration: ['b-reg',  "📋 Ro'yxat"],
+    in_progress:  ['b-live', '⚡ Jarayonda'],
+    finished:     ['b-done', '🏆 Yakunlandi'],
+    cancelled:    ['b-cancel','❌ Bekor'],
   };
-  const [cls, lbl] = m[s] || ['badge-done', s];
-  return '<span class="status-badge ' + cls + '">' + lbl + '</span>';
+  const [cls, lbl] = m[s] || ['b-done', s];
+  return '<span class="badge ' + cls + '">' + lbl + '</span>';
 }
 
-function typeIcon(t) {
+function typeIco(t) {
   return {single_elimination:'🎯',double_elimination:'🔄',round_robin:'🔁'}[t]||'🏆';
 }
 function typeName(t) {
@@ -232,8 +263,7 @@ function typeName(t) {
 }
 function fmtDate(iso) {
   if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+  return new Date(iso).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
