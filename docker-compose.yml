@@ -197,6 +197,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./web-panel:/var/www/panel:ro
     depends_on:
       tournament-service:
         condition: service_healthy

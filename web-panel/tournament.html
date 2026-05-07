@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏆 Turnir Bracket</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:auto}
+
+/* HEADER */
+.hdr{
+  background:linear-gradient(135deg,#0b0b1e,#0f0f28,#0b0b1e);
+  border-bottom:2px solid #d4a012;
+  padding:14px 22px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.back-btn{
+  display:flex;align-items:center;gap:6px;
+  color:#6060a0;font-size:.82rem;text-decoration:none;
+  border:1px solid #1a1a38;border-radius:8px;padding:6px 12px;
+  transition:border-color .2s,color .2s;flex-shrink:0;
+}
+.back-btn:hover{border-color:#d4a012;color:#d4a012}
+.hdr-info{flex:1;min-width:0}
+.hdr-info h1{font-size:clamp(1rem,3vw,1.6rem);font-weight:800;color:#f0c030;text-shadow:0 0 20px rgba(240,192,48,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-info p{font-size:.75rem;color:#5050a0;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+.hdr-info p span{background:rgba(255,255,255,.04);border-radius:4px;padding:1px 7px}
+.type-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(212,160,18,.1);border:1px solid rgba(212,160,18,.25);border-radius:10px;padding:3px 10px;font-size:.7rem;color:#d4a012;margin-top:5px}
+.live-badge{display:flex;align-items:center;gap:6px;border-radius:16px;padding:6px 12px;font-size:.75rem;white-space:nowrap;border:1px solid #30b030;background:#061206;color:#30c030;flex-shrink:0}
+.dot{width:7px;height:7px;border-radius:50%;background:#30c030;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* SECTION HEADERS */
+.section-wrap{padding:0 0 28px}
+.section-hdr{display:flex;align-items:center;gap:12px;padding:16px 22px 10px;font-size:.68rem;text-transform:uppercase;letter-spacing:2.5px;font-weight:700}
+.section-hdr::after{content:'';flex:1;height:1px;background:currentColor;opacity:.15}
+.section-hdr.wb{color:#c0a000}
+.section-hdr.lb{color:#5080c0}
+.section-hdr.gf{color:#c04080}
+.section-hdr.rr{color:#50a060}
+
+/* BRACKET */
+.bracket{display:flex;align-items:stretch;padding:8px 22px 0;gap:0;overflow-x:auto}
+.round-col{display:flex;flex-direction:column;align-items:center;min-width:215px}
+.round-label{font-size:.62rem;text-transform:uppercase;letter-spacing:2px;color:#383870;margin-bottom:10px;text-align:center;padding:3px 10px;border-radius:4px;background:rgba(56,56,112,.12)}
+.matches-col{display:flex;flex-direction:column;width:100%;flex:1}
+.match-slot{display:flex;align-items:center;flex:1;min-height:68px}
+.conn{display:flex;flex-direction:column;justify-content:center;width:30px;flex-shrink:0;align-self:stretch}
+.conn-line{border-top:1px solid #181838;width:100%}
+
+/* MATCH CARD */
+.card{
+  width:200px;border-radius:10px;overflow:hidden;
+  border:1px solid #181836;
+  background:linear-gradient(160deg,#0d0d22,#0a0a1a);
+  transition:box-shadow .25s,border-color .25s;
+}
+.card.live{border-color:#d4a012;box-shadow:0 0 18px rgba(212,160,18,.28);animation:glow 2.2s ease-in-out infinite}
+.card.done{border-color:#182018;background:linear-gradient(160deg,#0c1410,#080e0c)}
+@keyframes glow{0%,100%{box-shadow:0 0 18px rgba(212,160,18,.28)}50%{box-shadow:0 0 34px rgba(212,160,18,.52)}}
+.player{padding:9px 12px;font-size:.84rem;font-weight:500;display:flex;align-items:center;gap:8px}
+.player+.player{border-top:1px solid rgba(255,255,255,.05)}
+.player.win{background:rgba(212,160,18,.14);color:#f0c030;font-weight:700}
+.player.lose{color:#282850}
+.ico{width:16px;text-align:center;font-size:.7rem;flex-shrink:0}
+.pname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:155px}
+.bye{width:200px;padding:11px 14px;border-radius:10px;border:1px dashed #181836;background:#07070f;color:#282850;font-size:.78rem;font-style:italic}
+.void-el{width:200px;height:62px}
+
+/* WINNER */
+.winner-col{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:150px;flex:1;gap:8px;padding:20px}
+.trophy{font-size:3.8rem;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 12px rgba(240,192,48,.5))}
+.winner-name{font-size:1.25rem;font-weight:800;color:#f0c030;text-align:center}
+.winner-sub{font-size:.63rem;color:#6060a0;text-transform:uppercase;letter-spacing:2.5px}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+/* GRAND FINAL */
+.gf-wrap{display:flex;align-items:center;justify-content:center;padding:16px 22px 36px;gap:18px;flex-wrap:wrap}
+.gf-label{font-size:.65rem;text-transform:uppercase;letter-spacing:2px;color:#c04080;margin-bottom:8px;text-align:center}
+
+/* ROUND ROBIN */
+.rr-wrap{display:grid;grid-template-columns:1fr 270px;gap:20px;padding:10px 22px 40px}
+@media(max-width:760px){.rr-wrap{grid-template-columns:1fr}}
+.rr-matches{display:flex;flex-direction:column;gap:7px}
+.rr-card{border-radius:10px;border:1px solid #181836;background:linear-gradient(160deg,#0d0d22,#0a0a1a);padding:10px 14px;display:flex;align-items:center;gap:10px;transition:border-color .2s}
+.rr-card.live{border-color:#d4a012;animation:glow 2.2s ease-in-out infinite}
+.rr-card.done{border-color:#182018;background:linear-gradient(160deg,#0c1410,#080e0c)}
+.rr-num{font-size:.65rem;color:#303060;min-width:22px;text-align:right}
+.rr-vs{color:#282858;font-size:.75rem;margin:0 6px}
+.rr-p{font-size:.84rem;font-weight:500}
+.rr-p.win{color:#f0c030;font-weight:700}
+.rr-p.lose{color:#252548}
+.rr-status{margin-left:auto;font-size:.75rem}
+
+.standings{border-radius:12px;border:1px solid #181836;background:linear-gradient(160deg,#0d0d22,#0a0a1a);overflow:hidden;height:fit-content}
+.standings-hdr{padding:11px 16px;font-size:.65rem;text-transform:uppercase;letter-spacing:2px;color:#505090;border-bottom:1px solid #181836;background:rgba(255,255,255,.02)}
+.s-row{display:grid;grid-template-columns:26px 1fr 32px 32px 32px;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.03);font-size:.83rem}
+.s-row:last-child{border-bottom:none}
+.s-row.first{background:rgba(212,160,18,.06)}
+.s-row.first .s-name{color:#f0c030;font-weight:700}
+.s-rank{color:#383870;font-weight:700;font-size:.72rem}
+.s-rank.r1{color:#f0c030}.s-rank.r2{color:#b0b0b0}.s-rank.r3{color:#c08060}
+.s-name{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s-num{text-align:center;color:#505090;font-size:.78rem}
+.s-num.w{color:#30c060;font-weight:700}
+
+/* EMPTY / OVERLAY */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:12px;color:#282858;font-size:.9rem;text-align:center;padding:40px}
+.empty .big{font-size:2.8rem;opacity:.4}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;z-index:99}
+.overlay.on{opacity:1}
+.spinner{width:40px;height:40px;border:3px solid #181830;border-top-color:#f0c030;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* FOOTER */
+.foot{position:fixed;bottom:0;left:0;right:0;background:#04040c;border-top:1px solid #0e0e20;padding:6px 22px;display:flex;justify-content:space-between;font-size:.68rem;color:#282850}
+
+/* MOBILE */
+@media(max-width:700px){
+  .bracket{flex-direction:column;padding:8px 12px 0}
+  .round-col{min-width:unset;width:100%}
+  .matches-col{flex-direction:row;overflow-x:auto;gap:8px;padding-bottom:8px}
+  .match-slot{flex-shrink:0}
+  .conn{display:none}
+  .section-hdr{padding:12px 14px 8px}
+  .gf-wrap{padding:12px 14px 36px}
+}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="ov"><div class="spinner"></div></div>
+
+<header class="hdr">
+  <a class="back-btn" href="/">‹ Turnirlar</a>
+  <div class="hdr-info">
+    <h1 id="tname">Yuklanmoqda…</h1>
+    <p id="tmeta"></p>
+    <div id="ttype" class="type-pill" style="display:none"></div>
+  </div>
+  <div class="live-badge" id="live-badge" style="display:none">
+    <span class="dot"></span><span>JONLI</span>
+  </div>
+</header>
+
+<div id="main">
+  <div class="empty"><div class="big">⏳</div><div>Yuklanmoqda…</div></div>
+</div>
+
+<footer class="foot">
+  <span id="upd">—</span>
+  <span>🎱 Billiard King</span>
+</footer>
+
+<script>
+const API = '/api';
+const params = new URLSearchParams(location.search);
+const TRN_ID = params.get('id');
+
+if (!TRN_ID) location.href = '/';
+
+async function loadData() {
+  const ov = document.getElementById('ov');
+  ov.className = 'overlay on';
+  try {
+    const [tRes, bRes] = await Promise.all([
+      fetch(API + '/tournaments/' + TRN_ID),
+      fetch(API + '/tournaments/' + TRN_ID + '/bracket'),
+    ]);
+    if (!tRes.ok) throw new Error('not found');
+    const tournament = await tRes.json();
+    const matches = bRes.ok ? (await bRes.json() || []) : [];
+    render({ tournament, matches });
+    document.getElementById('upd').textContent =
+      'Yangilandi: ' + new Date().toLocaleTimeString('uz-UZ');
+  } catch(e) {
+    document.getElementById('main').innerHTML =
+      '<div class="empty"><div class="big">⚠️</div><div>Turnir topilmadi</div></div>';
+  } finally {
+    ov.className = 'overlay';
+  }
+}
+
+/* ── RENDER ROUTER ── */
+function render(data) {
+  const t = data.tournament || {};
+  const matches = data.matches || [];
+
+  document.title = '🏆 ' + (t.name || 'Bracket');
+  document.getElementById('tname').textContent = '🏆 ' + (t.name || '—');
+
+  const meta = document.getElementById('tmeta');
+  meta.innerHTML = '';
+  if (t.branch_name) addSpan(meta, '📍 ' + t.branch_name);
+  if (t.scheduled_at) addSpan(meta, '📅 ' + fmtDate(t.scheduled_at));
+  addSpan(meta, statusLabel(t.status));
+  if (t.approved_count != null) addSpan(meta, '👥 ' + t.approved_count + '/' + t.max_players);
+
+  const tp = document.getElementById('ttype');
+  const tl = typeLabel(t.type);
+  if (tl) { tp.textContent = tl; tp.style.display = 'inline-flex'; }
+
+  const lb = document.getElementById('live-badge');
+  lb.style.display = t.status === 'in_progress' ? 'flex' : 'none';
+
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+
+  if (!matches.length) {
+    main.innerHTML = '<div class="empty"><div class="big">⏳</div><div>Bracket hali yaratilmagan</div></div>';
+    return;
+  }
+
+  if (t.type === 'double_elimination') renderDE(main, t, matches);
+  else if (t.type === 'round_robin')   renderRR(main, t, matches);
+  else                                 renderSE(main, t, matches);
+}
+
+function addSpan(parent, text) {
+  const s = document.createElement('span');
+  s.textContent = text;
+  parent.appendChild(s);
+}
+
+/* ── SINGLE ELIMINATION ── */
+function renderSE(container, t, matches) {
+  const rounds = groupByRound(matches);
+  const nums = Object.keys(rounds).map(Number).sort((a,b)=>a-b);
+  if (!nums.length) return;
+  const maxR = nums[nums.length-1];
+  let winner = null;
+  if (t.status === 'finished')
+    for (const m of rounds[maxR]||[])
+      if (m.status==='done'&&m.winner_name) winner = m.winner_name;
+
+  const br = mkBracket();
+  nums.forEach((r,i) => {
+    if (i>0) br.appendChild(mkConn());
+    br.appendChild(mkRoundCol(rounds[r], r===maxR?'Final':r+'-bosqich', r));
+  });
+  if (t.status === 'finished') { br.appendChild(mkConn()); br.appendChild(mkWinner(winner)); }
+  container.appendChild(br);
+}
+
+/* ── DOUBLE ELIMINATION ── */
+function renderDE(container, t, matches) {
+  const wb = matches.filter(m=>m.match_type==='winners');
+  const lb = matches.filter(m=>m.match_type==='losers');
+  const gf = matches.filter(m=>m.match_type==='grand_final');
+
+  if (wb.length) {
+    const sec = mkSection('🏆 Winners Bracket','wb');
+    const rounds = groupByRound(wb);
+    const nums = Object.keys(rounds).map(Number).sort((a,b)=>a-b);
+    const maxR = nums[nums.length-1];
+    const br = mkBracket();
+    nums.forEach((r,i) => {
+      if (i>0) br.appendChild(mkConn());
+      br.appendChild(mkRoundCol(rounds[r], r===maxR?'WB Final':'WB R'+r, r));
+    });
+    sec.appendChild(br); container.appendChild(sec);
+  }
+  if (lb.length) {
+    const sec = mkSection('⬇ Losers Bracket','lb');
+    const rounds = groupByRound(lb);
+    const nums = Object.keys(rounds).map(Number).sort((a,b)=>a-b);
+    const maxR = nums[nums.length-1];
+    const br = mkBracket();
+    nums.forEach((r,i) => {
+      if (i>0) br.appendChild(mkConn());
+      const lbR = r - 1000;
+      br.appendChild(mkRoundCol(rounds[r], r===maxR?'LB Final':'LB R'+lbR, r));
+    });
+    sec.appendChild(br); container.appendChild(sec);
+  }
+  if (gf.length) {
+    const sec = mkSection('🎯 Grand Final','gf');
+    const wrap = document.createElement('div');
+    wrap.className = 'gf-wrap';
+    for (const m of gf) {
+      const col = document.createElement('div');
+      const lbl = document.createElement('div');
+      lbl.className = 'gf-label'; lbl.textContent = 'Grand Final';
+      col.appendChild(lbl); col.appendChild(buildCard(m));
+      wrap.appendChild(col);
+    }
+    if (t.status==='finished') {
+      let winner=null;
+      for (const m of gf) if (m.status==='done'&&m.winner_name) winner=m.winner_name;
+      wrap.appendChild(mkConn()); wrap.appendChild(mkWinner(winner));
+    }
+    sec.appendChild(wrap); container.appendChild(sec);
+  }
+  if (!wb.length&&!lb.length&&!gf.length) renderSE(container,t,matches);
+}
+
+/* ── ROUND ROBIN ── */
+function renderRR(container, t, matches) {
+  const wrap = document.createElement('div');
+  wrap.className = 'rr-wrap';
+
+  const mList = document.createElement('div');
+  mList.className = 'rr-matches';
+  const hdr = document.createElement('div');
+  hdr.className = 'section-hdr rr';
+  hdr.textContent = 'O\'yinlar';
+  mList.appendChild(hdr);
+
+  matches.forEach((m,i) => {
+    const card = document.createElement('div');
+    card.className = 'rr-card'+(m.status==='ready'?' live':m.status==='done'?' done':'');
+    const done = m.status==='done';
+    const p1win = done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player1_tg_id;
+    const p2win = done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player2_tg_id;
+
+    card.innerHTML =
+      '<span class="rr-num">'+(i+1)+'.</span>'+
+      '<span class="rr-p'+(p1win?' win':done&&!p1win?' lose':'')+'">'+esc(m.player1_name||'—')+'</span>'+
+      '<span class="rr-vs">vs</span>'+
+      '<span class="rr-p'+(p2win?' win':done&&!p2win?' lose':'')+'">'+esc(m.player2_name||'—')+'</span>'+
+      '<span class="rr-status">'+(m.status==='ready'?'🎱':m.status==='done'?'✅':'⏳')+'</span>';
+    mList.appendChild(card);
+  });
+
+  // Standings
+  const stand = document.createElement('div');
+  stand.className = 'standings';
+  stand.innerHTML = '<div class="standings-hdr">Jadval</div>';
+
+  const wins={}, played={}, players={};
+  for (const m of matches) {
+    if (m.player1_tg_id&&m.player1_name) players[m.player1_tg_id]=m.player1_name;
+    if (m.player2_tg_id&&m.player2_name) players[m.player2_tg_id]=m.player2_name;
+    if (m.status==='done'&&m.winner_tg_id) {
+      wins[m.winner_tg_id]=(wins[m.winner_tg_id]||0)+1;
+      [m.player1_tg_id,m.player2_tg_id].forEach(id=>{if(id)played[id]=(played[id]||0)+1});
+    }
+  }
+
+  // header row
+  stand.innerHTML += '<div class="s-row" style="border-bottom:1px solid #1a1a38;font-size:.65rem;color:#383870;letter-spacing:1px">' +
+    '<span>#</span><span>O\'YINCHI</span><span style="text-align:center">O</span>' +
+    '<span style="text-align:center;color:#30c060">G</span><span style="text-align:center">M</span></div>';
+
+  Object.entries(players)
+    .sort((a,b)=>(wins[b[0]]||0)-(wins[a[0]]||0))
+    .forEach(([id,name],idx) => {
+      const w=wins[id]||0, p=played[id]||0, l=p-w;
+      const rankIco=idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':idx+1;
+      const rankCls=idx===0?'r1':idx===1?'r2':idx===2?'r3':'';
+      const row = document.createElement('div');
+      row.className = 's-row'+(idx===0?' first':'');
+      row.innerHTML =
+        '<span class="s-rank '+rankCls+'">'+rankIco+'</span>'+
+        '<span class="s-name">'+esc(name)+'</span>'+
+        '<span class="s-num">'+p+'</span>'+
+        '<span class="s-num w">'+w+'</span>'+
+        '<span class="s-num">'+l+'</span>';
+      stand.appendChild(row);
+    });
+
+  wrap.appendChild(mList);
+  wrap.appendChild(stand);
+  container.appendChild(wrap);
+}
+
+/* ── HELPERS ── */
+function groupByRound(matches) {
+  const r={};
+  for (const m of matches) { if(!r[m.round]) r[m.round]=[]; r[m.round].push(m); }
+  return r;
+}
+function mkBracket() {
+  const d=document.createElement('div'); d.className='bracket'; return d;
+}
+function mkSection(title, cls) {
+  const sec=document.createElement('div'); sec.className='section-wrap';
+  const hdr=document.createElement('div'); hdr.className='section-hdr '+cls; hdr.textContent=title;
+  sec.appendChild(hdr); return sec;
+}
+function mkRoundCol(rmatches, label, round) {
+  const col=document.createElement('div'); col.className='round-col';
+  const lbl=document.createElement('div'); lbl.className='round-label'; lbl.textContent=label;
+  col.appendChild(lbl);
+  const mc=document.createElement('div'); mc.className='matches-col';
+  mc.style.gap=(Math.pow(2,round-1)*10)+'px';
+  for (const m of (rmatches||[])) {
+    const slot=document.createElement('div'); slot.className='match-slot';
+    slot.appendChild(buildCard(m)); mc.appendChild(slot);
+  }
+  col.appendChild(mc); return col;
+}
+function mkConn() {
+  const d=document.createElement('div'); d.className='conn';
+  d.innerHTML='<div class="conn-line"></div>'; return d;
+}
+function mkWinner(name) {
+  const w=document.createElement('div'); w.className='winner-col';
+  w.innerHTML='<div class="trophy">🏆</div><div class="winner-name">'+esc(name||'—')+'</div><div class="winner-sub">G\'olib</div>';
+  return w;
+}
+function buildCard(m) {
+  if (m.status==='void') { const d=document.createElement('div'); d.className='void-el'; return d; }
+  if (m.status==='bye') {
+    const d=document.createElement('div'); d.className='bye';
+    d.textContent=esc(m.player1_name||'—')+' → keyingi bosqich'; return d;
+  }
+  const live=m.status==='ready', done=m.status==='done';
+  const div=document.createElement('div');
+  div.className='card'+(live?' live':'')+(done?' done':'');
+  const p1win=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player1_tg_id;
+  const p2win=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player2_tg_id;
+  div.innerHTML=mkPlayer(m.player1_name,live,p1win,done&&!p1win)+mkPlayer(m.player2_name,live,p2win,done&&!p2win);
+  return div;
+}
+function mkPlayer(name,live,win,lose) {
+  const cls=win?' win':lose?' lose':'';
+  const ico=win?'🏆':live?'🎱':'👤';
+  return '<div class="player'+cls+'"><span class="ico">'+ico+'</span><span class="pname">'+esc(name||'—')+'</span></div>';
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmtDate(iso){
+  if(!iso)return'—';
+  const d=new Date(iso);
+  return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'})+
+    ' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+function statusLabel(s){
+  return {registration:"📋 Ro'yxat",in_progress:'⚡ Jarayonda',finished:'🏆 Yakunlandi',cancelled:'❌ Bekor'}[s]||s;
+}
+function typeLabel(t){
+  return {single_elimination:'🎯 Single Elimination',double_elimination:'🔄 Double Elimination',round_robin:'🔁 Round Robin'}[t]||null;
+}
+
+loadData();
+// Har 30 soniyada yangilanadi (jonli turnirlar uchun)
+setInterval(loadData, 30000);
+</script>
+</body>
+</html>
