@@ -255,10 +255,11 @@ func (h *Handler) cbAdminTrnApproveReg(bot *tgbotapi.BotAPI, chatID int64, msgID
 			trnName = t.Name
 		}
 		send(bot, targetReg.UserTgID, fmt.Sprintf(
-			"✅ <b>Tabriklaymiz! Turnirga qabul qilindingiz!</b>\n\n"+
-				"🏆 %s\n"+
+			"🎉 <b>Tabriklaymiz, siz turnirga qabul qilindingiz!</b>\n\n"+
+				"🏆 <b>%s</b>\n"+
 				"📅 %s\n\n"+
-				"Turnir boshlanishidan oldin sizga xabar beriladi.",
+				"Turnir kunida tayyor bo'ling — g'alaba siz tomonida! 💪\n"+
+				"Turnir boshlanishi haqida oldindan xabardor qilinasiz.",
 			trnName,
 			func() string {
 				if t != nil {
@@ -295,10 +296,11 @@ func (h *Handler) cbAdminTrnRejectReg(bot *tgbotapi.BotAPI, chatID int64, msgID 
 
 	if targetReg != nil {
 		send(bot, targetReg.UserTgID, fmt.Sprintf(
-			"❌ <b>Turnirga qabul qilinmadingiz.</b>\n\n"+
+			"😔 Afsuski, bu safar so'rovingiz qabul qilinmadi.\n\n"+
 				"🏆 Turnir #%d\n\n"+
-				"Boshqa turnirlarni kuzatib boring.\n"+
-				"❓ Savollar bo'lsa: %s",
+				"Xafa bo'lmang — yangi turnirlar tez orada bo'ladi! 🎱\n"+
+				"Keyingi imkoniyatni boy bermang. Boshqa turnirlarni kuzatib boring.\n"+
+				"❓ Savol yoki muammo bo'lsa: %s",
 			trnID, config.AppConfig.SupportUsername,
 		))
 	}
@@ -328,8 +330,9 @@ func (h *Handler) cbAdminGenBracket(bot *tgbotapi.BotAPI, chatID int64, msgID in
 	for _, r := range regs {
 		if r.Status == models.RegStatusApproved && r.UserTgID > 0 {
 			send(bot, r.UserTgID, fmt.Sprintf(
-				"⚡ <b>%s — Turnir boshlanmoqda!</b>\n\n"+
-					"Bracket tayyor. Turnir ro'yxatidan o'z o'yiningizni ko'ring.",
+				"🥁 <b>%s — Turnir boshlanmoqda!</b>\n\n"+
+					"Bracket tayyor — joyingizni egallab oling! 🎱\n"+
+					"Turnir ro'yxatidan o'z o'yiningizni ko'ring va g'alaba uchun kurashing! 🏆",
 				trnName,
 			))
 		}
@@ -340,11 +343,15 @@ func (h *Handler) cbAdminGenBracket(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		if m.Round == 1 && m.Status == models.MatchStatusReady && m.Player1TgID != nil && m.Player2TgID != nil {
 			if *m.Player1TgID > 0 {
 				send(bot, *m.Player1TgID, fmt.Sprintf(
-					"⚔️ <b>Sizning birinchi o'yiningiz!</b>\n\nRaqibingiz: <b>%s</b>", m.Player2Name))
+					"⚔️ <b>Birinchi o'yiningiz tayyor!</b>\n\n"+
+						"Raqibingiz: <b>%s</b>\n\n"+
+						"Kuchingizni to'plang va sahnaga chiqing! 🎱 G'alaba sizniki!", m.Player2Name))
 			}
 			if *m.Player2TgID > 0 {
 				send(bot, *m.Player2TgID, fmt.Sprintf(
-					"⚔️ <b>Sizning birinchi o'yiningiz!</b>\n\nRaqibingiz: <b>%s</b>", m.Player1Name))
+					"⚔️ <b>Birinchi o'yiningiz tayyor!</b>\n\n"+
+						"Raqibingiz: <b>%s</b>\n\n"+
+						"Kuchingizni to'plang va sahnaga chiqing! 🎱 G'alaba sizniki!", m.Player1Name))
 			}
 		}
 	}

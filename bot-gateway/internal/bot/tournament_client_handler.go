@@ -18,11 +18,11 @@ func (h *Handler) showClientTournamentList(bot *tgbotapi.BotAPI, chatID int64, t
 		return
 	}
 
-	header := "🏆 <b>Faol Turnirlar</b>\n\n"
+	header := "🏆 <b>Billiard King — Turnirlar</b>\n\n"
 	var rows [][]tgbotapi.InlineKeyboardButton
 
 	if len(tournaments) == 0 {
-		header += "Hozirda faol turnirlar yo'q.\nKeyinroq qaytib keling! 👀"
+		header += "Hozirda faol turnirlar yo'q.\n\nKuzatib boring — yangi turnirlar tez orada e'lon qilinadi! 🎱"
 	} else {
 		for _, t := range tournaments {
 			label := fmt.Sprintf("🏆 %s — %s (%d/%d)",
@@ -84,7 +84,7 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 	case models.TournamentStatusRegistration:
 		if reg == nil || reg.Status == models.RegStatusRejected {
 			if reg != nil && reg.Status == models.RegStatusRejected {
-				text += "\n\n❌ <i>Sizning so'rovingiz rad etildi.</i>"
+				text += "\n\n❌ <i>So'rovingiz rad etildi. Qaytadan urinib ko'ring yoki boshqa turnirga qatnashing!</i>"
 			}
 			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("✅ Ro'yxatdan o'tish",
@@ -93,9 +93,9 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		} else {
 			switch reg.Status {
 			case models.RegStatusPending:
-				text += "\n\n⏳ <i>Sizning so'rovingiz tekshirilmoqda...</i>"
+				text += "\n\n⏳ <i>So'rovingiz adminlar tomonidan ko'rib chiqilmoqda. Sabr qiling!</i>"
 			case models.RegStatusApproved:
-				text += "\n\n✅ <i>Siz ro'yxatdan o'tgansiz!</i>"
+				text += "\n\n✅ <i>Siz turnirga qabul qilindingiz! Omad tilaymiz 🍀</i>"
 			}
 		}
 
@@ -106,14 +106,14 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		))
 
 	case models.TournamentStatusFinished:
-		text += "\n\n🏆 <i>Turnir yakunlandi!</i>"
+		text += "\n\n🏆 <i>Turnir yakunlandi! Barcha ishtirokchilarga rahmat.</i>"
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🏆 Natijalarni ko'rish",
 				fmt.Sprintf("trn_bracket:%d", trnID)),
 		))
 
 	case models.TournamentStatusCancelled:
-		text += "\n\n❌ <i>Bu turnir bekor qilindi.</i>"
+		text += "\n\n❌ <i>Bu turnir bekor qilindi. Boshqa turnirlarni kuzatib boring! 🎱</i>"
 	}
 
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
@@ -194,10 +194,10 @@ func (h *Handler) finishTrnRegister(bot *tgbotapi.BotAPI, chatID int64, msgID in
 	}
 
 	confirmText := fmt.Sprintf(
-		"✅ <b>So'rovingiz yuborildi!</b>\n\n"+
-			"🏆 %s\n\n"+
-			"⏳ Admin tasdiqlashini kuting.\n"+
-			"Natija haqida sizga xabar beriladi.",
+		"✅ <b>So'rovingiz muvaffaqiyatli yuborildi!</b>\n\n"+
+			"🏆 <b>%s</b>\n\n"+
+			"⏳ Admin so'rovingizni ko'rib chiqmoqda.\n"+
+			"Qaror haqida sizga darhol xabar beriladi. Sabr qiling! 🎱",
 		trnName,
 	)
 	kb := tgbotapi.NewInlineKeyboardMarkup(

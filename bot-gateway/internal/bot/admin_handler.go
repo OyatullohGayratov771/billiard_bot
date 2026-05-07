@@ -53,7 +53,8 @@ func (h *Handler) cmdStart(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *mo
 		kb.ResizeKeyboard = true
 		kb.OneTimeKeyboard = true
 		sendWithKeyboard(bot, msg.Chat.ID,
-			"👋 Xush kelibsiz!\n\n📱 Davom etish uchun telefon raqamingizni ulashing:", kb)
+			"🎱 <b>Billiard King</b> botiga xush kelibsiz!\n\n"+
+				"Platformadan foydalanish uchun telefon raqamingizni tasdiqlang 📱", kb)
 		return
 	}
 
@@ -75,10 +76,10 @@ func (h *Handler) showMainMenu(bot *tgbotapi.BotAPI, chatID int64, user *models.
 	}
 
 	text := fmt.Sprintf(
-		"🎱 <b>Billiard Club Bot</b>\n\n"+
-			"Xush kelibsiz, <b>%s</b>!\n"+
-			"Sizning rolingiz: %s\n\n"+
-			"Pastdagi tugmalardan foydalaning 👇",
+		"🎱 <b>Billiard King</b>\n\n"+
+			"Assalomu alaykum, <b>%s</b>! 👋\n"+
+			"Siz tizimga <b>%s</b> sifatida kirgansiz.\n\n"+
+			"Quyidagi bo'limlardan birini tanlang 👇",
 		name, roleText,
 	)
 
