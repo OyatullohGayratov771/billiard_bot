@@ -225,8 +225,6 @@ function connectSSE() {
   };
 }
 
-// Zapas polling — SSE tushib ketsa ham 5 sekundda yangilanib turadi
-setInterval(loadData, 5000);
 
 function render(data) {
   const t = data.tournament || {};
