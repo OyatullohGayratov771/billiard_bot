@@ -134,6 +134,42 @@ func (h *Handler) tvStatus(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GET /tournaments/sse  — global SSE: har qanday turnir o'zgarishida refresh
+func (h *Handler) tournamentsSSE(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		writeError(w, 500, "streaming not supported")
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+
+	fmt.Fprintf(w, "data: {\"type\":\"connected\"}\n\n")
+	flusher.Flush()
+
+	ch := h.hub.subscribe("tournaments")
+	defer h.hub.unsubscribe("tournaments", ch)
+
+	ticker := time.NewTicker(25 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case <-ch:
+			fmt.Fprintf(w, "data: {\"type\":\"refresh\"}\n\n")
+			flusher.Flush()
+		case <-ticker.C:
+			fmt.Fprintf(w, ": keepalive\n\n")
+			flusher.Flush()
+		}
+	}
+}
+
 // GET /tournaments/{id}/sse  — public SSE, token shart emas
 func (h *Handler) tournamentSSE(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

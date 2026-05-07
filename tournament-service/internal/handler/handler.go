@@ -53,6 +53,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 
 	mux.HandleFunc("POST /tournaments/{id}/bracket", h.generateBracket)
 	mux.HandleFunc("GET /tournaments/{id}/bracket", h.getBracket)
+	mux.HandleFunc("GET /tournaments/sse", h.tournamentsSSE)
 	mux.HandleFunc("GET /tournaments/{id}/sse", h.tournamentSSE)
 
 	mux.HandleFunc("PUT /matches/{id}/result", h.setResult)
@@ -99,6 +100,7 @@ func (h *Handler) createTournament(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, err.Error())
 		return
 	}
+	h.hub.Broadcast("tournaments")
 	writeJSON(w, 200, tournament)
 }
 
@@ -150,6 +152,7 @@ func (h *Handler) updateTournament(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, err.Error())
 		return
 	}
+	h.hub.Broadcast("tournaments")
 	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
@@ -163,6 +166,7 @@ func (h *Handler) cancelTournament(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, err.Error())
 		return
 	}
+	h.hub.Broadcast("tournaments")
 	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
@@ -207,6 +211,7 @@ func (h *Handler) registerManual(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, err.Error())
 		return
 	}
+	h.hub.Broadcast("tournaments")
 	writeJSON(w, 200, reg)
 }
 
@@ -235,6 +240,7 @@ func (h *Handler) approveReg(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, err.Error())
 		return
 	}
+	h.hub.Broadcast("tournaments")
 	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
@@ -249,6 +255,7 @@ func (h *Handler) rejectReg(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, err.Error())
 		return
 	}
+	h.hub.Broadcast("tournaments")
 	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
@@ -263,6 +270,7 @@ func (h *Handler) generateBracket(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, err.Error())
 		return
 	}
+	h.hub.Broadcast("tournaments")
 	writeJSON(w, 200, matches)
 }
 
@@ -299,6 +307,7 @@ func (h *Handler) setResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.hub.Broadcast(fmt.Sprintf("trn:%d", trnID))
+	h.hub.Broadcast("tournaments")
 	writeJSON(w, 200, map[string]any{
 		"next_match_id":       winnerNextID,
 		"loser_next_match_id": loserNextID,

@@ -270,7 +270,23 @@ function esc(s) {
 }
 
 load();
-setInterval(load, 5000);
+
+// SSE — server o'zgarish bo'lganda o'zi xabar yuboradi
+let _retryMs = 2000, _sse = null;
+function connectSSE() {
+  if (_sse) { _sse.close(); _sse = null; }
+  _sse = new EventSource(API + '/tournaments/sse');
+  _sse.onopen = () => { _retryMs = 2000; };
+  _sse.onmessage = e => {
+    try { const m = JSON.parse(e.data); if (m.type === 'refresh') load(); } catch(x) {}
+  };
+  _sse.onerror = () => {
+    _sse.close(); _sse = null;
+    setTimeout(connectSSE, _retryMs);
+    _retryMs = Math.min(_retryMs * 2, 30000);
+  };
+}
+connectSSE();
 </script>
 </body>
 </html>
