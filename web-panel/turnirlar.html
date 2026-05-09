@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billiard King — Turnirlar</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#d4a012;--gold-light:#f0c030;--gold-dim:#8b6910;
+  --felt:#1a4a22;--felt-dim:rgba(26,74,34,.18);
+  --bg:#06090a;--bg2:#0a0f0b;--card-bg:rgba(10,16,11,.97);
+  --border:#1a2a1c;--border-gold:rgba(212,160,18,.3);
+  --text:#dde8d8;--text-dim:#4a5e4a;--text-muted:#28382a;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(26,74,34,.12),transparent)}
+
+/* ── HEADER ── */
+.hdr{
+  position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#040b05 0%,#060d07 60%,var(--bg) 100%);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+}
+.hdr::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(212,160,18,.04) 50%,transparent 100%);
+  pointer-events:none;
+}
+.hdr-inner{
+  max-width:960px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  padding:20px 0 18px;
+}
+.logo{display:flex;align-items:center;gap:14px}
+.logo-img{height:62px;width:auto;filter:drop-shadow(0 0 12px rgba(212,160,18,.5))}
+.hdr-right{font-size:.72rem;color:var(--text-dim)}
+
+/* ── GOLD DIVIDER ── */
+.divider{height:2px;background:linear-gradient(90deg,transparent,var(--gold) 30%,var(--gold-light) 50%,var(--gold) 70%,transparent);opacity:.6}
+
+/* ── MAIN ── */
+.main{max-width:960px;margin:0 auto;padding:28px 20px 72px}
+
+/* ── SECTION ── */
+.sec-title{
+  display:flex;align-items:center;gap:10px;
+  font-size:.6rem;text-transform:uppercase;letter-spacing:3.5px;
+  color:var(--text-dim);margin-bottom:14px;margin-top:32px;
+}
+.sec-title:first-child{margin-top:0}
+.sec-title .line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+
+/* ── CARD GRID ── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+
+.card{
+  display:block;text-decoration:none;color:inherit;
+  border-radius:14px;padding:18px 20px;
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  transition:border-color .25s,box-shadow .25s,transform .18s;
+  position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;inset:0;border-radius:14px;opacity:0;transition:opacity .3s;
+  background:linear-gradient(135deg,rgba(26,74,34,.12),transparent 60%,rgba(212,160,18,.05));
+}
+.card:hover{border-color:var(--border-gold);box-shadow:0 4px 32px rgba(212,160,18,.18),0 0 0 1px rgba(212,160,18,.1);transform:translateY(-2px)}
+.card:hover::before{opacity:1}
+.card.active{border-color:rgba(26,100,36,.5)}
+.card.finished{opacity:.6}
+
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
+.card-name{font-size:1rem;font-weight:700;color:var(--text);line-height:1.3}
+.badge{flex-shrink:0;font-size:.62rem;padding:3px 9px;border-radius:8px;font-weight:700;white-space:nowrap;letter-spacing:.5px}
+.b-reg{background:rgba(30,120,50,.14);border:1px solid rgba(30,160,60,.25);color:#30c060}
+.b-live{background:rgba(212,160,18,.12);border:1px solid rgba(212,160,18,.35);color:var(--gold-light);animation:bpulse 1.6s infinite}
+.b-done{background:rgba(60,60,80,.12);border:1px solid rgba(80,80,120,.25);color:#6070a0}
+.b-cancel{background:rgba(120,30,30,.1);border:1px solid rgba(160,40,40,.2);color:#a05050}
+@keyframes bpulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+.card-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.tag{font-size:.7rem;color:var(--text-dim);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:5px;padding:2px 8px}
+
+.card-footer{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bar-wrap{flex:1}
+.bar-lbl{font-size:.65rem;color:var(--text-muted);margin-bottom:4px}
+.bar{height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,rgba(26,74,34,.8),var(--gold));border-radius:2px;transition:width .5s}
+.pcount{font-size:.72rem;color:var(--text-dim)}
+.arr{color:var(--text-muted);font-size:1rem;transition:color .2s,transform .2s}
+.card:hover .arr{color:var(--gold);transform:translateX(2px)}
+
+/* ── LOADING / EMPTY ── */
+.loader{display:flex;align-items:center;justify-content:center;gap:14px;padding:70px;color:var(--text-muted)}
+.spin{width:26px;height:26px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:rot .7s linear infinite;flex-shrink:0}
+@keyframes rot{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:50px 20px;color:var(--text-muted);font-size:.9rem}
+.empty .ico{font-size:2.8rem;display:block;margin-bottom:10px;opacity:.35}
+
+/* ── FOOTER ── */
+.foot{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(4,7,4,.96);backdrop-filter:blur(8px);
+  border-top:1px solid var(--border);
+  padding:7px 24px;display:flex;justify-content:space-between;align-items:center;
+  font-size:.68rem;color:var(--text-muted);
+}
+.foot-logo img{height:32px;width:auto;filter:drop-shadow(0 0 4px rgba(212,160,18,.35));opacity:.8}
+
+/* ── MOBILE ── */
+@media(max-width:600px){
+  .hdr-inner{padding:16px 0 14px}
+  .main{padding:20px 14px 72px}
+  .cards{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="logo">
+      <a href="/"><img src="logo.jpg" alt="Billiard King" class="logo-img"></a>
+    </div>
+    <div class="hdr-right" id="upd">—</div>
+  </div>
+</header>
+<div class="divider"></div>
+
+<main class="main" id="main">
+  <div class="loader"><div class="spin"></div>Yuklanmoqda…</div>
+</main>
+
+<footer class="foot">
+  <span>billiardking.uz</span>
+  <div class="foot-logo"><img src="logo.jpg" alt="Billiard King"></div>
+</footer>
+
+<script>
+const API = '/api';
+
+async function load() {
+  try {
+    const r = await fetch(API + '/tournaments');
+    if (!r.ok) throw new Error(r.status);
+    const all = await r.json() || [];
+    render(all);
+    document.getElementById('upd').textContent =
+      'Yangilandi: ' + new Date().toLocaleTimeString('uz-UZ');
+  } catch(e) {
+    document.getElementById('main').innerHTML =
+      '<div class="empty"><span class="ico">⚠️</span>Serverga ulanib bo\'lmadi</div>';
+  }
+}
+
+function render(all) {
+  const active   = all.filter(t => t.status === 'registration' || t.status === 'in_progress');
+  const finished = all.filter(t => t.status === 'finished' || t.status === 'cancelled');
+  active.sort((a,b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+  finished.sort((a,b) => new Date(b.scheduled_at) - new Date(a.scheduled_at));
+
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+
+  if (!all.length) {
+    main.innerHTML = '<div class="empty"><span class="ico">🏆</span>Hozircha turnirlar yo\'q</div>';
+    return;
+  }
+
+  if (active.length) {
+    main.appendChild(mkSec('⚡ Faol turnirlar'));
+    main.appendChild(mkCards(active));
+  }
+  if (finished.length) {
+    main.appendChild(mkSec('📋 Turnirlar tarixi'));
+    main.appendChild(mkCards(finished));
+  }
+}
+
+function mkSec(title) {
+  const d = document.createElement('div');
+  d.className = 'sec-title';
+  d.innerHTML = title + '<span class="line"></span>';
+  return d;
+}
+
+function mkCards(list) {
+  const g = document.createElement('div');
+  g.className = 'cards';
+  for (const t of list) g.appendChild(mkCard(t));
+  return g;
+}
+
+function mkCard(t) {
+  const a = document.createElement('a');
+  a.href = '/tournament.html?id=' + t.id;
+  const isActive = t.status === 'registration' || t.status === 'in_progress';
+  a.className = 'card ' + (isActive ? 'active' : 'finished');
+
+  const pct = t.max_players > 0
+    ? Math.min(100, Math.round((t.approved_count / t.max_players) * 100)) : 0;
+
+  a.innerHTML =
+    '<div class="card-top">' +
+      '<div class="card-name">' + esc(t.name) + '</div>' +
+      badge(t.status) +
+    '</div>' +
+    '<div class="card-meta">' +
+      (t.branch_name ? '<span class="tag">📍 ' + esc(t.branch_name) + '</span>' : '') +
+      '<span class="tag">📅 ' + fmtDate(t.scheduled_at) + '</span>' +
+      '<span class="tag">' + typeIco(t.type) + ' ' + typeName(t.type) + '</span>' +
+    '</div>' +
+    '<div class="card-footer">' +
+      '<div class="bar-wrap">' +
+        '<div class="bar-lbl">O\'yinchilar</div>' +
+        '<div class="bar"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '</div>' +
+      '<span class="pcount">' + (t.approved_count||0) + '/' + (t.max_players||0) + '</span>' +
+      '<span class="arr">›</span>' +
+    '</div>';
+  return a;
+}
+
+function badge(s) {
+  const m = {
+    registration: ['b-reg',  "📋 Ro'yxat"],
+    in_progress:  ['b-live', '⚡ Jarayonda'],
+    finished:     ['b-done', '🏆 Yakunlandi'],
+    cancelled:    ['b-cancel','❌ Bekor'],
+  };
+  const [cls, lbl] = m[s] || ['b-done', s];
+  return '<span class="badge ' + cls + '">' + lbl + '</span>';
+}
+
+function typeIco(t) {
+  return {single_elimination:'🎯',double_elimination:'🔄',round_robin:'🔁'}[t]||'🏆';
+}
+function typeName(t) {
+  return {single_elimination:'Single',double_elimination:'Double',round_robin:'Round Robin'}[t]||t||'';
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+load();
+
+// SSE — server o'zgarish bo'lganda o'zi xabar yuboradi
+let _retryMs = 2000, _sse = null;
+function connectSSE() {
+  if (_sse) { _sse.close(); _sse = null; }
+  _sse = new EventSource(API + '/tournaments/sse');
+  _sse.onopen = () => { _retryMs = 2000; };
+  _sse.onmessage = e => {
+    try { const m = JSON.parse(e.data); if (m.type === 'refresh') load(); } catch(x) {}
+  };
+  _sse.onerror = () => {
+    _sse.close(); _sse = null;
+    setTimeout(connectSSE, _retryMs);
+    _retryMs = Math.min(_retryMs * 2, 30000);
+  };
+}
+connectSSE();
+</script>
+</body>
+</html>
