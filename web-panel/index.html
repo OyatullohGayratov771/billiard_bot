@@ -38,7 +38,23 @@ nav{
 .nav-links a:hover{color:var(--orange)}
 .nav-cta{background:var(--orange);color:#fff;padding:8px 22px;border-radius:4px;font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;transition:background .2s,transform .1s}
 .nav-cta:hover{background:#c86400;transform:translateY(-1px)}
-@media(max-width:700px){.nav-links{display:none}}
+/* ── Hamburger ── */
+.nav-burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none}
+.nav-burger span{display:block;width:22px;height:2px;background:var(--text2);border-radius:2px;transition:all .3s}
+.nav-burger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.nav-burger.open span:nth-child(2){opacity:0}
+.nav-burger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.nav-mobile{
+  display:none;position:fixed;top:60px;left:0;right:0;z-index:99;
+  background:rgba(8,8,8,.98);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  flex-direction:column;padding:16px 24px 20px;gap:4px;
+}
+.nav-mobile.open{display:flex}
+.nav-mobile a{padding:12px 8px;font-size:.85rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2);border-bottom:1px solid rgba(255,255,255,.05);transition:color .2s}
+.nav-mobile a:last-child{border-bottom:none;color:var(--orange);font-weight:700}
+.nav-mobile a:hover{color:var(--orange)}
+@media(max-width:700px){.nav-links,.nav-cta{display:none}.nav-burger{display:flex}}
 
 /* ══════════════════════════════════════════
    HERO — F1 CINEMATIC
@@ -218,6 +234,11 @@ nav{
 }
 .trn-join:hover{background:#c86400}
 .trn-join.disabled{background:#1e1e1e;color:#444;border:1px solid #2a2a2a;cursor:default}
+.trn-card{cursor:pointer}
+.trn-loading{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:12px;padding:60px;color:var(--text3);font-size:.85rem}
+.trn-spin{width:22px;height:22px;border:2px solid #2a2a2a;border-top-color:var(--orange);border-radius:50%;animation:tspin .7s linear infinite;flex-shrink:0}
+@keyframes tspin{to{transform:rotate(360deg)}}
+.trn-empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text3);font-size:.9rem}
 
 .faceit-more{text-align:center;margin-top:32px}
 .btn-outline{
@@ -486,7 +507,17 @@ footer{background:#060606;border-top:1px solid var(--border);padding:60px 0 32px
     <a href="#profiles">Reyting</a>
   </div>
   <a href="https://t.me/BilliardKingBot" class="nav-cta" target="_blank">Bot → Ulash</a>
+  <button class="nav-burger" id="burger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+<div class="nav-mobile" id="nav-mobile">
+  <a href="/turnirlar.html">🏆 Turnirlar</a>
+  <a href="#shop">🛒 Do'kon</a>
+  <a href="#community">👥 Jamiyat</a>
+  <a href="#profiles">🎯 Reyting</a>
+  <a href="https://t.me/BilliardKingBot" target="_blank">✈️ Botga Ulash</a>
+</div>
 
 <!-- ══════════════════════════════════════════
      HERO — F1 CINEMATIC
@@ -547,107 +578,18 @@ footer{background:#060606;border-top:1px solid var(--border);padding:60px 0 32px
         <p class="section-sub">Professional darajadagi turnirlar, real-time bracket va jonli natijalar.</p>
       </div>
       <div class="faceit-filters">
-        <button class="filter-btn active">Barchasi</button>
-        <button class="filter-btn">Faol</button>
-        <button class="filter-btn">Yaqinda</button>
-        <button class="filter-btn">Yakunlangan</button>
+        <button class="filter-btn active" data-filter="all">Barchasi</button>
+        <button class="filter-btn" data-filter="active">Jarayonda</button>
+        <button class="filter-btn" data-filter="reg">Ro'yxat</button>
+        <button class="filter-btn" data-filter="done">Yakunlangan</button>
       </div>
     </div>
 
-    <div class="faceit-grid reveal">
-
-      <!-- LIVE -->
-      <div class="trn-card live-card">
-        <div class="trn-top">
-          <div>
-            <div class="trn-type">Single Elimination</div>
-            <div class="trn-name">King Cup — Yanvar 2026</div>
-          </div>
-          <div class="trn-badge live">LIVE</div>
-        </div>
-        <div class="trn-meta">
-          <div class="trn-meta-item">📍 Chilonzor filial</div>
-          <div class="trn-meta-item">📅 09.01.2026  18:00</div>
-          <div class="trn-meta-item">🏆 Bepul</div>
-        </div>
-        <div class="trn-bottom">
-          <div class="trn-slots">
-            <div class="slots-bar"><div class="slots-fill" style="width:87%"></div></div>
-            <div class="slots-text">7 / 8</div>
-          </div>
-          <button class="trn-join disabled">Jarayonda</button>
-        </div>
+    <div class="faceit-grid reveal" id="trn-grid">
+      <div class="trn-loading">
+        <div class="trn-spin"></div>
+        <span>Yuklanmoqda…</span>
       </div>
-
-      <!-- UPCOMING -->
-      <div class="trn-card">
-        <div class="trn-top">
-          <div>
-            <div class="trn-type">Double Elimination</div>
-            <div class="trn-name">Pro League — Round 3</div>
-          </div>
-          <div class="trn-badge soon">YAQINDA</div>
-        </div>
-        <div class="trn-meta">
-          <div class="trn-meta-item">📍 Yunusobod filial</div>
-          <div class="trn-meta-item">📅 15.01.2026  19:00</div>
-          <div class="trn-meta-item">🏆 Bepul</div>
-        </div>
-        <div class="trn-bottom">
-          <div class="trn-slots">
-            <div class="slots-bar"><div class="slots-fill" style="width:50%"></div></div>
-            <div class="slots-text">8 / 16</div>
-          </div>
-          <button class="trn-join">Ro'yxat</button>
-        </div>
-      </div>
-
-      <!-- UPCOMING 2 -->
-      <div class="trn-card">
-        <div class="trn-top">
-          <div>
-            <div class="trn-type">Round Robin</div>
-            <div class="trn-name">Weekend Warriors #12</div>
-          </div>
-          <div class="trn-badge soon">YAQINDA</div>
-        </div>
-        <div class="trn-meta">
-          <div class="trn-meta-item">📍 Mirzo Ulugbek</div>
-          <div class="trn-meta-item">📅 18.01.2026  17:00</div>
-          <div class="trn-meta-item">🏆 Bepul</div>
-        </div>
-        <div class="trn-bottom">
-          <div class="trn-slots">
-            <div class="slots-bar"><div class="slots-fill" style="width:25%"></div></div>
-            <div class="slots-text">2 / 8</div>
-          </div>
-          <button class="trn-join">Ro'yxat</button>
-        </div>
-      </div>
-
-      <!-- DONE -->
-      <div class="trn-card">
-        <div class="trn-top">
-          <div>
-            <div class="trn-type">Single Elimination</div>
-            <div class="trn-name">December Championship</div>
-          </div>
-          <div class="trn-badge done">YAKUNLANDI</div>
-        </div>
-        <div class="trn-meta">
-          <div class="trn-meta-item">📍 Chilonzor filial</div>
-          <div class="trn-meta-item">📅 28.12.2025  18:00</div>
-          <div class="trn-meta-item">🏆 Azizbek Karimov</div>
-        </div>
-        <div class="trn-bottom">
-          <div class="trn-slots">
-            <div class="slots-bar"><div class="slots-fill" style="width:100%"></div></div>
-            <div class="slots-text">8 / 8</div>
-          </div>
-          <button class="trn-join disabled">Natijalar</button>
-        </div>
-      </div>
-
     </div>
 
     <div class="faceit-more reveal">
@@ -1016,19 +958,15 @@ footer{background:#060606;border-top:1px solid var(--border);padding:60px 0 32px
 </footer>
 
 <script>
+const API = '/api';
+let _allTrn = [];
+let _activeFilter = 'all';
+
 // ── Scroll reveal
 const observer = new IntersectionObserver(entries => {
   entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('in'); observer.unobserve(e.target); }});
 }, {threshold:.1});
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-// ── Filter buttons
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  });
-});
 
 // ── Nav scroll effect
 const navbar = document.getElementById('navbar');
@@ -1037,33 +975,185 @@ window.addEventListener('scroll', () => {
     ? 'rgba(8,8,8,.98)' : 'rgba(8,8,8,.85)';
 });
 
-// ── Counter animation
-function animateCount(el, target, suffix) {
-  let cur = 0;
-  const step = target / 60;
-  const timer = setInterval(() => {
-    cur = Math.min(cur + step, target);
-    el.textContent = (cur >= 1000 ? Math.round(cur/100)/10 + 'k' : Math.round(cur)) + suffix;
-    if(cur >= target) clearInterval(timer);
-  }, 24);
-}
-const heroObs = new IntersectionObserver(entries => {
-  if(entries[0].isIntersecting) {
-    animateCount(document.getElementById('cnt-players'), 1200, '+');
-    animateCount(document.getElementById('cnt-trn'), 48, '');
-    animateCount(document.getElementById('cnt-clubs'), 4, '');
-    heroObs.disconnect();
-  }
-}, {threshold:.3});
-heroObs.observe(document.getElementById('hero'));
+// ── Hamburger menu
+const burger = document.getElementById('burger');
+const navMobile = document.getElementById('nav-mobile');
+burger.addEventListener('click', () => {
+  burger.classList.toggle('open');
+  navMobile.classList.toggle('open');
+});
+navMobile.querySelectorAll('a').forEach(a => {
+  a.addEventListener('click', () => {
+    burger.classList.remove('open');
+    navMobile.classList.remove('open');
+  });
+});
 
 // ── Smooth anchor scroll
 document.querySelectorAll('a[href^="#"]').forEach(a => {
   a.addEventListener('click', e => {
-    const target = document.querySelector(a.getAttribute('href'));
-    if(target) { e.preventDefault(); target.scrollIntoView({behavior:'smooth'}); }
+    const t = document.querySelector(a.getAttribute('href'));
+    if(t) { e.preventDefault(); t.scrollIntoView({behavior:'smooth'}); }
   });
 });
+
+// ── Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _activeFilter = btn.dataset.filter || 'all';
+    renderTrn(_allTrn);
+  });
+});
+
+// ── Counter animation
+function animateCount(el, target, suffix='') {
+  if(!el) return;
+  let cur = 0;
+  const step = Math.max(1, target / 60);
+  const timer = setInterval(() => {
+    cur = Math.min(cur + step, target);
+    el.textContent = Math.round(cur) + suffix;
+    if(cur >= target) clearInterval(timer);
+  }, 22);
+}
+
+// ── Load tournaments from API
+async function loadTrn() {
+  try {
+    const r = await fetch(API + '/tournaments');
+    if(!r.ok) throw new Error(r.status);
+    _allTrn = await r.json() || [];
+    renderTrn(_allTrn);
+
+    // Update hero stats from real data
+    const total = _allTrn.length;
+    const players = _allTrn.reduce((s, t) => s + (t.approved_count || 0), 0);
+    animateCount(document.getElementById('cnt-players'), Math.max(players, 10), '+');
+    animateCount(document.getElementById('cnt-trn'), Math.max(total, 1), '');
+    animateCount(document.getElementById('cnt-clubs'), 4, '');
+  } catch(e) {
+    document.getElementById('trn-grid').innerHTML =
+      '<div class="trn-empty">⚠️ Serverga ulanib bo\'lmadi.<br><a href="/turnirlar.html" style="color:var(--orange);text-decoration:underline">Qayta urinish →</a></div>';
+  }
+}
+
+function renderTrn(all) {
+  const grid = document.getElementById('trn-grid');
+  let list = [...all];
+
+  if(_activeFilter === 'active')   list = list.filter(t => t.status === 'in_progress');
+  else if(_activeFilter === 'reg') list = list.filter(t => t.status === 'registration');
+  else if(_activeFilter === 'done')list = list.filter(t => t.status === 'finished' || t.status === 'cancelled');
+
+  // sort: in_progress first, then registration, then rest
+  list.sort((a, b) => {
+    const order = {in_progress:0, registration:1, finished:2, cancelled:3};
+    return (order[a.status]??9) - (order[b.status]??9) || new Date(a.scheduled_at) - new Date(b.scheduled_at);
+  });
+
+  const show = list.slice(0, 4);
+
+  if(!show.length) {
+    grid.innerHTML = '<div class="trn-empty">Turnir topilmadi</div>';
+    return;
+  }
+
+  grid.innerHTML = show.map(t => trnCard(t)).join('');
+
+  grid.querySelectorAll('.trn-card[data-id]').forEach(card => {
+    card.addEventListener('click', e => {
+      if(e.target.closest('.trn-join')) return;
+      window.location.href = '/tournament.html?id=' + card.dataset.id;
+    });
+  });
+}
+
+function trnCard(t) {
+  const live = t.status === 'in_progress';
+  const reg  = t.status === 'registration';
+  const done = t.status === 'finished';
+  const pct  = t.max_players > 0 ? Math.min(100, Math.round((t.approved_count/t.max_players)*100)) : 0;
+
+  const badgeHtml = live
+    ? '<div class="trn-badge live">⚡ JONLI</div>'
+    : reg
+    ? '<div class="trn-badge soon">📋 RO\'YXAT</div>'
+    : done
+    ? '<div class="trn-badge done">🏆 YAKUNLANDI</div>'
+    : '<div class="trn-badge closed">❌ BEKOR</div>';
+
+  const joinBtn = live
+    ? '<a class="trn-join disabled" href="/tournament.html?id='+t.id+'">Bracket →</a>'
+    : reg
+    ? '<a class="trn-join" href="https://t.me/BilliardKingBot" target="_blank">Ro\'yxat</a>'
+    : '<a class="trn-join disabled" href="/tournament.html?id='+t.id+'">Natijalar →</a>';
+
+  return `<div class="trn-card${live?' live-card':''}" data-id="${t.id}">
+    <div class="trn-top">
+      <div>
+        <div class="trn-type">${typeName(t.type)}</div>
+        <div class="trn-name">${esc(t.name)}</div>
+      </div>
+      ${badgeHtml}
+    </div>
+    <div class="trn-meta">
+      ${t.branch_name ? `<div class="trn-meta-item">📍 ${esc(t.branch_name)}</div>` : ''}
+      <div class="trn-meta-item">📅 ${fmtDate(t.scheduled_at)}</div>
+      <div class="trn-meta-item">👥 ${t.approved_count||0}/${t.max_players||0}</div>
+    </div>
+    <div class="trn-bottom">
+      <div class="trn-slots">
+        <div class="slots-bar"><div class="slots-fill" style="width:${pct}%"></div></div>
+        <div class="slots-text">${t.approved_count||0} / ${t.max_players||0}</div>
+      </div>
+      ${joinBtn}
+    </div>
+  </div>`;
+}
+
+function typeName(t) {
+  return {single_elimination:'Single Elimination',double_elimination:'Double Elimination',round_robin:'Round Robin'}[t]||t||'';
+}
+function fmtDate(iso) {
+  if(!iso) return '—';
+  return new Date(iso).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Sync filter buttons with dataset
+document.querySelectorAll('.filter-btn').forEach((btn, i) => {
+  const maps = ['all','active','reg','done'];
+  btn.dataset.filter = maps[i] || 'all';
+});
+
+// ── Hero counter obs (fires before API returns if fast)
+const heroObs = new IntersectionObserver(entries => {
+  if(entries[0].isIntersecting) { heroObs.disconnect(); }
+}, {threshold:.3});
+heroObs.observe(document.getElementById('hero'));
+
+// ── SSE for live updates
+let _sse = null, _retryMs = 3000;
+function connectSSE() {
+  if(_sse) { _sse.close(); _sse = null; }
+  _sse = new EventSource(API + '/tournaments/sse');
+  _sse.onopen = () => { _retryMs = 3000; };
+  _sse.onmessage = e => {
+    try { if(JSON.parse(e.data).type === 'refresh') loadTrn(); } catch(x) {}
+  };
+  _sse.onerror = () => {
+    _sse.close(); _sse = null;
+    setTimeout(connectSSE, _retryMs);
+    _retryMs = Math.min(_retryMs * 2, 30000);
+  };
+}
+
+loadTrn();
+connectSSE();
 </script>
 </body>
 </html>
