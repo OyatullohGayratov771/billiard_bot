@@ -31,34 +31,34 @@ body{background:#1c1c1c;color:#ccc;font-family:'Segoe UI',system-ui,sans-serif;m
 
 /* ROUND COLUMN */
 .r-col{display:flex;flex-direction:column;align-items:flex-start}
-.r-lbl{font-size:.63rem;text-transform:uppercase;letter-spacing:1.8px;color:#555;text-align:center;height:26px;line-height:26px;width:200px;flex-shrink:0}
+.r-lbl{font-size:.63rem;text-transform:uppercase;letter-spacing:1.8px;color:#555;text-align:center;height:26px;line-height:26px;width:210px;flex-shrink:0}
 
 /* MATCH AREA (position:relative container) */
-.r-area{position:relative;width:200px}
+.r-area{position:relative;width:210px}
 
 /* MATCH CARD */
-.mcard{position:absolute;left:0;width:200px;border-radius:3px;overflow:hidden;border:1px solid #3a3a3a;background:#2e2e2e}
-.mcard.live{border-color:#c86400;box-shadow:0 0 10px rgba(200,100,0,.3)}
-.mcard.done{border-color:#353535}
+.mcard{position:absolute;left:0;width:210px;border-radius:4px;overflow:hidden;border:1px solid #3a3a3a;background:#2a2a2a}
+.mcard.live{border-color:#c86400;box-shadow:0 0 12px rgba(200,100,0,.28)}
+.mcard.done{border-color:#363636}
 
 /* PLAYER ROW */
-.prow{display:flex;align-items:center;height:29px;padding:0 5px 0 6px;gap:5px;transition:background .15s}
-.prow+.prow{border-top:1px solid #3a3a3a}
-.prow.win{background:#2e2e2e}.prow.lose{background:#282828}.prow.pend{background:#2e2e2e}
-.pseed{font-size:.65rem;color:#4a4a4a;min-width:20px;text-align:right;flex-shrink:0;font-weight:600}
-.pname{flex:1;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.prow.win .pname{color:#e07020;font-weight:600}
-.prow.lose .pname{color:#666}
+.prow{display:flex;align-items:center;height:32px;padding:0 7px 0 7px;gap:6px;transition:background .15s}
+.prow+.prow{border-top:2px solid #1c1c1c}
+.prow.win{background:#2f2f2f}.prow.lose{background:#252525}.prow.pend{background:#2a2a2a}
+.pseed{font-size:.64rem;color:#484848;min-width:18px;text-align:right;flex-shrink:0;font-weight:700}
+.pname{flex:1;font-size:.83rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.1px}
+.prow.win .pname{color:#e07020;font-weight:700}
+.prow.lose .pname{color:#5a5a5a}
 .prow.pend .pname{color:#aaa}
-.prow.live-p .pname{color:#c8c8c8}
-.pscore{flex-shrink:0;width:22px;height:20px;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;border-radius:2px}
+.prow.live-p .pname{color:#c0c0c0}
+.pscore{flex-shrink:0;width:24px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;border-radius:3px}
 .pscore.s-win{background:#c86400;color:#fff}
-.pscore.s-lose{background:#333;color:#555}
+.pscore.s-lose{background:#333;color:#4a4a4a}
 .pscore.s-none{background:transparent}
 
 /* BYE / VOID */
-.bye-card{position:absolute;left:0;width:200px;height:58px;display:flex;align-items:center;padding:0 10px;color:#3a3a3a;font-size:.74rem;font-style:italic;border:1px dashed #2e2e2e;border-radius:3px}
-.void-card{position:absolute;left:0;width:200px;height:58px}
+.bye-card{position:absolute;left:0;width:210px;height:66px;display:flex;align-items:center;padding:0 10px;color:#3a3a3a;font-size:.74rem;font-style:italic;border:1px dashed #2e2e2e;border-radius:4px}
+.void-card{position:absolute;left:0;width:210px;height:66px}
 
 /* CONNECTOR SVG */
 .conn-svg{flex-shrink:0;margin-top:26px}
@@ -130,11 +130,11 @@ const TRN_ID = params.get('id');
 if (!TRN_ID) location.href = '/';
 
 // Layout constants
-const CARD_H  = 58;  // height of one match card (2 rows × 29px)
-const ROW_H   = 29;
-const PAIR_GAP = 8;  // gap between pairs in round 1
-const COL_W   = 200; // match card width
-const CONN_W  = 44;  // connector SVG width
+const CARD_H  = 66;  // height of one match card (2 rows × 32px + 2px divider)
+const ROW_H   = 32;
+const PAIR_GAP = 10; // gap between pairs in round 1
+const COL_W   = 210; // match card width
+const CONN_W  = 46;  // connector SVG width
 const LABEL_H = 26;  // round label height
 
 async function loadData() {
