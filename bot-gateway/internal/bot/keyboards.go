@@ -277,8 +277,14 @@ func adminTournamentDetailKeyboard(t *models.Tournament) tgbotapi.InlineKeyboard
 					fmt.Sprintf("admin_trn_add_player:%d", t.ID)),
 			),
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("⚡ Bracket yaratish",
+				tgbotapi.NewInlineKeyboardButtonData("🎲 Bracket (yangilash)",
 					fmt.Sprintf("admin_trn_bracket:%d", t.ID)),
+				tgbotapi.NewInlineKeyboardButtonData("🔀 Aralashtirish",
+					fmt.Sprintf("admin_trn_shuffle:%d", t.ID)),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🎮 O'yinlarni boshqarish",
+					fmt.Sprintf("admin_trn_result:%d", t.ID)),
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("❌ Bekor qilish",
@@ -288,7 +294,7 @@ func adminTournamentDetailKeyboard(t *models.Tournament) tgbotapi.InlineKeyboard
 	case models.TournamentStatusInProgress:
 		rows = append(rows,
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("🏆 Natija kiritish",
+				tgbotapi.NewInlineKeyboardButtonData("🎮 O'yinlarni boshqarish",
 					fmt.Sprintf("admin_trn_result:%d", t.ID)),
 			),
 			tgbotapi.NewInlineKeyboardRow(

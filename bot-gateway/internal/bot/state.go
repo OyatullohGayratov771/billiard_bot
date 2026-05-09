@@ -50,6 +50,9 @@ const (
 	StateTrnEditDate = "trn:edit_date"
 	StateTrnEditMax  = "trn:edit_max"
 
+	// O'yin boshlash — stol raqami kiritish (admin)
+	StateTrnMatchTableNum = "trn:match_table"
+
 	// Profil tahrirlash
 	StateEditName = "profile:edit_name"
 )

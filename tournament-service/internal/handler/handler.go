@@ -52,10 +52,12 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /tournaments/{id}/registrations/{reg_id}/reject", h.rejectReg)
 
 	mux.HandleFunc("POST /tournaments/{id}/bracket", h.generateBracket)
+	mux.HandleFunc("POST /tournaments/{id}/bracket/shuffle", h.shuffleBracket)
 	mux.HandleFunc("GET /tournaments/{id}/bracket", h.getBracket)
 	mux.HandleFunc("GET /tournaments/sse", h.tournamentsSSE)
 	mux.HandleFunc("GET /tournaments/{id}/sse", h.tournamentSSE)
 
+	mux.HandleFunc("PUT /matches/{id}/start", h.startMatch)
 	mux.HandleFunc("PUT /matches/{id}/result", h.setResult)
 
 	mux.HandleFunc("GET /users/{tg_id}/tournaments", h.userTournaments)
@@ -272,6 +274,45 @@ func (h *Handler) generateBracket(w http.ResponseWriter, r *http.Request) {
 	}
 	h.hub.Broadcast("tournaments")
 	writeJSON(w, 200, matches)
+}
+
+func (h *Handler) shuffleBracket(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, 400, "invalid id")
+		return
+	}
+	matches, err := h.svc.ShuffleBracket(id)
+	if err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	h.hub.Broadcast(fmt.Sprintf("trn:%d", id))
+	writeJSON(w, 200, matches)
+}
+
+func (h *Handler) startMatch(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, 400, "invalid id")
+		return
+	}
+	var req struct {
+		TableNum int `json:"table_num"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, 400, "invalid request")
+		return
+	}
+	if err := h.svc.StartMatch(id, req.TableNum); err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	match, _ := h.svc.GetMatch(id)
+	if match != nil {
+		h.hub.Broadcast(fmt.Sprintf("trn:%d", match.TournamentID))
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
 func (h *Handler) getBracket(w http.ResponseWriter, r *http.Request) {

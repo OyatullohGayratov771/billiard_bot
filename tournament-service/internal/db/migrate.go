@@ -35,6 +35,9 @@ func alterMigrate(db *sql.DB) error {
 		ALTER TABLE tournament_matches ADD COLUMN IF NOT EXISTS match_type TEXT NOT NULL DEFAULT 'winners';
 		ALTER TABLE tournament_matches ADD COLUMN IF NOT EXISTS loser_next_match_id BIGINT;
 		ALTER TABLE tournament_matches ADD COLUMN IF NOT EXISTS winner_next_match_id BIGINT;
+		ALTER TABLE tournament_matches ADD COLUMN IF NOT EXISTS table_num INT NOT NULL DEFAULT 0;
+		ALTER TABLE tournament_matches ADD COLUMN IF NOT EXISTS player1_score INT NOT NULL DEFAULT 0;
+		ALTER TABLE tournament_matches ADD COLUMN IF NOT EXISTS player2_score INT NOT NULL DEFAULT 0;
 	`)
 	if err != nil {
 		log.Printf("❌ alterMigrate xatosi: %v", err)

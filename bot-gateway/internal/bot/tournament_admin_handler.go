@@ -270,6 +270,9 @@ func (h *Handler) cbAdminTrnApproveReg(bot *tgbotapi.BotAPI, chatID int64, msgID
 		))
 	}
 
+	// Auto-update bracket after approval (silently ignore if < 2 players)
+	_, _ = h.tournamentSvc.GenerateBracket(trnID)
+
 	h.cbAdminTrnRegs(bot, chatID, msgID, user, trnIDStr)
 }
 
@@ -308,6 +311,40 @@ func (h *Handler) cbAdminTrnRejectReg(bot *tgbotapi.BotAPI, chatID int64, msgID 
 	h.cbAdminTrnRegs(bot, chatID, msgID, user, trnIDStr)
 }
 
+func (h *Handler) cbAdminTrnShuffle(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, trnIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	trnID := mustParseInt64(trnIDStr)
+
+	matches, err := h.tournamentSvc.ShuffleBracket(trnID)
+	if err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		return
+	}
+
+	text := fmt.Sprintf("🔀 Bracket yangilandi! <b>%d</b> o'yin.\n", len(matches))
+	text += formatBracket(matches)
+
+	kb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔀 Qayta aralashtirish",
+				fmt.Sprintf("admin_trn_shuffle:%d", trnID)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🎮 O'yinlarni boshqarish",
+				fmt.Sprintf("admin_trn_result:%d", trnID)),
+			tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga",
+				fmt.Sprintf("admin_trn_detail:%d", trnID)),
+		),
+	)
+	if msgID > 0 {
+		editMessage(bot, chatID, msgID, text, &kb)
+	} else {
+		sendWithKeyboard(bot, chatID, text, kb)
+	}
+}
+
 func (h *Handler) cbAdminGenBracket(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, trnIDStr string) {
 	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
 		return
@@ -320,48 +357,16 @@ func (h *Handler) cbAdminGenBracket(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		return
 	}
 
-	t, _ := h.tournamentSvc.GetTournament(trnID)
-	trnName := fmt.Sprintf("#%d", trnID)
-	if t != nil {
-		trnName = t.Name
-	}
-
-	regs, _ := h.tournamentSvc.ListRegistrations(trnID)
-	for _, r := range regs {
-		if r.Status == models.RegStatusApproved && r.UserTgID > 0 {
-			send(bot, r.UserTgID, fmt.Sprintf(
-				"🥁 <b>%s — Turnir boshlanmoqda!</b>\n\n"+
-					"Bracket tayyor — joyingizni egallab oling! 🎱\n"+
-					"Turnir ro'yxatidan o'z o'yiningizni ko'ring va g'alaba uchun kurashing! 🏆",
-				trnName,
-			))
-		}
-	}
-
-	// Round-1 tayyor o'yinlarda raqiblar haqida xabar (faqat haqiqiy Telegram foydalanuvchilar)
-	for _, m := range matches {
-		if m.Round == 1 && m.Status == models.MatchStatusReady && m.Player1TgID != nil && m.Player2TgID != nil {
-			if *m.Player1TgID > 0 {
-				send(bot, *m.Player1TgID, fmt.Sprintf(
-					"⚔️ <b>Birinchi o'yiningiz tayyor!</b>\n\n"+
-						"Raqibingiz: <b>%s</b>\n\n"+
-						"Kuchingizni to'plang va sahnaga chiqing! 🎱 G'alaba sizniki!", m.Player2Name))
-			}
-			if *m.Player2TgID > 0 {
-				send(bot, *m.Player2TgID, fmt.Sprintf(
-					"⚔️ <b>Birinchi o'yiningiz tayyor!</b>\n\n"+
-						"Raqibingiz: <b>%s</b>\n\n"+
-						"Kuchingizni to'plang va sahnaga chiqing! 🎱 G'alaba sizniki!", m.Player1Name))
-			}
-		}
-	}
-
 	text := fmt.Sprintf("✅ Bracket yaratildi! <b>%d</b> o'yin.\n", len(matches))
 	text += formatBracket(matches)
 
 	kb := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🏆 Natija kiritish",
+			tgbotapi.NewInlineKeyboardButtonData("🔀 Aralashtirish",
+				fmt.Sprintf("admin_trn_shuffle:%d", trnID)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🎮 O'yinlarni boshqarish",
 				fmt.Sprintf("admin_trn_result:%d", trnID)),
 			tgbotapi.NewInlineKeyboardButtonData("🔙 Orqaga",
 				fmt.Sprintf("admin_trn_detail:%d", trnID)),
@@ -387,32 +392,51 @@ func (h *Handler) cbAdminTrnResult(bot *tgbotapi.BotAPI, chatID int64, msgID int
 	}
 
 	var rows [][]tgbotapi.InlineKeyboardButton
-	text := fmt.Sprintf("🏆 <b>Turnir #%d — Natija kiritish</b>\n\n", trnID)
+	text := fmt.Sprintf("🎮 <b>Turnir #%d — O'yinlar boshqaruvi</b>\n\n", trnID)
 
+	hasActive := false
 	for _, m := range matches {
-		if m.Status != models.MatchStatusReady {
-			continue
-		}
 		if m.Player1TgID == nil || m.Player2TgID == nil {
 			continue
 		}
-		label := fmt.Sprintf("R%d M%d: %s vs %s",
-			m.Round, m.MatchNum, m.Player1Name, m.Player2Name)
-		rows = append(rows,
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(label, "clip_noop"),
-			),
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("🏆 "+m.Player1Name,
-					fmt.Sprintf("admin_trn_winner:%d:%d:%d", trnID, m.ID, *m.Player1TgID)),
-				tgbotapi.NewInlineKeyboardButtonData("🏆 "+m.Player2Name,
-					fmt.Sprintf("admin_trn_winner:%d:%d:%d", trnID, m.ID, *m.Player2TgID)),
-			),
-		)
+		switch m.Status {
+		case models.MatchStatusReady:
+			hasActive = true
+			label := fmt.Sprintf("⚡ R%d M%d: %s vs %s",
+				m.Round, m.MatchNum, m.Player1Name, m.Player2Name)
+			rows = append(rows,
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(label, "clip_noop"),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("▶️ Boshlash",
+						fmt.Sprintf("admin_match_start:%d:%d", m.ID, trnID)),
+				),
+			)
+		case models.MatchStatusInProgress:
+			hasActive = true
+			tableStr := ""
+			if m.TableNum > 0 {
+				tableStr = fmt.Sprintf(" [%d-stol]", m.TableNum)
+			}
+			label := fmt.Sprintf("🟠 R%d M%d: %s vs %s%s",
+				m.Round, m.MatchNum, m.Player1Name, m.Player2Name, tableStr)
+			rows = append(rows,
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(label, "clip_noop"),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("🏆 "+m.Player1Name,
+						fmt.Sprintf("admin_trn_winner:%d:%d:%d", trnID, m.ID, *m.Player1TgID)),
+					tgbotapi.NewInlineKeyboardButtonData("🏆 "+m.Player2Name,
+						fmt.Sprintf("admin_trn_winner:%d:%d:%d", trnID, m.ID, *m.Player2TgID)),
+				),
+			)
+		}
 	}
 
-	if len(rows) == 0 {
-		text += "Hozirda natija kiritish kerak bo'lgan o'yin yo'q."
+	if !hasActive {
+		text += "Hozirda faol o'yin yo'q."
 	}
 
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
@@ -425,6 +449,55 @@ func (h *Handler) cbAdminTrnResult(bot *tgbotapi.BotAPI, chatID int64, msgID int
 	} else {
 		sendWithKeyboard(bot, chatID, text, kb)
 	}
+}
+
+func (h *Handler) cbAdminMatchStart(bot *tgbotapi.BotAPI, chatID int64, msgID int, tgID int64, user *models.User, matchIDStr, trnIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	matchID := mustParseInt64(matchIDStr)
+	trnID := mustParseInt64(trnIDStr)
+
+	h.states.Set(tgID, StateTrnMatchTableNum)
+	h.states.SetData(tgID, "match_id", matchID)
+	h.states.SetData(tgID, "match_trn_id", trnID)
+
+	kb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("❌ Bekor",
+				fmt.Sprintf("admin_trn_result:%d", trnID)),
+		),
+	)
+	if msgID > 0 {
+		editMessage(bot, chatID, msgID,
+			"🎱 <b>O'yin boshlanmoqda!</b>\n\nQaysi stolda o'ynashadi?\n<i>Stol raqamini kiriting (masalan: 3)</i>", &kb)
+	} else {
+		sendWithKeyboard(bot, chatID,
+			"🎱 <b>O'yin boshlanmoqda!</b>\n\nQaysi stolda o'ynashadi?\n<i>Stol raqamini kiriting (masalan: 3)</i>", kb)
+	}
+}
+
+func (h *Handler) handleMatchTableInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
+	tgID := msg.From.ID
+	chatID := msg.Chat.ID
+
+	tableNum := int(mustParseInt64(strings.TrimSpace(msg.Text)))
+	if tableNum < 1 {
+		send(bot, chatID, "⚠️ Noto'g'ri stol raqami. Musbat son kiriting:")
+		return
+	}
+
+	matchID, _ := h.states.GetInt64(tgID, "match_id")
+	trnID, _ := h.states.GetInt64(tgID, "match_trn_id")
+	h.states.Clear(tgID)
+
+	if err := h.tournamentSvc.StartMatch(matchID, tableNum); err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		return
+	}
+
+	send(bot, chatID, fmt.Sprintf("▶️ O'yin boshlandi! <b>%d-stol</b>", tableNum))
+	h.cbAdminTrnResult(bot, chatID, 0, user, fmt.Sprintf("%d", trnID))
 }
 
 // cbAdminTrnWinner — arg1=trnID, arg2="matchID:winnerTgID"
@@ -474,7 +547,6 @@ func (h *Handler) cbAdminTrnWinner(bot *tgbotapi.BotAPI, chatID int64, msgID int
 			}
 		}
 		if winnerNextID > 0 {
-			send(bot, chatID, fmt.Sprintf("✅ Natija kiritildi. Keyingi o'yin #%d.", winnerNextID))
 			notifyMatch(winnerNextID, "Keyingi o'yiningiz")
 		}
 		if loserNextID > 0 {
@@ -530,6 +602,8 @@ func (h *Handler) handleTrnAddPlayerInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Me
 	}
 	h.logAction(user, "manual_player_added", fmt.Sprintf("trn:%d player:%s reg:%d", trnID, name, reg.ID))
 	send(bot, chatID, fmt.Sprintf("✅ <b>%s</b> turnirga qo'shildi va tasdiqlandi.", name))
+	// Auto-update bracket
+	_, _ = h.tournamentSvc.GenerateBracket(trnID)
 }
 
 // ===================== TURNIR TAHRIRLASH (admin) =====================
@@ -967,6 +1041,12 @@ func formatMatchLine(m *models.TournamentMatch) string {
 		return fmt.Sprintf("  • O'yin %d (bo'sh)\n", m.MatchNum)
 	case models.MatchStatusDone:
 		return fmt.Sprintf("  • %s vs %s → 🏆 %s\n", m.Player1Name, m.Player2Name, m.WinnerName)
+	case models.MatchStatusInProgress:
+		tableStr := ""
+		if m.TableNum > 0 {
+			tableStr = fmt.Sprintf(" [%d-stol]", m.TableNum)
+		}
+		return fmt.Sprintf("  🟠 %s vs %s%s (jarayonda)\n", m.Player1Name, m.Player2Name, tableStr)
 	case models.MatchStatusReady:
 		return fmt.Sprintf("  ⚡ %s vs %s\n", m.Player1Name, m.Player2Name)
 	default:

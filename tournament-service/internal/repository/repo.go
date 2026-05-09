@@ -278,14 +278,26 @@ func (r *Repo) GetMatch(id int64) (*models.Match, error) {
 	err := r.db.QueryRow(`
 		SELECT id, tournament_id, round, match_num,
 		       player1_tg_id, player2_tg_id, winner_tg_id, status,
-		       COALESCE(match_type,'winners'), loser_next_match_id, winner_next_match_id
+		       COALESCE(match_type,'winners'), loser_next_match_id, winner_next_match_id,
+		       COALESCE(table_num,0), COALESCE(player1_score,0), COALESCE(player2_score,0)
 		FROM tournament_matches WHERE id=$1`, id,
 	).Scan(&m.ID, &m.TournamentID, &m.Round, &m.MatchNum, &m.Player1TgID, &m.Player2TgID, &m.WinnerTgID, &m.Status,
-		&m.MatchType, &m.LoserNextMatchID, &m.WinnerNextMatchID)
+		&m.MatchType, &m.LoserNextMatchID, &m.WinnerNextMatchID,
+		&m.TableNum, &m.Player1Score, &m.Player2Score)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
 	return m, err
+}
+
+func (r *Repo) DeleteBracket(tournamentID int64) error {
+	_, err := r.db.Exec(`DELETE FROM tournament_matches WHERE tournament_id=$1`, tournamentID)
+	return err
+}
+
+func (r *Repo) StartMatch(matchID int64, tableNum int) error {
+	_, err := r.db.Exec(`UPDATE tournament_matches SET status='in_progress', table_num=$1 WHERE id=$2`, tableNum, matchID)
+	return err
 }
 
 func (r *Repo) UpdateMatchPlayers(tx *sql.Tx, id int64, p1, p2 *int64, status string) error {
@@ -317,6 +329,7 @@ func (r *Repo) GetBracket(tournamentID int64) ([]*models.Match, error) {
 		SELECT m.id, m.tournament_id, m.round, m.match_num,
 		       m.player1_tg_id, m.player2_tg_id, m.winner_tg_id, m.status,
 		       COALESCE(m.match_type,'winners'),
+		       COALESCE(m.table_num,0), COALESCE(m.player1_score,0), COALESCE(m.player2_score,0),
 		       COALESCE(r1.user_name,''), COALESCE(r2.user_name,''), COALESCE(rw.user_name,'')
 		FROM tournament_matches m
 		LEFT JOIN tournament_registrations r1 ON r1.tournament_id=m.tournament_id AND r1.user_tg_id=m.player1_tg_id
@@ -333,6 +346,7 @@ func (r *Repo) GetBracket(tournamentID int64) ([]*models.Match, error) {
 		m := &models.Match{}
 		if err := rows.Scan(&m.ID, &m.TournamentID, &m.Round, &m.MatchNum,
 			&m.Player1TgID, &m.Player2TgID, &m.WinnerTgID, &m.Status, &m.MatchType,
+			&m.TableNum, &m.Player1Score, &m.Player2Score,
 			&m.Player1Name, &m.Player2Name, &m.WinnerName); err != nil {
 			return nil, err
 		}

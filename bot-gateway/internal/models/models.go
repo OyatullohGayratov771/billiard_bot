@@ -161,11 +161,12 @@ const (
 )
 
 const (
-	MatchStatusPending = "pending"
-	MatchStatusReady   = "ready"
-	MatchStatusBye     = "bye"
-	MatchStatusVoid    = "void"
-	MatchStatusDone    = "done"
+	MatchStatusPending    = "pending"
+	MatchStatusReady      = "ready"
+	MatchStatusInProgress = "in_progress"
+	MatchStatusBye        = "bye"
+	MatchStatusVoid       = "void"
+	MatchStatusDone       = "done"
 )
 
 const (
@@ -220,6 +221,9 @@ type TournamentMatch struct {
 	WinnerTgID   *int64 `json:"winner_tg_id"`
 	Status       string `json:"status"`
 	MatchType    string `json:"match_type"`
+	TableNum     int    `json:"table_num"`
+	Player1Score int    `json:"player1_score"`
+	Player2Score int    `json:"player2_score"`
 	Player1Name  string `json:"player1_name"`
 	Player2Name  string `json:"player2_name"`
 	WinnerName   string `json:"winner_name"`

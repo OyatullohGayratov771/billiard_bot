@@ -97,9 +97,19 @@ func (c *TournamentClient) GenerateBracket(tournamentID int64) ([]*models.Tourna
 	return matches, c.post(fmt.Sprintf("/tournaments/%d/bracket", tournamentID), []byte("{}"), &matches)
 }
 
+func (c *TournamentClient) ShuffleBracket(tournamentID int64) ([]*models.TournamentMatch, error) {
+	var matches []*models.TournamentMatch
+	return matches, c.post(fmt.Sprintf("/tournaments/%d/bracket/shuffle", tournamentID), []byte("{}"), &matches)
+}
+
 func (c *TournamentClient) GetBracket(tournamentID int64) ([]*models.TournamentMatch, error) {
 	var matches []*models.TournamentMatch
 	return matches, c.get(fmt.Sprintf("/tournaments/%d/bracket", tournamentID), &matches)
+}
+
+func (c *TournamentClient) StartMatch(matchID int64, tableNum int) error {
+	body, _ := json.Marshal(map[string]any{"table_num": tableNum})
+	return c.putNoResponse(fmt.Sprintf("/matches/%d/start", matchID), body)
 }
 
 func (c *TournamentClient) SetResult(matchID, winnerTgID int64) (winnerNextID int64, loserNextID int64, finished bool, err error) {

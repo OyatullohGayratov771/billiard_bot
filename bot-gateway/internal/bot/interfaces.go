@@ -40,7 +40,9 @@ type TournamentService interface {
 	ApproveRegistration(tournamentID, regID int64) error
 	RejectRegistration(tournamentID, regID int64) error
 	GenerateBracket(tournamentID int64) ([]*models.TournamentMatch, error)
+	ShuffleBracket(tournamentID int64) ([]*models.TournamentMatch, error)
 	GetBracket(tournamentID int64) ([]*models.TournamentMatch, error)
+	StartMatch(matchID int64, tableNum int) error
 	SetResult(matchID, winnerTgID int64) (winnerNextID int64, loserNextID int64, finished bool, err error)
 	GetUserTournaments(tgID int64) ([]*models.TournamentRegistration, error)
 	GetUserRegistration(tournamentID, userTgID int64) (*models.TournamentRegistration, error)

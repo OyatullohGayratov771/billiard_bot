@@ -22,11 +22,12 @@ const (
 )
 
 const (
-	MatchStatusPending = "pending" // players not assigned yet
-	MatchStatusReady   = "ready"   // both players assigned, awaiting result
-	MatchStatusBye     = "bye"     // one player auto-advances
-	MatchStatusVoid    = "void"    // no players (double-bye cascade)
-	MatchStatusDone    = "done"    // winner recorded
+	MatchStatusPending    = "pending"     // players not assigned yet
+	MatchStatusReady      = "ready"       // both players assigned, awaiting start
+	MatchStatusInProgress = "in_progress" // match started, admin entered table num
+	MatchStatusBye        = "bye"         // one player auto-advances
+	MatchStatusVoid       = "void"        // no players (double-bye cascade)
+	MatchStatusDone       = "done"        // winner recorded
 )
 
 const (
@@ -93,6 +94,9 @@ type Match struct {
 	WinnerTgID   *int64 `json:"winner_tg_id"`
 	Status       string `json:"status"`
 	MatchType    string `json:"match_type"`
+	TableNum     int    `json:"table_num"`
+	Player1Score int    `json:"player1_score"`
+	Player2Score int    `json:"player2_score"`
 
 	LoserNextMatchID  *int64 `json:"-"`
 	WinnerNextMatchID *int64 `json:"-"`

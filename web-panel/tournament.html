@@ -181,7 +181,8 @@ function render(data) {
 
   document.title = (t.name || 'Bracket') + ' — Billiard King';
   document.getElementById('tname').textContent = t.name || '—';
-  document.getElementById('live-badge').style.display = t.status === 'in_progress' ? 'flex' : 'none';
+  const hasLive = matches.some(m => m.status === 'in_progress' || m.status === 'ready');
+  document.getElementById('live-badge').style.display = (t.status === 'in_progress' || (t.status === 'registration' && hasLive)) ? 'flex' : 'none';
 
   const parts = [];
   if (t.branch_name) parts.push('📍 ' + t.branch_name);
@@ -398,7 +399,7 @@ function buildMatchCard(m) {
   }
 
   const done = m.status === 'done';
-  const live = m.status === 'ready';
+  const live = m.status === 'ready' || m.status === 'in_progress';
   const p1win = done && m.winner_tg_id != null && m.winner_tg_id === m.player1_tg_id;
   const p2win = done && m.winner_tg_id != null && m.winner_tg_id === m.player2_tg_id;
 
@@ -407,6 +408,13 @@ function buildMatchCard(m) {
 
   card.appendChild(buildPlayerRow(m.player1_name, m.match_num, live, done, p1win, done && !p1win));
   card.appendChild(buildPlayerRow(m.player2_name, null, live, done, p2win, done && !p2win));
+
+  if (m.status === 'in_progress' && m.table_num > 0) {
+    const tbl = document.createElement('div');
+    tbl.style.cssText = 'font-size:.6rem;color:#c86400;text-align:center;padding:2px 0;background:#1e1208;letter-spacing:.5px';
+    tbl.textContent = '🎱 ' + m.table_num + '-stol';
+    card.appendChild(tbl);
+  }
 
   return card;
 }
@@ -449,7 +457,7 @@ function renderRR(container, t, matches) {
   mlist.className = 'rr-matches';
   matches.forEach((m, i) => {
     const done  = m.status === 'done';
-    const live  = m.status === 'ready';
+    const live  = m.status === 'ready' || m.status === 'in_progress';
     const p1win = done && m.winner_tg_id === m.player1_tg_id;
     const p2win = done && m.winner_tg_id === m.player2_tg_id;
     const card = document.createElement('div');

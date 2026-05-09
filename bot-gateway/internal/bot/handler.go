@@ -268,8 +268,12 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbAdminTrnRejectReg(bot, chatID, msgID, user, arg1, arg2)
 	case "admin_trn_bracket":
 		h.cbAdminGenBracket(bot, chatID, msgID, user, arg1)
+	case "admin_trn_shuffle":
+		h.cbAdminTrnShuffle(bot, chatID, msgID, user, arg1)
 	case "admin_trn_result":
 		h.cbAdminTrnResult(bot, chatID, msgID, user, arg1)
+	case "admin_match_start":
+		h.cbAdminMatchStart(bot, chatID, msgID, tgID, user, arg1, arg2)
 	case "admin_trn_winner":
 		h.cbAdminTrnWinner(bot, chatID, msgID, user, arg1, arg2)
 

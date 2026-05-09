@@ -451,6 +451,10 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 		h.handleTrnEditDateInput(bot, msg)
 	case StateTrnEditMax:
 		h.handleTrnEditMaxInput(bot, msg)
+
+	// --- O'yin boshlash: stol raqami ---
+	case StateTrnMatchTableNum:
+		h.handleMatchTableInput(bot, msg, user)
 	}
 }
 

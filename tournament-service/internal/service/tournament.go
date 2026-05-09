@@ -227,7 +227,11 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 		return nil, errors.New("turnir topilmadi")
 	}
 	if t.Status != models.TournamentStatusRegistration {
-		return nil, errors.New("bracket allaqachon yaratilgan yoki turnir tugagan")
+		return nil, errors.New("faqat ro'yxatga olish holatidagi turnir uchun bracket yaratish mumkin")
+	}
+	// Delete existing bracket before regenerating (allows reshuffling)
+	if err := s.repo.DeleteBracket(tournamentID); err != nil {
+		return nil, fmt.Errorf("eski bracket o'chirishda xato: %v", err)
 	}
 	switch t.Type {
 	case models.TournamentTypeDoubleElim:
@@ -237,6 +241,31 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 	default:
 		return s.generateSingleElimBracket(tournamentID)
 	}
+}
+
+func (s *Service) ShuffleBracket(tournamentID int64) ([]*models.Match, error) {
+	return s.GenerateBracket(tournamentID)
+}
+
+func (s *Service) StartMatch(matchID int64, tableNum int) error {
+	m, err := s.repo.GetMatch(matchID)
+	if err != nil {
+		return errors.New("o'yin topilmadi")
+	}
+	if m.Status != models.MatchStatusReady {
+		return fmt.Errorf("o'yin boshlash uchun tayyor emas (holat: %s)", m.Status)
+	}
+	if err := s.repo.StartMatch(matchID, tableNum); err != nil {
+		return err
+	}
+	t, err := s.repo.GetTournament(m.TournamentID)
+	if err != nil {
+		return nil
+	}
+	if t.Status == models.TournamentStatusRegistration {
+		_ = s.repo.SetTournamentStatus(m.TournamentID, models.TournamentStatusInProgress)
+	}
+	return nil
 }
 
 // --- Single Elimination ---
@@ -370,9 +399,6 @@ func (s *Service) generateSingleElimBracket(tournamentID int64) ([]*models.Match
 		}
 	}
 
-	if err := s.repo.SetTournamentStatus(tournamentID, models.TournamentStatusInProgress); err != nil {
-		return nil, err
-	}
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("bracket saqlashda xato: %v", err)
 	}
@@ -415,9 +441,6 @@ func (s *Service) generateRoundRobinBracket(tournamentID int64) ([]*models.Match
 		}
 	}
 
-	if err := s.repo.SetTournamentStatus(tournamentID, models.TournamentStatusInProgress); err != nil {
-		return nil, err
-	}
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("RR bracket saqlashda xato: %v", err)
 	}
@@ -565,9 +588,6 @@ func (s *Service) generateDoubleElimBracket(tournamentID int64) ([]*models.Match
 		}
 	}
 
-	if err := s.repo.SetTournamentStatus(tournamentID, models.TournamentStatusInProgress); err != nil {
-		return nil, err
-	}
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("DE bracket saqlashda xato: %v", err)
 	}
@@ -588,6 +608,10 @@ func (s *Service) GetBracket(tournamentID int64) ([]*models.Match, error) {
 	return s.repo.GetBracket(tournamentID)
 }
 
+func (s *Service) GetMatch(matchID int64) (*models.Match, error) {
+	return s.repo.GetMatch(matchID)
+}
+
 // ===================== MATCH RESULT =====================
 
 // SetResult records winner, advances players. Returns (winnerNextID, loserNextID, finished, trnID, err).
@@ -597,8 +621,8 @@ func (s *Service) SetResult(matchID, winnerTgID int64) (winnerNextID int64, lose
 	if err != nil {
 		return 0, 0, false, 0, errors.New("o'yin topilmadi")
 	}
-	if m.Status != models.MatchStatusReady {
-		return 0, 0, false, 0, fmt.Errorf("o'yin hali tayyor emas (holat: %s)", m.Status)
+	if m.Status != models.MatchStatusInProgress {
+		return 0, 0, false, 0, fmt.Errorf("o'yin boshlanmagan (holat: %s)", m.Status)
 	}
 	isP1 := m.Player1TgID != nil && *m.Player1TgID == winnerTgID
 	isP2 := m.Player2TgID != nil && *m.Player2TgID == winnerTgID
