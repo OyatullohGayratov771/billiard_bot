@@ -33,18 +33,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   padding:20px 0 18px;
 }
 .logo{display:flex;align-items:center;gap:14px}
-.ball{
-  position:relative;width:50px;height:50px;flex-shrink:0;
-  background:radial-gradient(circle at 35% 30%,#2a2a2a,#000 60%);
-  border-radius:50%;
-  box-shadow:0 0 0 2px var(--gold-dim),0 0 20px rgba(212,160,18,.25),inset -4px -4px 12px rgba(255,255,255,.04);
-}
-.ball::after{
-  content:'8';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:1.25rem;font-weight:900;color:#fff;
-  text-shadow:0 1px 3px rgba(0,0,0,.8);
-}
-.ball .crown{position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:1.1rem;filter:drop-shadow(0 0 6px rgba(212,160,18,.7))}
+.logo-img{height:62px;width:auto;filter:drop-shadow(0 0 12px rgba(212,160,18,.5))}
 .brand h1{font-size:1.6rem;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;line-height:1;
   background:linear-gradient(135deg,#f0c030 0%,#d4a012 50%,#a07010 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
@@ -123,7 +112,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   padding:7px 24px;display:flex;justify-content:space-between;align-items:center;
   font-size:.68rem;color:var(--text-muted);
 }
-.foot-logo{display:flex;align-items:center;gap:5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-dim);font-size:.65rem}
+.foot-logo img{height:32px;width:auto;filter:drop-shadow(0 0 4px rgba(212,160,18,.35))opacity:.8}
 
 /* ── MOBILE ── */
 @media(max-width:600px){
@@ -139,11 +128,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <header class="hdr">
   <div class="hdr-inner">
     <div class="logo">
-      <div class="ball"><span class="crown">👑</span></div>
-      <div class="brand">
-        <h1>Billiard King</h1>
-        <p>Turnirlar</p>
-      </div>
+      <img src="logo.jpg" alt="Billiard King" class="logo-img">
     </div>
     <div class="hdr-right" id="upd">—</div>
   </div>
@@ -156,7 +141,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
 <footer class="foot">
   <span>billiardking.uz</span>
-  <div class="foot-logo">🎱 Billiard King</div>
+  <div class="foot-logo"><img src="logo.jpg" alt="Billiard King"></div>
 </footer>
 
 <script>

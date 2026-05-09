@@ -9,7 +9,8 @@
 body{background:#1c1c1c;color:#ccc;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:auto}
 
 /* HEADER */
-.hdr{background:#111;border-bottom:1px solid #2a2a2a;padding:11px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+.hdr{background:#111;border-bottom:1px solid #2a2a2a;padding:8px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+.hdr-logo{height:38px;width:auto;filter:drop-shadow(0 0 6px rgba(212,160,18,.45));flex-shrink:0}
 .back-btn{display:flex;align-items:center;gap:5px;color:#888;font-size:.8rem;text-decoration:none;border:1px solid #333;border-radius:5px;padding:5px 11px;background:#1e1e1e;transition:border-color .2s,color .2s;flex-shrink:0}
 .back-btn:hover{border-color:#e07020;color:#e07020}
 .hdr-title{font-size:1rem;font-weight:700;color:#ddd;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -109,6 +110,7 @@ body{background:#1c1c1c;color:#ccc;font-family:'Segoe UI',system-ui,sans-serif;m
 
 <header class="hdr">
   <a class="back-btn" href="/">‹ Turnirlar</a>
+  <img src="/panel/logo.jpg" alt="Billiard King" class="hdr-logo">
   <div class="hdr-title" id="tname">Yuklanmoqda…</div>
   <div class="live-badge" id="live-badge" style="display:none"><span class="dot"></span><span>JONLI</span></div>
   <div class="hdr-meta" id="tmeta"></div>
