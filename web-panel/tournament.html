@@ -130,9 +130,10 @@ const TRN_ID = params.get('id');
 if (!TRN_ID) location.href = '/';
 
 // Layout constants
-const CARD_H  = 66;  // height of one match card (2 rows × 32px + 2px divider)
-const ROW_H   = 32;
-const PAIR_GAP = 10; // gap between pairs in round 1
+const CARD_H   = 66;  // height of one match card (2 rows × 32px + 2px divider)
+const ROW_H    = 32;
+const MATCH_GAP = 10; // gap between adjacent match cards within a pair
+const PAIR_GAP  = 20; // extra gap added between pairs (on top of MATCH_GAP)
 const COL_W   = 210; // match card width
 const CONN_W  = 46;  // connector SVG width
 const LABEL_H = 26;  // round label height
@@ -265,7 +266,7 @@ function buildBracketRow(matches, t, roundOffset) {
   const r1Count = r1Matches.length;
 
   // Position helpers
-  function r1Top(i)    { return i * CARD_H + Math.floor(i / 2) * PAIR_GAP; }
+  function r1Top(i)    { return i * (CARD_H + MATCH_GAP) + Math.floor(i / 2) * PAIR_GAP; }
   function r1Bottom(i) { return r1Top(i) + CARD_H; }
   function centerY(rIdx, j) {
     const span = Math.pow(2, rIdx);
