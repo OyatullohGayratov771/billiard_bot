@@ -6,152 +6,101 @@
 <title>Billiard King — Bracket</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --gold:#d4a012;--gold-light:#f0c030;--gold-dim:#8b6910;
-  --felt:#1a4a22;--felt-dim:rgba(26,74,34,.18);
-  --bg:#06090a;--bg2:#0a0f0b;--card-bg:rgba(10,16,11,.97);
-  --border:#1a2a1c;--border-gold:rgba(212,160,18,.3);
-  --text:#dde8d8;--text-dim:#4a5e4a;--text-muted:#28382a;
-}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:auto;
-  background-image:radial-gradient(ellipse 80% 40% at 50% -10%,rgba(26,74,34,.1),transparent)}
+body{background:#1c1c1c;color:#ccc;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:auto}
 
-/* ── HEADER ── */
-.hdr{
-  position:relative;overflow:hidden;
-  background:linear-gradient(180deg,#040b05 0%,#060d07 60%,var(--bg) 100%);
-  border-bottom:1px solid var(--border);
-  padding:14px 22px;
-  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-}
-.hdr::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(212,160,18,.03) 50%,transparent);pointer-events:none}
-.back-btn{
-  display:flex;align-items:center;gap:6px;
-  color:var(--text-dim);font-size:.8rem;text-decoration:none;
-  border:1px solid var(--border);border-radius:8px;padding:7px 12px;
-  transition:border-color .2s,color .2s;flex-shrink:0;background:rgba(0,0,0,.2);
-}
-.back-btn:hover{border-color:var(--border-gold);color:var(--gold)}
-.hdr-info{flex:1;min-width:0}
-.hdr-info h1{
-  font-size:clamp(1rem,3vw,1.55rem);font-weight:900;letter-spacing:.5px;
-  background:linear-gradient(135deg,#f0c030,#d4a012 60%,#a07010);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.hdr-info .meta{font-size:.73rem;color:var(--text-dim);margin-top:4px;display:flex;gap:7px;flex-wrap:wrap}
-.hdr-info .meta span{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:1px 7px}
-.type-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(212,160,18,.08);border:1px solid rgba(212,160,18,.2);border-radius:8px;padding:3px 10px;font-size:.68rem;color:var(--gold);margin-top:6px;width:fit-content}
-.live-badge{display:flex;align-items:center;gap:7px;border-radius:20px;padding:7px 14px;font-size:.73rem;white-space:nowrap;border:1px solid rgba(30,160,60,.4);background:rgba(10,30,14,.8);color:#30c060;flex-shrink:0;font-weight:700;letter-spacing:.5px}
-.dot{width:7px;height:7px;border-radius:50%;background:#30c060;animation:pulse 1.4s infinite;box-shadow:0 0 8px #30c060}
+/* HEADER */
+.hdr{background:#111;border-bottom:1px solid #2a2a2a;padding:11px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+.back-btn{display:flex;align-items:center;gap:5px;color:#888;font-size:.8rem;text-decoration:none;border:1px solid #333;border-radius:5px;padding:5px 11px;background:#1e1e1e;transition:border-color .2s,color .2s;flex-shrink:0}
+.back-btn:hover{border-color:#e07020;color:#e07020}
+.hdr-title{font-size:1rem;font-weight:700;color:#ddd;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdr-meta{font-size:.7rem;color:#555;flex-basis:100%;order:3}
+.live-badge{display:flex;align-items:center;gap:6px;background:#1a2a1a;border:1px solid #2a4a2a;border-radius:20px;padding:4px 11px;font-size:.7rem;color:#40b040;font-weight:700;flex-shrink:0}
+.dot{width:6px;height:6px;border-radius:50%;background:#40b040;animation:pulse 1.4s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
 
-/* ── GOLD DIVIDER ── */
-.divider{height:2px;background:linear-gradient(90deg,transparent,var(--gold) 30%,var(--gold-light) 50%,var(--gold) 70%,transparent);opacity:.5}
+/* BRACKET SCROLL */
+.bracket-scroll{padding:20px 24px 80px;overflow-x:auto}
+.bracket-outer{display:inline-flex;flex-direction:column;gap:32px}
 
-/* ── SECTIONS ── */
-.sec-wrap{padding:0 0 24px}
-.sec-hdr{display:flex;align-items:center;gap:12px;padding:18px 22px 10px;font-size:.66rem;text-transform:uppercase;letter-spacing:2.5px;font-weight:700}
-.sec-hdr::after{content:'';flex:1;height:1px;background:currentColor;opacity:.12}
-.sec-hdr.wb{color:#c0a000}
-.sec-hdr.lb{color:#4a80c0}
-.sec-hdr.gf{color:#c04080}
-.sec-hdr.rr{color:#40a060}
+/* SECTION LABEL (for DE) */
+.sec-lbl{font-size:.62rem;text-transform:uppercase;letter-spacing:2.5px;color:#555;margin-bottom:8px;padding-left:2px}
+.sec-lbl.wb{color:#a07820}.sec-lbl.lb{color:#3a6090}.sec-lbl.gf{color:#904060}
 
-/* ── BRACKET ── */
-.bracket{display:flex;align-items:stretch;padding:8px 22px 0;overflow-x:auto;gap:0}
-.round-col{display:flex;flex-direction:column;align-items:center;min-width:215px}
-.round-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-bottom:10px;text-align:center;padding:3px 10px;border-radius:4px;background:rgba(26,74,34,.1);border:1px solid rgba(26,74,34,.2)}
-.matches-col{display:flex;flex-direction:column;width:100%;flex:1}
-.match-slot{display:flex;align-items:center;flex:1;min-height:72px}
-.conn{display:flex;flex-direction:column;justify-content:center;width:28px;flex-shrink:0;align-self:stretch}
-.conn-line{border-top:1px solid rgba(26,74,34,.35);width:100%}
+/* BRACKET ROW: rounds + connectors */
+.bracket-row{display:inline-flex;align-items:flex-start}
 
-/* ── MATCH CARD ── */
-.mcard{
-  width:200px;border-radius:10px;overflow:hidden;
-  border:1px solid var(--border);
-  background:linear-gradient(160deg,rgba(10,18,11,.98),rgba(6,10,7,.98));
-  transition:box-shadow .25s,border-color .25s;
-}
-.mcard.live{
-  border-color:var(--gold-dim);
-  box-shadow:0 0 16px rgba(212,160,18,.22);
-  animation:cglow 2.2s ease-in-out infinite;
-}
-.mcard.done{border-color:rgba(26,74,34,.35);background:linear-gradient(160deg,rgba(10,20,12,.98),rgba(6,12,8,.98))}
-@keyframes cglow{0%,100%{box-shadow:0 0 16px rgba(212,160,18,.22)}50%{box-shadow:0 0 30px rgba(212,160,18,.45)}}
-.player{padding:9px 12px;font-size:.84rem;font-weight:500;display:flex;align-items:center;gap:8px}
-.player+.player{border-top:1px solid rgba(255,255,255,.04)}
-.player.win{background:rgba(212,160,18,.12);color:var(--gold-light);font-weight:700}
-.player.lose{color:var(--text-muted)}
-.ico{width:16px;text-align:center;font-size:.7rem;flex-shrink:0}
-.pname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:155px}
-.bye-el{width:200px;padding:12px 14px;border-radius:10px;border:1px dashed rgba(26,74,34,.3);background:rgba(6,10,7,.8);color:var(--text-muted);font-size:.76rem;font-style:italic}
-.void-el{width:200px;height:64px}
+/* ROUND COLUMN */
+.r-col{display:flex;flex-direction:column;align-items:flex-start}
+.r-lbl{font-size:.63rem;text-transform:uppercase;letter-spacing:1.8px;color:#555;text-align:center;height:26px;line-height:26px;width:200px;flex-shrink:0}
 
-/* ── WINNER ── */
-.winner-col{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:140px;flex:1;gap:8px;padding:20px}
-.trophy{font-size:3.6rem;animation:tfloat 3s ease-in-out infinite;filter:drop-shadow(0 0 14px rgba(240,192,48,.55))}
-.winner-name{font-size:1.2rem;font-weight:900;text-align:center;
-  background:linear-gradient(135deg,#f0c030,#d4a012);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.winner-sub{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:3px}
-@keyframes tfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+/* MATCH AREA (position:relative container) */
+.r-area{position:relative;width:200px}
 
-/* ── GRAND FINAL ── */
-.gf-wrap{display:flex;align-items:center;justify-content:center;padding:16px 22px 36px;gap:20px;flex-wrap:wrap}
-.gf-lbl{font-size:.63rem;text-transform:uppercase;letter-spacing:2px;color:#c04080;margin-bottom:8px;text-align:center}
+/* MATCH CARD */
+.mcard{position:absolute;left:0;width:200px;border-radius:3px;overflow:hidden;border:1px solid #3a3a3a;background:#2e2e2e}
+.mcard.live{border-color:#c86400;box-shadow:0 0 10px rgba(200,100,0,.3)}
+.mcard.done{border-color:#353535}
 
-/* ── ROUND ROBIN ── */
-.rr-wrap{display:grid;grid-template-columns:1fr 270px;gap:20px;padding:10px 22px 40px}
-@media(max-width:760px){.rr-wrap{grid-template-columns:1fr}}
-.rr-matches{display:flex;flex-direction:column;gap:7px}
-.rr-card{border-radius:10px;border:1px solid var(--border);background:linear-gradient(160deg,rgba(10,18,11,.98),rgba(6,10,7,.98));padding:10px 14px;display:flex;align-items:center;gap:10px;transition:border-color .2s}
-.rr-card.live{border-color:var(--gold-dim);animation:cglow 2.2s ease-in-out infinite}
-.rr-card.done{border-color:rgba(26,74,34,.3);background:linear-gradient(160deg,rgba(10,20,12,.98),rgba(6,12,8,.98))}
-.rr-num{font-size:.63rem;color:var(--text-muted);min-width:22px;text-align:right}
-.rr-vs{color:var(--text-muted);font-size:.75rem;margin:0 6px}
-.rr-p{font-size:.84rem;font-weight:500}
-.rr-p.win{color:var(--gold-light);font-weight:700}
-.rr-p.lose{color:var(--text-muted)}
-.rr-status{margin-left:auto;font-size:.75rem}
+/* PLAYER ROW */
+.prow{display:flex;align-items:center;height:29px;padding:0 5px 0 6px;gap:5px;transition:background .15s}
+.prow+.prow{border-top:1px solid #3a3a3a}
+.prow.win{background:#2e2e2e}.prow.lose{background:#282828}.prow.pend{background:#2e2e2e}
+.pseed{font-size:.65rem;color:#4a4a4a;min-width:20px;text-align:right;flex-shrink:0;font-weight:600}
+.pname{flex:1;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow.win .pname{color:#e07020;font-weight:600}
+.prow.lose .pname{color:#666}
+.prow.pend .pname{color:#aaa}
+.prow.live-p .pname{color:#c8c8c8}
+.pscore{flex-shrink:0;width:22px;height:20px;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;border-radius:2px}
+.pscore.s-win{background:#c86400;color:#fff}
+.pscore.s-lose{background:#333;color:#555}
+.pscore.s-none{background:transparent}
 
-.standings{border-radius:12px;border:1px solid var(--border);background:linear-gradient(160deg,rgba(10,18,11,.98),rgba(6,10,7,.98));overflow:hidden;height:fit-content}
-.st-hdr{padding:11px 16px;font-size:.63rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--text-dim);border-bottom:1px solid var(--border);background:rgba(26,74,34,.08)}
-.s-row{display:grid;grid-template-columns:26px 1fr 32px 32px 32px;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.03);font-size:.83rem}
-.s-row:last-child{border-bottom:none}
-.s-row.first{background:rgba(212,160,18,.06)}
-.s-row.first .s-name{color:var(--gold-light);font-weight:700}
-.s-rank{color:var(--text-muted);font-weight:700;font-size:.72rem}
-.s-rank.r1{color:#f0c030}.s-rank.r2{color:#b0b0b0}.s-rank.r3{color:#c08060}
-.s-name{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.s-num{text-align:center;color:var(--text-dim);font-size:.78rem}
-.s-num.w{color:#30c060;font-weight:700}
+/* BYE / VOID */
+.bye-card{position:absolute;left:0;width:200px;height:58px;display:flex;align-items:center;padding:0 10px;color:#3a3a3a;font-size:.74rem;font-style:italic;border:1px dashed #2e2e2e;border-radius:3px}
+.void-card{position:absolute;left:0;width:200px;height:58px}
 
-/* ── EMPTY / OVERLAY ── */
-.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:12px;color:var(--text-muted);font-size:.9rem;text-align:center;padding:40px}
-.empty .big{font-size:2.8rem;opacity:.35}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;z-index:99}
+/* CONNECTOR SVG */
+.conn-svg{flex-shrink:0;margin-top:26px}
+
+/* WINNER */
+.winner-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;gap:6px;flex-shrink:0;margin-top:26px}
+.w-trophy{font-size:2.8rem;filter:drop-shadow(0 0 10px rgba(200,100,0,.55));animation:wfloat 3s ease-in-out infinite}
+@keyframes wfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.w-name{font-size:1rem;font-weight:800;color:#e07020;text-align:center;max-width:130px}
+.w-sub{font-size:.58rem;color:#444;text-transform:uppercase;letter-spacing:3px;margin-top:2px}
+
+/* ROUND ROBIN */
+.rr-wrap{display:grid;grid-template-columns:1fr 260px;gap:16px}
+@media(max-width:700px){.rr-wrap{grid-template-columns:1fr}}
+.rr-matches{display:flex;flex-direction:column;gap:5px}
+.rr-card{background:#2e2e2e;border:1px solid #3a3a3a;border-radius:3px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:.82rem}
+.rr-card.live{border-color:#c86400}.rr-card.done{border-color:#353535}
+.rr-num{color:#444;min-width:22px;font-size:.67rem}
+.rr-vs{color:#444;font-size:.72rem;margin:0 4px}
+.rr-p{font-weight:500}.rr-p.win{color:#e07020;font-weight:700}.rr-p.lose{color:#666}
+.rr-st{margin-left:auto;font-size:.72rem;color:#555}
+
+.standings{background:#2e2e2e;border:1px solid #3a3a3a;border-radius:3px;overflow:hidden}
+.st-hdr{padding:9px 14px;font-size:.62rem;text-transform:uppercase;letter-spacing:2px;color:#555;border-bottom:1px solid #3a3a3a;background:#282828}
+.st-row{display:grid;grid-template-columns:22px 1fr 28px 28px 28px;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid #2a2a2a;font-size:.82rem}
+.st-row:last-child{border-bottom:none}
+.st-row.top1{background:#2a2218}
+.st-rank{color:#444;font-size:.7rem;font-weight:700}
+.st-rank.r1{color:#c86400}.st-rank.r2{color:#888}.st-rank.r3{color:#774433}
+.st-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-row.top1 .st-name{color:#e07020;font-weight:600}
+.st-num{text-align:center;color:#555;font-size:.76rem}
+.st-num.w{color:#40b040;font-weight:700}
+
+/* EMPTY / OVERLAY / FOOTER */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:10px;color:#333;text-align:center;padding:40px}
+.empty .big{font-size:2.4rem}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;z-index:99}
 .overlay.on{opacity:1}
-.spinner{width:38px;height:38px;border:3px solid rgba(26,74,34,.3);border-top-color:var(--gold);border-radius:50%;animation:rot .7s linear infinite}
+.spinner{width:34px;height:34px;border:3px solid #333;border-top-color:#e07020;border-radius:50%;animation:rot .7s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
-
-/* ── FOOTER ── */
-.foot{position:fixed;bottom:0;left:0;right:0;background:rgba(4,7,4,.96);backdrop-filter:blur(8px);border-top:1px solid var(--border);padding:6px 22px;display:flex;justify-content:space-between;align-items:center;font-size:.68rem;color:var(--text-muted)}
-.foot-logo{display:flex;align-items:center;gap:5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-dim);font-size:.65rem}
-
-/* ── MOBILE ── */
-@media(max-width:700px){
-  .bracket{flex-direction:column;padding:8px 12px 0}
-  .round-col{min-width:unset;width:100%}
-  .matches-col{flex-direction:row;overflow-x:auto;gap:8px;padding-bottom:8px}
-  .match-slot{flex-shrink:0}
-  .conn{display:none}
-  .sec-hdr{padding:12px 14px 8px}
-  .gf-wrap{padding:12px 14px 36px}
-}
+.foot{position:fixed;bottom:0;left:0;right:0;background:rgba(17,17,17,.95);backdrop-filter:blur(8px);border-top:1px solid #222;padding:5px 18px;display:flex;justify-content:space-between;align-items:center;font-size:.67rem;color:#333}
 </style>
 </head>
 <body>
@@ -160,24 +109,18 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
 <header class="hdr">
   <a class="back-btn" href="/">‹ Turnirlar</a>
-  <div class="hdr-info">
-    <h1 id="tname">Yuklanmoqda…</h1>
-    <div class="meta" id="tmeta"></div>
-    <div id="ttype" class="type-pill" style="display:none"></div>
-  </div>
-  <div class="live-badge" id="live-badge" style="display:none">
-    <span class="dot"></span><span>JONLI</span>
-  </div>
+  <div class="hdr-title" id="tname">Yuklanmoqda…</div>
+  <div class="live-badge" id="live-badge" style="display:none"><span class="dot"></span><span>JONLI</span></div>
+  <div class="hdr-meta" id="tmeta"></div>
 </header>
-<div class="divider"></div>
 
-<div id="main">
+<div class="bracket-scroll" id="main">
   <div class="empty"><div class="big">⏳</div><div>Yuklanmoqda…</div></div>
 </div>
 
 <footer class="foot">
   <span id="upd">—</span>
-  <div class="foot-logo">🎱 Billiard King</div>
+  <span>🎱 Billiard King</span>
 </footer>
 
 <script>
@@ -185,6 +128,14 @@ const API = '/api';
 const params = new URLSearchParams(location.search);
 const TRN_ID = params.get('id');
 if (!TRN_ID) location.href = '/';
+
+// Layout constants
+const CARD_H  = 58;  // height of one match card (2 rows × 29px)
+const ROW_H   = 29;
+const PAIR_GAP = 8;  // gap between pairs in round 1
+const COL_W   = 200; // match card width
+const CONN_W  = 44;  // connector SVG width
+const LABEL_H = 26;  // round label height
 
 async function loadData() {
   const ov = document.getElementById('ov');
@@ -208,43 +159,36 @@ async function loadData() {
   }
 }
 
-// SSE — bot natija kiritganda server darhol xabar yuboradi
-let _retryMs = 2000, _sse = null, _sseOk = false;
+// SSE
+let _retryMs = 2000, _sse = null;
 function connectSSE() {
   if (_sse) { _sse.close(); _sse = null; }
   _sse = new EventSource(API + '/tournaments/' + TRN_ID + '/sse');
-  _sse.onopen = () => { _retryMs = 2000; _sseOk = true; };
+  _sse.onopen = () => { _retryMs = 2000; };
   _sse.onmessage = e => {
-    try { const msg = JSON.parse(e.data); if (msg.type === 'refresh') loadData(); } catch(x) {}
+    try { const m = JSON.parse(e.data); if (m.type === 'refresh') loadData(); } catch(x){}
   };
   _sse.onerror = () => {
-    _sseOk = false;
     _sse.close(); _sse = null;
     setTimeout(connectSSE, _retryMs);
     _retryMs = Math.min(_retryMs * 2, 30000);
   };
 }
 
-
 function render(data) {
   const t = data.tournament || {};
   const matches = data.matches || [];
 
-  document.title = '🏆 ' + (t.name || 'Bracket') + ' — Billiard King';
+  document.title = (t.name || 'Bracket') + ' — Billiard King';
   document.getElementById('tname').textContent = t.name || '—';
-
-  const meta = document.getElementById('tmeta');
-  meta.innerHTML = '';
-  if (t.branch_name) addSpan(meta, '📍 ' + t.branch_name);
-  if (t.scheduled_at) addSpan(meta, '📅 ' + fmtDate(t.scheduled_at));
-  addSpan(meta, statusLabel(t.status));
-  if (t.approved_count != null) addSpan(meta, '👥 ' + t.approved_count + '/' + t.max_players);
-
-  const tp = document.getElementById('ttype');
-  const tl = typeLabel(t.type);
-  if (tl) { tp.textContent = tl; tp.style.display = 'inline-flex'; }
-
   document.getElementById('live-badge').style.display = t.status === 'in_progress' ? 'flex' : 'none';
+
+  const parts = [];
+  if (t.branch_name) parts.push('📍 ' + t.branch_name);
+  if (t.scheduled_at) parts.push('📅 ' + fmtDate(t.scheduled_at));
+  parts.push(statusLabel(t.status));
+  if (t.max_players) parts.push('👥 ' + (t.approved_count||0) + '/' + t.max_players);
+  document.getElementById('tmeta').textContent = parts.join('  ·  ');
 
   const main = document.getElementById('main');
   main.innerHTML = '';
@@ -254,224 +198,345 @@ function render(data) {
     return;
   }
 
-  if (t.type === 'double_elimination') renderDE(main, t, matches);
-  else if (t.type === 'round_robin')   renderRR(main, t, matches);
-  else                                 renderSE(main, t, matches);
+  const outer = document.createElement('div');
+  outer.className = 'bracket-outer';
+
+  if (t.type === 'double_elimination') renderDE(outer, t, matches);
+  else if (t.type === 'round_robin')   renderRR(outer, t, matches);
+  else                                 renderSE(outer, t, matches);
+
+  main.appendChild(outer);
 }
 
-function addSpan(parent, text) {
-  const s = document.createElement('span');
-  s.textContent = text;
-  parent.appendChild(s);
-}
-
-/* ── SINGLE ELIMINATION ── */
+/* ════════════════════════════════════════
+   SINGLE ELIMINATION
+════════════════════════════════════════ */
 function renderSE(container, t, matches) {
-  const rounds = groupByRound(matches);
-  const nums = Object.keys(rounds).map(Number).sort((a,b)=>a-b);
-  if (!nums.length) return;
-  const maxR = nums[nums.length-1];
-  let winner = null;
-  if (t.status === 'finished')
-    for (const m of rounds[maxR]||[])
-      if (m.status==='done'&&m.winner_name) winner = m.winner_name;
-
-  const br = mkBracket();
-  nums.forEach((r,i) => {
-    if (i>0) br.appendChild(mkConn());
-    br.appendChild(mkRoundCol(rounds[r], r===maxR?'Final':r+'-bosqich', r));
-  });
-  if (t.status === 'finished') { br.appendChild(mkConn()); br.appendChild(mkWinner(winner)); }
-  container.appendChild(br);
+  const row = buildBracketRow(matches, t, null);
+  container.appendChild(row);
 }
 
-/* ── DOUBLE ELIMINATION ── */
+/* ════════════════════════════════════════
+   DOUBLE ELIMINATION
+════════════════════════════════════════ */
 function renderDE(container, t, matches) {
-  const wb = matches.filter(m=>m.match_type==='winners');
-  const lb = matches.filter(m=>m.match_type==='losers');
-  const gf = matches.filter(m=>m.match_type==='grand_final');
+  const wb = matches.filter(m => m.match_type === 'winners');
+  const lb = matches.filter(m => m.match_type === 'losers');
+  const gf = matches.filter(m => m.match_type === 'grand_final');
 
   if (wb.length) {
-    const sec = mkSec('🏆 Winners Bracket','wb');
-    const rounds = groupByRound(wb);
-    const nums = Object.keys(rounds).map(Number).sort((a,b)=>a-b);
-    const maxR = nums[nums.length-1];
-    const br = mkBracket();
-    nums.forEach((r,i) => {
-      if (i>0) br.appendChild(mkConn());
-      br.appendChild(mkRoundCol(rounds[r], r===maxR?'WB Final':'WB R'+r, r));
-    });
-    sec.appendChild(br); container.appendChild(sec);
+    const lbl = document.createElement('div');
+    lbl.className = 'sec-lbl wb';
+    lbl.textContent = '🏆 Winners Bracket';
+    container.appendChild(lbl);
+    container.appendChild(buildBracketRow(wb, t, null));
   }
   if (lb.length) {
-    const sec = mkSec('⬇ Losers Bracket','lb');
-    const rounds = groupByRound(lb);
-    const nums = Object.keys(rounds).map(Number).sort((a,b)=>a-b);
-    const maxR = nums[nums.length-1];
-    const br = mkBracket();
-    nums.forEach((r,i) => {
-      if (i>0) br.appendChild(mkConn());
-      const lbR = r - 1000;
-      br.appendChild(mkRoundCol(rounds[r], r===maxR?'LB Final':'LB R'+lbR, r));
-    });
-    sec.appendChild(br); container.appendChild(sec);
+    const lbl = document.createElement('div');
+    lbl.className = 'sec-lbl lb';
+    lbl.textContent = '⬇ Losers Bracket';
+    container.appendChild(lbl);
+    container.appendChild(buildBracketRow(lb, t, 1000));
   }
   if (gf.length) {
-    const sec = mkSec('🎯 Grand Final','gf');
-    const wrap = document.createElement('div');
-    wrap.className = 'gf-wrap';
-    for (const m of gf) {
-      const col = document.createElement('div');
-      const lbl = document.createElement('div');
-      lbl.className = 'gf-lbl'; lbl.textContent = 'Grand Final';
-      col.appendChild(lbl); col.appendChild(buildCard(m));
-      wrap.appendChild(col);
-    }
-    if (t.status==='finished') {
-      let winner=null;
-      for (const m of gf) if (m.status==='done'&&m.winner_name) winner=m.winner_name;
-      wrap.appendChild(mkConn()); wrap.appendChild(mkWinner(winner));
-    }
-    sec.appendChild(wrap); container.appendChild(sec);
+    const lbl = document.createElement('div');
+    lbl.className = 'sec-lbl gf';
+    lbl.textContent = '🎯 Grand Final';
+    container.appendChild(lbl);
+    container.appendChild(buildBracketRow(gf, t, null));
   }
-  if (!wb.length&&!lb.length&&!gf.length) renderSE(container,t,matches);
+  if (!wb.length && !lb.length && !gf.length) renderSE(container, t, matches);
 }
 
-/* ── ROUND ROBIN ── */
+/* ════════════════════════════════════════
+   BRACKET ROW builder
+════════════════════════════════════════ */
+function buildBracketRow(matches, t, roundOffset) {
+  const rounds = groupByRound(matches);
+  const roundNums = Object.keys(rounds).map(Number).sort((a,b) => a-b);
+  if (!roundNums.length) return document.createElement('div');
+
+  // Adjust round numbers if offset (LB rounds are 1001, 1002...)
+  const adjRounds = roundNums.map(r => roundOffset ? r - roundOffset : r);
+  const maxR = roundNums[roundNums.length - 1];
+
+  const r1Matches = rounds[roundNums[0]] || [];
+  const r1Count = r1Matches.length;
+
+  // Position helpers
+  function r1Top(i)    { return i * CARD_H + Math.floor(i / 2) * PAIR_GAP; }
+  function r1Bottom(i) { return r1Top(i) + CARD_H; }
+  function centerY(rIdx, j) {
+    const span = Math.pow(2, rIdx);
+    const first = j * span;
+    const last  = Math.min((j + 1) * span - 1, r1Count - 1);
+    return (r1Top(first) + r1Bottom(last)) / 2;
+  }
+  function topY(rIdx, j) { return centerY(rIdx, j) - CARD_H / 2; }
+
+  const totalH = r1Bottom(r1Count - 1) + PAIR_GAP;
+  const totalRounds = roundNums.length;
+  const row = document.createElement('div');
+  row.className = 'bracket-row';
+
+  roundNums.forEach((rn, rIdx) => {
+    const rMatches = rounds[rn] || [];
+    const isLast   = rIdx === totalRounds - 1;
+
+    // ── Round column ──
+    const col = document.createElement('div');
+    col.className = 'r-col';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'r-lbl';
+    lbl.textContent = roundLabel(rIdx, totalRounds, adjRounds[rIdx]);
+    col.appendChild(lbl);
+
+    const area = document.createElement('div');
+    area.className = 'r-area';
+    area.style.height = totalH + 'px';
+
+    rMatches.forEach((m, j) => {
+      const ty = rIdx === 0 ? r1Top(j) : topY(rIdx, j);
+      const card = buildMatchCard(m);
+      card.style.top = ty + 'px';
+      area.appendChild(card);
+    });
+    col.appendChild(area);
+    row.appendChild(col);
+
+    // ── Connector SVG ──
+    if (!isLast) {
+      const nextRMatches = rounds[roundNums[rIdx + 1]] || [];
+      const svg = buildConnectorSVG(rMatches, nextRMatches, rIdx, totalH, centerY);
+      row.appendChild(svg);
+    }
+  });
+
+  // ── Winner box ──
+  if (t && t.status === 'finished') {
+    let winner = null;
+    for (const m of rounds[maxR] || [])
+      if (m.status === 'done' && m.winner_name) winner = m.winner_name;
+    // vertical align to final match center
+    const finalCenter = totalRounds > 0 ? centerY(totalRounds - 1, 0) : totalH / 2;
+    const ww = document.createElement('div');
+    ww.className = 'winner-wrap';
+    ww.style.paddingTop = Math.max(0, finalCenter - 60) + 'px';
+    ww.innerHTML = `<div class="w-trophy">🏆</div><div class="w-name">${esc(winner||'—')}</div><div class="w-sub">G'olib</div>`;
+    row.appendChild(ww);
+  }
+
+  return row;
+}
+
+/* ════════════════════════════════════════
+   CONNECTOR SVG
+════════════════════════════════════════ */
+function buildConnectorSVG(curMatches, nextMatches, rIdx, totalH, centerY) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', CONN_W);
+  svg.setAttribute('height', totalH);
+  svg.style.cssText = 'flex-shrink:0;margin-top:' + LABEL_H + 'px;overflow:visible';
+
+  const strokeColor = '#484848';
+  const textColor   = '#5a5a5a';
+  const midX        = CONN_W / 2;
+
+  function line(x1, y1, x2, y2) {
+    const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', x1); l.setAttribute('y1', y1);
+    l.setAttribute('x2', x2); l.setAttribute('y2', y2);
+    l.setAttribute('stroke', strokeColor);
+    l.setAttribute('stroke-width', '1');
+    svg.appendChild(l);
+  }
+
+  nextMatches.forEach((nm, nj) => {
+    const nc      = centerY(rIdx + 1, nj);  // center of next-round match
+    const topIdx  = nj * 2;
+    const botIdx  = nj * 2 + 1;
+
+    const topC = topIdx < curMatches.length ? centerY(rIdx, topIdx) : nc;
+    const botC = botIdx < curMatches.length ? centerY(rIdx, botIdx) : topC;
+
+    // Horizontal from top feeder to midX
+    line(0, topC, midX, topC);
+    // Horizontal from bottom feeder to midX
+    if (Math.abs(botC - topC) > 2) line(0, botC, midX, botC);
+    // Vertical bar
+    if (Math.abs(botC - topC) > 2) line(midX, topC, midX, botC);
+    // Horizontal from midX to right edge (to next match)
+    line(midX, nc, CONN_W, nc);
+
+    // Match number label
+    if (nm.match_num || nm.id) {
+      const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      txt.setAttribute('x', midX + 3);
+      txt.setAttribute('y', nc - 2);
+      txt.setAttribute('fill', textColor);
+      txt.setAttribute('font-size', '9');
+      txt.setAttribute('font-family', 'Segoe UI,system-ui,sans-serif');
+      txt.textContent = nm.match_num || nm.id;
+      svg.appendChild(txt);
+    }
+  });
+
+  return svg;
+}
+
+/* ════════════════════════════════════════
+   MATCH CARD
+════════════════════════════════════════ */
+function buildMatchCard(m) {
+  if (m.status === 'void') {
+    const d = document.createElement('div'); d.className = 'void-card'; return d;
+  }
+  if (m.status === 'bye') {
+    const d = document.createElement('div'); d.className = 'bye-card';
+    d.textContent = esc(m.player1_name || '—') + ' → keyingi bosqich'; return d;
+  }
+
+  const done = m.status === 'done';
+  const live = m.status === 'ready';
+  const p1win = done && m.winner_tg_id != null && m.winner_tg_id === m.player1_tg_id;
+  const p2win = done && m.winner_tg_id != null && m.winner_tg_id === m.player2_tg_id;
+
+  const card = document.createElement('div');
+  card.className = 'mcard' + (live ? ' live' : done ? ' done' : '');
+
+  card.appendChild(buildPlayerRow(m.player1_name, m.match_num, live, done, p1win, done && !p1win));
+  card.appendChild(buildPlayerRow(m.player2_name, null, live, done, p2win, done && !p2win));
+
+  return card;
+}
+
+function buildPlayerRow(name, seed, live, done, win, lose) {
+  const row = document.createElement('div');
+  row.className = 'prow ' + (win ? 'win' : lose ? 'lose' : live ? 'live-p' : 'pend');
+
+  const seedEl = document.createElement('span');
+  seedEl.className = 'pseed';
+  seedEl.textContent = seed || '';
+  row.appendChild(seedEl);
+
+  const nameEl = document.createElement('span');
+  nameEl.className = 'pname';
+  nameEl.textContent = name || '—';
+  row.appendChild(nameEl);
+
+  const scoreEl = document.createElement('span');
+  if (done) {
+    scoreEl.className = 'pscore ' + (win ? 's-win' : 's-lose');
+    scoreEl.textContent = win ? 'W' : '—';
+  } else {
+    scoreEl.className = 'pscore s-none';
+  }
+  row.appendChild(scoreEl);
+
+  return row;
+}
+
+/* ════════════════════════════════════════
+   ROUND ROBIN
+════════════════════════════════════════ */
 function renderRR(container, t, matches) {
   const wrap = document.createElement('div');
   wrap.className = 'rr-wrap';
 
-  const mList = document.createElement('div');
-  mList.className = 'rr-matches';
-  const hdr = document.createElement('div');
-  hdr.className = 'sec-hdr rr'; hdr.textContent = "O'yinlar";
-  mList.appendChild(hdr);
-
-  matches.forEach((m,i) => {
+  // Matches list
+  const mlist = document.createElement('div');
+  mlist.className = 'rr-matches';
+  matches.forEach((m, i) => {
+    const done  = m.status === 'done';
+    const live  = m.status === 'ready';
+    const p1win = done && m.winner_tg_id === m.player1_tg_id;
+    const p2win = done && m.winner_tg_id === m.player2_tg_id;
     const card = document.createElement('div');
-    card.className = 'rr-card'+(m.status==='ready'?' live':m.status==='done'?' done':'');
-    const done = m.status==='done';
-    const p1win = done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player1_tg_id;
-    const p2win = done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player2_tg_id;
-
+    card.className = 'rr-card' + (live ? ' live' : done ? ' done' : '');
     card.innerHTML =
-      '<span class="rr-num">'+(i+1)+'.</span>'+
-      '<span class="rr-p'+(p1win?' win':done&&!p1win?' lose':'')+'">'+esc(m.player1_name||'—')+'</span>'+
-      '<span class="rr-vs">vs</span>'+
-      '<span class="rr-p'+(p2win?' win':done&&!p2win?' lose':'')+'">'+esc(m.player2_name||'—')+'</span>'+
-      '<span class="rr-status">'+(m.status==='ready'?'🎱':m.status==='done'?'✅':'⏳')+'</span>';
-    mList.appendChild(card);
+      `<span class="rr-num">${i+1}.</span>` +
+      `<span class="rr-p${p1win?' win':done&&!p1win?' lose':''}">${esc(m.player1_name||'—')}</span>` +
+      `<span class="rr-vs">vs</span>` +
+      `<span class="rr-p${p2win?' win':done&&!p2win?' lose':''}">${esc(m.player2_name||'—')}</span>` +
+      `<span class="rr-st">${live?'🎱':done?'✅':'⏳'}</span>`;
+    mlist.appendChild(card);
   });
 
+  // Standings
   const stand = document.createElement('div');
   stand.className = 'standings';
   stand.innerHTML = '<div class="st-hdr">Turnir Jadvali</div>';
 
   const wins={}, played={}, players={};
   for (const m of matches) {
-    if (m.player1_tg_id&&m.player1_name) players[m.player1_tg_id]=m.player1_name;
-    if (m.player2_tg_id&&m.player2_name) players[m.player2_tg_id]=m.player2_name;
-    if (m.status==='done'&&m.winner_tg_id) {
-      wins[m.winner_tg_id]=(wins[m.winner_tg_id]||0)+1;
-      [m.player1_tg_id,m.player2_tg_id].forEach(id=>{if(id)played[id]=(played[id]||0)+1});
+    if (m.player1_tg_id && m.player1_name) players[m.player1_tg_id] = m.player1_name;
+    if (m.player2_tg_id && m.player2_name) players[m.player2_tg_id] = m.player2_name;
+    if (m.status === 'done' && m.winner_tg_id) {
+      wins[m.winner_tg_id] = (wins[m.winner_tg_id]||0) + 1;
+      [m.player1_tg_id, m.player2_tg_id].forEach(id => {
+        if (id) played[id] = (played[id]||0) + 1;
+      });
     }
   }
 
   const hrow = document.createElement('div');
-  hrow.className = 's-row';
-  hrow.style.cssText = 'border-bottom:1px solid rgba(26,74,34,.3);font-size:.62rem;color:var(--text-muted);letter-spacing:1px';
-  hrow.innerHTML = '<span>#</span><span>O\'YINCHI</span><span style="text-align:center">O</span><span style="text-align:center;color:#30c060">G</span><span style="text-align:center">M</span>';
+  hrow.className = 'st-row';
+  hrow.style.cssText = 'border-bottom:1px solid #333;font-size:.6rem;color:#444;letter-spacing:1px';
+  hrow.innerHTML = '<span>#</span><span>O\'YINCHI</span><span style="text-align:center">O</span><span style="text-align:center;color:#40b040">G</span><span style="text-align:center">M</span>';
   stand.appendChild(hrow);
 
   Object.entries(players)
-    .sort((a,b)=>(wins[b[0]]||0)-(wins[a[0]]||0))
-    .forEach(([id,name],idx) => {
-      const w=wins[id]||0, p=played[id]||0, l=p-w;
-      const rankIco=idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':idx+1;
-      const rankCls=idx===0?'r1':idx===1?'r2':idx===2?'r3':'';
+    .sort((a, b) => (wins[b[0]]||0) - (wins[a[0]]||0))
+    .forEach(([id, name], idx) => {
+      const w = wins[id]||0, p = played[id]||0, l = p - w;
       const row = document.createElement('div');
-      row.className = 's-row'+(idx===0?' first':'');
+      row.className = 'st-row' + (idx===0?' top1':'');
+      const rankMap = ['🥇','🥈','🥉'];
+      const rankCls = idx<3?('r'+(idx+1)):'';
       row.innerHTML =
-        '<span class="s-rank '+rankCls+'">'+rankIco+'</span>'+
-        '<span class="s-name">'+esc(name)+'</span>'+
-        '<span class="s-num">'+p+'</span>'+
-        '<span class="s-num w">'+w+'</span>'+
-        '<span class="s-num">'+l+'</span>';
+        `<span class="st-rank ${rankCls}">${rankMap[idx]||idx+1}</span>` +
+        `<span class="st-name">${esc(name)}</span>` +
+        `<span class="st-num">${p}</span>` +
+        `<span class="st-num w">${w}</span>` +
+        `<span class="st-num">${l}</span>`;
       stand.appendChild(row);
     });
 
-  wrap.appendChild(mList);
+  wrap.appendChild(mlist);
   wrap.appendChild(stand);
   container.appendChild(wrap);
 }
 
-/* ── HELPERS ── */
+/* ════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════ */
 function groupByRound(matches) {
-  const r={};
-  for (const m of matches) { if(!r[m.round]) r[m.round]=[]; r[m.round].push(m); }
+  const r = {};
+  for (const m of matches) { if (!r[m.round]) r[m.round] = []; r[m.round].push(m); }
   return r;
 }
-function mkBracket() {
-  const d=document.createElement('div'); d.className='bracket'; return d;
+
+function roundLabel(rIdx, total, adjRound) {
+  // Last round = Final, second-to-last = Semi-Final, rest = numbered
+  const fromEnd = total - 1 - rIdx;
+  if (fromEnd === 0) return 'Final';
+  if (fromEnd === 1) return 'Yarim Final';
+  if (fromEnd === 2 && total > 3) return 'Chorak Final';
+  return (rIdx + 1) + '-tur';
 }
-function mkSec(title, cls) {
-  const sec=document.createElement('div'); sec.className='sec-wrap';
-  const hdr=document.createElement('div'); hdr.className='sec-hdr '+(cls||''); hdr.textContent=title;
-  sec.appendChild(hdr); return sec;
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-function mkRoundCol(rmatches, label, round) {
-  const col=document.createElement('div'); col.className='round-col';
-  const lbl=document.createElement('div'); lbl.className='round-lbl'; lbl.textContent=label;
-  col.appendChild(lbl);
-  const mc=document.createElement('div'); mc.className='matches-col';
-  mc.style.gap=(Math.pow(2,round-1)*10)+'px';
-  for (const m of (rmatches||[])) {
-    const slot=document.createElement('div'); slot.className='match-slot';
-    slot.appendChild(buildCard(m)); mc.appendChild(slot);
-  }
-  col.appendChild(mc); return col;
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit', year:'numeric'}) +
+    ' ' + d.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
 }
-function mkConn() {
-  const d=document.createElement('div'); d.className='conn';
-  d.innerHTML='<div class="conn-line"></div>'; return d;
-}
-function mkWinner(name) {
-  const w=document.createElement('div'); w.className='winner-col';
-  w.innerHTML='<div class="trophy">🏆</div><div class="winner-name">'+esc(name||'—')+'</div><div class="winner-sub">G\'olib</div>';
-  return w;
-}
-function buildCard(m) {
-  if (m.status==='void') { const d=document.createElement('div'); d.className='void-el'; return d; }
-  if (m.status==='bye') {
-    const d=document.createElement('div'); d.className='bye-el';
-    d.textContent=esc(m.player1_name||'—')+' → keyingi bosqich'; return d;
-  }
-  const live=m.status==='ready', done=m.status==='done';
-  const div=document.createElement('div');
-  div.className='mcard'+(live?' live':'')+(done?' done':'');
-  const p1win=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player1_tg_id;
-  const p2win=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player2_tg_id;
-  div.innerHTML=mkPlayer(m.player1_name,live,p1win,done&&!p1win)+mkPlayer(m.player2_name,live,p2win,done&&!p2win);
-  return div;
-}
-function mkPlayer(name,live,win,lose) {
-  const cls=win?' win':lose?' lose':'';
-  const ico=win?'👑':live?'🎱':'○';
-  return '<div class="player'+cls+'"><span class="ico">'+ico+'</span><span class="pname">'+esc(name||'—')+'</span></div>';
-}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function fmtDate(iso){
-  if(!iso)return'—';
-  const d=new Date(iso);
-  return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'})+
-    ' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-}
-function statusLabel(s){
-  return {registration:"📋 Ro'yxat",in_progress:'⚡ Jarayonda',finished:'🏆 Yakunlandi',cancelled:'❌ Bekor'}[s]||s;
-}
-function typeLabel(t){
-  return {single_elimination:'🎯 Single Elimination',double_elimination:'🔄 Double Elimination',round_robin:'🔁 Round Robin'}[t]||null;
+function statusLabel(s) {
+  return {registration:"📋 Ro'yxat", in_progress:'⚡ Jarayonda', finished:'🏆 Yakunlandi', cancelled:'❌ Bekor'}[s] || s;
 }
 
 loadData();
