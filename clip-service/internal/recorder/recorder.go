@@ -186,11 +186,12 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
 	log.Printf("[klip#%d] RTSP: %s", clipID, maskRTSP(rtspURL))
 
-	timeout := time.Duration(durationSec+90) * time.Second
+	timeout := time.Duration(durationSec*2+120) * time.Second
 
 	err := runFFmpeg(outPath, timeout, []string{
 		"-loglevel", "warning",
-		"-fflags", "+genpts+igndts",
+		"-fflags", "+genpts+igndts+discardcorrupt",
+		"-err_detect", "ignore_err",
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
@@ -217,7 +218,8 @@ func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string
 	outPath := r.ClipPath(clipID)
 	args := []string{
 		"-loglevel", "warning",
-		"-fflags", "+genpts+igndts",
+		"-fflags", "+genpts+igndts+discardcorrupt",
+		"-err_detect", "ignore_err",
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 	}
@@ -235,7 +237,7 @@ func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string
 		"-movflags", "+faststart",
 		"-y", outPath,
 	)
-	timeout := time.Duration(durationSec+60) * time.Second
+	timeout := time.Duration(durationSec*2+120) * time.Second
 	if err := runFFmpeg(outPath, timeout, args); err != nil {
 		return "", err
 	}
