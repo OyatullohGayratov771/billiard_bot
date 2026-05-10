@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Billiard King — Do'kon</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+:root{--or:#e07020;--or2:#c86400;--bg:#080808;--bg2:#0a0a0a;--card:#111;--border:#1e1e1e;--text:#f0f0f0;--text2:#999;--text3:#444}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+a{text-decoration:none;color:inherit}
+
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:60px;background:rgba(8,8,8,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.06)}
+.nav-logo img{height:44px;width:auto;filter:drop-shadow(0 0 8px rgba(224,112,32,.4))}
+.nav-links{display:flex;gap:28px;font-size:.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2)}
+.nav-links a:hover,.nav-links a.active{color:var(--or)}
+.nav-cta{background:var(--or);color:#fff;padding:8px 20px;border-radius:3px;font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;transition:.2s}
+.nav-cta:hover{background:var(--or2)}
+.nav-burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none}
+.nav-burger span{display:block;width:22px;height:2px;background:var(--text2);border-radius:2px;transition:.3s}
+.nav-burger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.nav-burger.open span:nth-child(2){opacity:0}
+.nav-burger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.nav-mobile{display:none;position:fixed;top:60px;left:0;right:0;z-index:99;background:rgba(8,8,8,.98);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);flex-direction:column;padding:16px 24px 20px;gap:4px}
+.nav-mobile.open{display:flex}
+.nav-mobile a{padding:12px 8px;font-size:.85rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2);border-bottom:1px solid rgba(255,255,255,.05);transition:.2s}
+.nav-mobile a:last-child{border-bottom:none;color:var(--or)}
+@media(max-width:700px){.nav-links,.nav-cta{display:none}.nav-burger{display:flex}}
+
+/* HERO */
+.page-hero{padding:80px 40px 60px;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:center;min-height:420px}
+.ph-text{display:flex;flex-direction:column;gap:20px}
+.ph-eyebrow{font-size:.6rem;letter-spacing:5px;text-transform:uppercase;color:var(--text3)}
+.ph-title{font-size:clamp(2.8rem,6vw,5rem);font-weight:900;line-height:.88;letter-spacing:-2px;text-transform:uppercase}
+.ph-title em{font-style:normal;-webkit-text-stroke:1px rgba(255,255,255,.4);color:transparent}
+.ph-sub{font-size:.85rem;color:var(--text2);line-height:1.8;max-width:340px}
+.btn-white{background:#fff;color:#000;padding:12px 30px;border-radius:2px;font-weight:800;font-size:.75rem;letter-spacing:2px;text-transform:uppercase;display:inline-block;transition:.2s;width:fit-content}
+.btn-white:hover{background:#e0e0e0;transform:translateY(-1px)}
+.ph-img{display:flex;align-items:center;justify-content:center;position:relative}
+.ball-big{width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff9f45,#c86400 50%,#6a3200 100%);box-shadow:0 0 80px rgba(200,100,0,.25),inset 0 -20px 40px rgba(0,0,0,.5);animation:floatball 6s ease-in-out infinite;position:relative;z-index:1}
+.ball-num{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);font-size:4rem;font-weight:900;color:rgba(0,0,0,.3);font-style:italic;z-index:2;user-select:none}
+@keyframes floatball{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+@media(max-width:700px){.page-hero{grid-template-columns:1fr;padding:60px 24px 40px}.ph-img{min-height:200px}}
+
+/* PRODUCTS */
+.products{padding:0 0 80px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 32px}
+.sec-label{font-size:.6rem;letter-spacing:4px;text-transform:uppercase;color:var(--text3);margin-bottom:24px;padding-top:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1px;background:var(--border)}
+.item{background:var(--bg2);padding:28px 24px;cursor:pointer;transition:.2s;position:relative}
+.item:hover{background:var(--card)}
+.item-tag{font-size:.54rem;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;font-weight:700}
+.item-img{width:100%;height:140px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:4.5rem;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+.item-name{font-size:1rem;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.item-sub{font-size:.73rem;color:var(--text2);margin-bottom:14px}
+.item-price{font-size:.9rem;font-weight:700;color:var(--or)}
+.item-arr{position:absolute;bottom:24px;right:24px;color:var(--text3);font-size:1rem;transition:.2s}
+.item:hover .item-arr{color:var(--or);transform:translateX(4px)}
+
+.soon-banner{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--or);padding:20px 24px;margin-top:32px;border-radius:2px;display:flex;align-items:center;gap:14px;font-size:.82rem;color:var(--text2)}
+.soon-banner strong{color:var(--text)}
+
+footer{background:#040404;border-top:1px solid var(--border);padding:20px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.foot-logo img{height:28px;opacity:.45;filter:drop-shadow(0 0 4px rgba(224,112,32,.2))}
+.foot-r{font-size:.66rem;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo"><img src="/logo.jpg" alt="Billiard King"></a>
+  <div class="nav-links">
+    <a href="/turnirlar">Turnirlar</a>
+    <a href="/shop" class="active">Do'kon</a>
+    <a href="/jamiyat">Jamiyat</a>
+    <a href="/reyting">Reyting</a>
+  </div>
+  <a href="https://t.me/BilliardKingBot" class="nav-cta" target="_blank">Bot → Ulash</a>
+  <button class="nav-burger" id="burger"><span></span><span></span><span></span></button>
+</nav>
+<div class="nav-mobile" id="nav-mobile">
+  <a href="/turnirlar">🏆 Turnirlar</a>
+  <a href="/shop">🛒 Do'kon</a>
+  <a href="/jamiyat">👥 Jamiyat</a>
+  <a href="/reyting">🎯 Reyting</a>
+  <a href="https://t.me/BilliardKingBot" target="_blank">✈️ Botga Ulash</a>
+</div>
+
+<div class="page-hero">
+  <div class="ph-text">
+    <div class="ph-eyebrow">Billiard King Store</div>
+    <h1 class="ph-title">Play<br><em>Bold.</em><br>Win<br>Hard.</h1>
+    <p class="ph-sub">Professional billiardchilar uchun yuqori sifatli uskunalar. Har bir zarba — g'alabaga bir qadam.</p>
+    <a href="https://t.me/BilliardKingBot" target="_blank" class="btn-white">Buyurtma Berish</a>
+  </div>
+  <div class="ph-img">
+    <div style="position:relative">
+      <div class="ball-big"></div>
+      <div class="ball-num">8</div>
+    </div>
+  </div>
+</div>
+
+<div class="products">
+  <div class="wrap">
+    <div class="sec-label">Mahsulotlar</div>
+    <div class="grid">
+      <div class="item">
+        <div class="item-tag">Bestseller</div>
+        <div class="item-img">🎱</div>
+        <div class="item-name">Pro Cue Series X</div>
+        <div class="item-sub">Carbon fiber shaft · 19oz · 2-piece</div>
+        <div class="item-price">320 000 so'm</div>
+        <div class="item-arr">→</div>
+      </div>
+      <div class="item">
+        <div class="item-tag">Yangi</div>
+        <div class="item-img">⚫</div>
+        <div class="item-name">Tournament Ball Set</div>
+        <div class="item-sub">Belgian phenolic · 57.2mm · 16-sharli</div>
+        <div class="item-price">180 000 so'm</div>
+        <div class="item-arr">→</div>
+      </div>
+      <div class="item">
+        <div class="item-tag">Ko'p sotilgan</div>
+        <div class="item-img">🟦</div>
+        <div class="item-name">Master Blue Chalk</div>
+        <div class="item-sub">Blue Diamond formula · 12-pack</div>
+        <div class="item-price">45 000 so'm</div>
+        <div class="item-arr">→</div>
+      </div>
+      <div class="item">
+        <div class="item-tag">Premium</div>
+        <div class="item-img">🎒</div>
+        <div class="item-name">Pro Cue Case</div>
+        <div class="item-sub">Aluminum shell · 2×2 · qulf bilan</div>
+        <div class="item-price">220 000 so'm</div>
+        <div class="item-arr">→</div>
+      </div>
+      <div class="item">
+        <div class="item-tag">Aksessuar</div>
+        <div class="item-img">🧤</div>
+        <div class="item-name">Billiard Glove</div>
+        <div class="item-sub">Lycra · S/M/L/XL · ko'p rangli</div>
+        <div class="item-price">18 000 so'm</div>
+        <div class="item-arr">→</div>
+      </div>
+      <div class="item">
+        <div class="item-tag">Stol</div>
+        <div class="item-img">🟩</div>
+        <div class="item-name">Table Brush Set</div>
+        <div class="item-sub">Kaşmir jun to'qima · 2 ta to'plam</div>
+        <div class="item-price">35 000 so'm</div>
+        <div class="item-arr">→</div>
+      </div>
+    </div>
+    <div class="soon-banner">
+      <span>🛒</span>
+      <div><strong>Onlayn to'lov tez kunda!</strong> Hozircha buyurtmani Telegram bot orqali bering — tez va qulay.</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-logo"><img src="/logo.jpg" alt="Billiard King"></div>
+  <div class="foot-r">© 2026 Billiard King · billiardking.uz</div>
+</footer>
+
+<script>
+const bg = document.getElementById('burger'), nm = document.getElementById('nav-mobile');
+bg.addEventListener('click', () => { bg.classList.toggle('open'); nm.classList.toggle('open'); });
+nm.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { bg.classList.remove('open'); nm.classList.remove('open'); }));
+</script>
+</body>
+</html>

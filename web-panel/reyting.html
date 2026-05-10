@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Billiard King — Reyting</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+:root{--or:#e07020;--or2:#c86400;--gold:#ffd700;--silver:#c0c0c0;--bronze:#cd7f32;--bg:#08090d;--bg2:#0d0f17;--card:#0d0f17;--border:rgba(255,255,255,.06);--text:#f0f0f0;--text2:#888;--text3:#3a3a5a}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+a{text-decoration:none;color:inherit}
+
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:60px;background:rgba(8,9,13,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.06)}
+.nav-logo img{height:44px;width:auto;filter:drop-shadow(0 0 8px rgba(224,112,32,.4))}
+.nav-links{display:flex;gap:28px;font-size:.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2)}
+.nav-links a:hover,.nav-links a.active{color:var(--or)}
+.nav-cta{background:var(--or);color:#fff;padding:8px 20px;border-radius:3px;font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;transition:.2s}
+.nav-cta:hover{background:var(--or2)}
+.nav-burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none}
+.nav-burger span{display:block;width:22px;height:2px;background:var(--text2);border-radius:2px;transition:.3s}
+.nav-burger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.nav-burger.open span:nth-child(2){opacity:0}
+.nav-burger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.nav-mobile{display:none;position:fixed;top:60px;left:0;right:0;z-index:99;background:rgba(8,9,13,.98);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);flex-direction:column;padding:16px 24px 20px;gap:4px}
+.nav-mobile.open{display:flex}
+.nav-mobile a{padding:12px 8px;font-size:.85rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2);border-bottom:1px solid rgba(255,255,255,.05);transition:.2s}
+.nav-mobile a:last-child{border-bottom:none;color:var(--or)}
+@media(max-width:700px){.nav-links,.nav-cta{display:none}.nav-burger{display:flex}}
+
+/* HERO */
+.page-hero{padding:80px 40px 48px;max-width:1100px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.ph-l .ph-eye{font-size:.6rem;letter-spacing:5px;text-transform:uppercase;color:var(--or);margin-bottom:10px}
+.ph-l .ph-title{font-size:clamp(2rem,5vw,3.2rem);font-weight:900;letter-spacing:-1.5px}
+.ph-l .ph-sub{color:var(--text2);font-size:.85rem;margin-top:8px;max-width:400px;line-height:1.6}
+.season-badge{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--or);padding:10px 18px;border-radius:2px;font-size:.72rem;color:var(--text2);white-space:nowrap}
+.season-badge strong{color:var(--or);display:block;font-size:1rem;font-weight:800;letter-spacing:-0.5px}
+@media(max-width:600px){.page-hero{padding:60px 24px 36px}}
+
+/* LEADERBOARD */
+.board-wrap{max-width:1100px;margin:0 auto;padding:0 32px 80px}
+.board-label{font-size:.58rem;letter-spacing:4px;text-transform:uppercase;color:var(--text3);margin-bottom:20px}
+
+/* TOP 3 PODIUM */
+.podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:2px;background:var(--border);margin-bottom:2px}
+.pod-card{background:var(--card);padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;position:relative;overflow:hidden}
+.pod-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.pod-1::before{background:var(--gold)}
+.pod-2::before{background:var(--silver)}
+.pod-3::before{background:var(--bronze)}
+.pod-rank{font-size:1.6rem;font-weight:900;line-height:1}
+.pod-rank.r1{color:var(--gold)}
+.pod-rank.r2{color:var(--silver)}
+.pod-rank.r3{color:var(--bronze)}
+.pod-av{width:56px;height:56px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;background:#13151e;border:1px solid rgba(255,255,255,.08)}
+.pod-name{font-size:.95rem;font-weight:800}
+.pod-at{font-size:.68rem;color:var(--text2)}
+.pod-stats{display:flex;gap:16px;margin-top:4px}
+.ps{text-align:center}
+.ps-v{font-size:.9rem;font-weight:700}
+.ps-l{font-size:.52rem;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-top:1px}
+.pod-wr{width:100%;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-top:4px}
+.pod-wr-fill{height:100%;background:linear-gradient(90deg,var(--or),#ff9f45);border-radius:2px}
+@media(max-width:600px){.podium{grid-template-columns:1fr}}
+
+/* REST OF TABLE */
+.rest-list{display:flex;flex-direction:column;gap:2px;background:var(--border)}
+.row{background:var(--card);padding:16px 20px;display:grid;grid-template-columns:36px 1fr auto;gap:14px;align-items:center;transition:.15s}
+.row:hover{background:#111318}
+.row-rank{font-size:.78rem;font-weight:800;color:var(--text3);text-align:center}
+.row-info{display:flex;align-items:center;gap:12px}
+.row-av{width:36px;height:36px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.95rem;background:#13151e;border:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.row-name{font-size:.88rem;font-weight:700}
+.row-at{font-size:.65rem;color:var(--text3);margin-top:1px}
+.row-stats{display:flex;gap:20px;align-items:center}
+.rs{text-align:right}
+.rs-v{font-size:.82rem;font-weight:700}
+.rs-l{font-size:.52rem;text-transform:uppercase;letter-spacing:1px;color:var(--text3)}
+@media(max-width:500px){.row-stats{display:none}}
+
+/* COMING SOON */
+.soon-note{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--or);padding:20px 24px;margin-top:24px;border-radius:2px;font-size:.82rem;color:var(--text2);display:flex;gap:12px;align-items:center}
+.soon-note strong{color:var(--text)}
+
+footer{background:#040404;border-top:1px solid rgba(255,255,255,.05);padding:20px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.foot-logo img{height:28px;opacity:.45;filter:drop-shadow(0 0 4px rgba(224,112,32,.2))}
+.foot-r{font-size:.66rem;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo"><img src="/logo.jpg" alt="Billiard King"></a>
+  <div class="nav-links">
+    <a href="/turnirlar">Turnirlar</a>
+    <a href="/shop">Do'kon</a>
+    <a href="/jamiyat">Jamiyat</a>
+    <a href="/reyting" class="active">Reyting</a>
+  </div>
+  <a href="https://t.me/BilliardKingBot" class="nav-cta" target="_blank">Bot → Ulash</a>
+  <button class="nav-burger" id="burger"><span></span><span></span><span></span></button>
+</nav>
+<div class="nav-mobile" id="nav-mobile">
+  <a href="/turnirlar">🏆 Turnirlar</a>
+  <a href="/shop">🛒 Do'kon</a>
+  <a href="/jamiyat">👥 Jamiyat</a>
+  <a href="/reyting">🎯 Reyting</a>
+  <a href="https://t.me/BilliardKingBot" target="_blank">✈️ Botga Ulash</a>
+</div>
+
+<div class="page-hero">
+  <div class="ph-l">
+    <div class="ph-eye">Global Reyting</div>
+    <h1 class="ph-title">Top O'yinchilar</h1>
+    <p class="ph-sub">Barcha turnirlar bo'yicha umumiy reyting. G'alaba soniga qarab yangilanadi.</p>
+  </div>
+  <div class="season-badge">
+    <strong id="trn-count">—</strong>
+    turnir o'tkazildi
+  </div>
+</div>
+
+<div class="board-wrap">
+  <div class="board-label">Podium — Top 3</div>
+  <div class="podium">
+    <div class="pod-card pod-2">
+      <div class="pod-rank r2">2</div>
+      <div class="pod-av">🎱</div>
+      <div class="pod-name">Sardor Raximov</div>
+      <div class="pod-at">@sardor_r · Yunusobod</div>
+      <div class="pod-stats">
+        <div class="ps"><div class="ps-v">19</div><div class="ps-l">G'alaba</div></div>
+        <div class="ps"><div class="ps-v">27</div><div class="ps-l">O'yin</div></div>
+        <div class="ps"><div class="ps-v">70%</div><div class="ps-l">Win</div></div>
+      </div>
+      <div class="pod-wr"><div class="pod-wr-fill" style="width:70%"></div></div>
+    </div>
+    <div class="pod-card pod-1">
+      <div class="pod-rank r1">1</div>
+      <div class="pod-av">🏆</div>
+      <div class="pod-name">Azizbek Karimov</div>
+      <div class="pod-at">@azizbek_k · Chilonzor</div>
+      <div class="pod-stats">
+        <div class="ps"><div class="ps-v">24</div><div class="ps-l">G'alaba</div></div>
+        <div class="ps"><div class="ps-v">31</div><div class="ps-l">O'yin</div></div>
+        <div class="ps"><div class="ps-v">77%</div><div class="ps-l">Win</div></div>
+      </div>
+      <div class="pod-wr"><div class="pod-wr-fill" style="width:77%"></div></div>
+    </div>
+    <div class="pod-card pod-3">
+      <div class="pod-rank r3">3</div>
+      <div class="pod-av">⚡</div>
+      <div class="pod-name">Jasur Umarov</div>
+      <div class="pod-at">@jasur_u · Mirzo Ulugbek</div>
+      <div class="pod-stats">
+        <div class="ps"><div class="ps-v">14</div><div class="ps-l">G'alaba</div></div>
+        <div class="ps"><div class="ps-v">22</div><div class="ps-l">O'yin</div></div>
+        <div class="ps"><div class="ps-v">63%</div><div class="ps-l">Win</div></div>
+      </div>
+      <div class="pod-wr"><div class="pod-wr-fill" style="width:63%"></div></div>
+    </div>
+  </div>
+
+  <div class="rest-list" style="margin-top:2px">
+    <div class="row">
+      <div class="row-rank">4</div>
+      <div class="row-info">
+        <div class="row-av">🎯</div>
+        <div><div class="row-name">Bobur Hasanov</div><div class="row-at">Chilonzor</div></div>
+      </div>
+      <div class="row-stats">
+        <div class="rs"><div class="rs-v">9</div><div class="rs-l">G'alaba</div></div>
+        <div class="rs"><div class="rs-v">56%</div><div class="rs-l">Win</div></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="row-rank">5</div>
+      <div class="row-info">
+        <div class="row-av">🎱</div>
+        <div><div class="row-name">Nodir Yusupov</div><div class="row-at">Yunusobod</div></div>
+      </div>
+      <div class="row-stats">
+        <div class="rs"><div class="rs-v">7</div><div class="rs-l">G'alaba</div></div>
+        <div class="rs"><div class="rs-v">50%</div><div class="rs-l">Win</div></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="row-rank">6</div>
+      <div class="row-info">
+        <div class="row-av">⚡</div>
+        <div><div class="row-name">Sherzod Mirzaev</div><div class="row-at">Uchtepa</div></div>
+      </div>
+      <div class="row-stats">
+        <div class="rs"><div class="rs-v">6</div><div class="rs-l">G'alaba</div></div>
+        <div class="rs"><div class="rs-v">46%</div><div class="rs-l">Win</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="soon-note">
+    <span>📊</span>
+    <div><strong>Real reyting tez kunda!</strong> Hozircha namuna ko'rsatilmoqda. Turnirlar yakünlangach, natijalar avtomatik hisoblanadi.</div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-logo"><img src="/logo.jpg" alt="Billiard King"></div>
+  <div class="foot-r">© 2026 Billiard King · billiardking.uz</div>
+</footer>
+
+<script>
+const bg = document.getElementById('burger'), nm = document.getElementById('nav-mobile');
+bg.addEventListener('click', () => { bg.classList.toggle('open'); nm.classList.toggle('open'); });
+nm.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { bg.classList.remove('open'); nm.classList.remove('open'); }));
+
+fetch('/api/tournaments').then(r => r.ok ? r.json() : []).then(all => {
+  document.getElementById('trn-count').textContent = (all || []).filter(t => t.status === 'finished').length;
+}).catch(() => {});
+</script>
+</body>
+</html>
