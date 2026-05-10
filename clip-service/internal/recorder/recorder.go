@@ -196,7 +196,6 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 		"-loglevel", "warning",
 		"-fflags", "+genpts+igndts+discardcorrupt",
 		"-rtsp_transport", "tcp",
-		"-stimeout", "25000000",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-map", "0:v:0",
