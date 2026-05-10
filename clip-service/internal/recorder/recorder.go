@@ -187,13 +187,15 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 	log.Printf("[klip#%d] RTSP: %s", clipID, maskRTSP(rtspURL))
 
 	// -c:v copy: HEVC decode qilmaymiz (buzilgan stream muammolarini chetlab o'tish)
-	// compressIfNeeded keyinchalik H.264 ga o'giradi (>40MB bo'lsa)
+	// compressIfNeeded keyinchalik H.264 ga o'giradi
+	// -stimeout: 25s inactivity timeout — CSeq mismatch/gap bo'lsa tez chiqadi
 	timeout := time.Duration(durationSec+120) * time.Second
 
 	err := runFFmpeg(outPath, timeout, []string{
 		"-loglevel", "warning",
 		"-fflags", "+genpts+igndts+discardcorrupt",
 		"-rtsp_transport", "tcp",
+		"-stimeout", "25000000",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-map", "0:v:0",
