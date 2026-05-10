@@ -91,23 +91,21 @@ func logDone(clipID int64, durationSec int, outPath string) {
 	log.Printf("[klip#%d] done: %.1fMB, %ds → %s", clipID, sizeMB, durationSec, outPath)
 }
 
-const telegramMaxBytes = 40 * 1024 * 1024 // 40MB threshold (Telegram 50MB limitidan havfsiz)
-
-// compressIfNeeded — 40MB dan katta bo'lsa H.264 ga siqadi.
-// Xato bo'lsa error qaytaradi — katta fayl yuborilmaydi.
+// compressIfNeeded — har doim H.264 ga o'giradi (HEVC Telegram da ishlamaydi).
+// Hajmni 40MB dan oshmaydigan qilib siqadi.
 func compressIfNeeded(clipID int64, path string, durationSec int) error {
 	info, err := os.Stat(path)
-	if err != nil || info.Size() <= telegramMaxBytes {
+	if err != nil {
 		return nil
 	}
 
 	sizeMB := float64(info.Size()) / 1024 / 1024
 	// 38MB maqsad: audio (64kbps) ni hisobga olib video kbps hisoblash
 	targetKbps := (38*1024*8 - 64*durationSec) / durationSec
-	if targetKbps < 200 {
-		targetKbps = 200
+	if targetKbps < 300 {
+		targetKbps = 300
 	}
-	log.Printf("[klip#%d] hajm %.1fMB > 40MB → siqilmoqda (%d kbps)", clipID, sizeMB, targetKbps)
+	log.Printf("[klip#%d] H.264 ga o'girish: %.1fMB → maqsad %d kbps", clipID, sizeMB, targetKbps)
 
 	tmpPath := path + ".tmp.mp4"
 	err = runFFmpeg(tmpPath, time.Duration(durationSec*3+120)*time.Second, []string{
