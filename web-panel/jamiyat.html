@@ -8,68 +8,85 @@
 <title>Billiard King — Jamiyat</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
-:root{--or:#e07020;--or2:#c86400;--tg:#229ED9;--bg:#080808;--bg2:#0d0e14;--card:#111217;--border:#1e1f28;--text:#f0f0f0;--text2:#888;--text3:#444}
+:root{
+  --gold:#D4AF37;--gold2:#B8941F;--gold-l:#F0D878;--gold-glow:rgba(212,175,55,.32);
+  --tg:#229ED9;
+  --em:#0D3B2E;--em2:#092A20;
+  --bg:#0E0E0E;--bg2:#080808;
+  --card:#141414;--card2:#1A1A1A;
+  --border:rgba(212,175,55,.15);--border2:rgba(212,175,55,.07);
+  --text:#F0F0F0;--text2:#888;--text3:#4A4A4A;
+}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
 a{text-decoration:none;color:inherit}
 
-nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:60px;background:rgba(8,8,8,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.06)}
-.nav-logo img{height:44px;width:auto;filter:drop-shadow(0 0 8px rgba(224,112,32,.4))}
-.nav-links{display:flex;gap:28px;font-size:.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2)}
-.nav-links a:hover,.nav-links a.active{color:var(--or)}
-.nav-cta{background:var(--or);color:#fff;padding:8px 20px;border-radius:3px;font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;transition:.2s}
-.nav-cta:hover{background:var(--or2)}
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:64px;background:rgba(8,8,8,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2)}
+.nav-logo img{height:44px;width:auto;filter:drop-shadow(0 0 10px var(--gold-glow))}
+.nav-links{display:flex;gap:32px;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3)}
+.nav-links a:hover,.nav-links a.active{color:var(--gold)}
+.nav-cta{background:var(--gold);color:#000;padding:9px 22px;border-radius:2px;font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;transition:.2s;white-space:nowrap}
+.nav-cta:hover{background:var(--gold-l);box-shadow:0 0 20px var(--gold-glow)}
 .nav-burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none}
 .nav-burger span{display:block;width:22px;height:2px;background:var(--text2);border-radius:2px;transition:.3s}
 .nav-burger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
 .nav-burger.open span:nth-child(2){opacity:0}
 .nav-burger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
-.nav-mobile{display:none;position:fixed;top:60px;left:0;right:0;z-index:99;background:rgba(8,8,8,.98);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);flex-direction:column;padding:16px 24px 20px;gap:4px}
+.nav-mobile{display:none;position:fixed;top:64px;left:0;right:0;z-index:99;background:rgba(8,8,8,.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);flex-direction:column;padding:16px 24px 24px;gap:2px}
 .nav-mobile.open{display:flex}
-.nav-mobile a{padding:12px 8px;font-size:.85rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2);border-bottom:1px solid rgba(255,255,255,.05);transition:.2s}
-.nav-mobile a:last-child{border-bottom:none;color:var(--or)}
+.nav-mobile a{padding:13px 8px;font-size:.82rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid rgba(255,255,255,.04);transition:.2s}
+.nav-mobile a:last-child{border-bottom:none;color:var(--gold);margin-top:8px}
+.nav-mobile a:hover{color:var(--gold)}
 @media(max-width:700px){.nav-links,.nav-cta{display:none}.nav-burger{display:flex}}
 
 /* HERO */
-.page-hero{padding:80px 40px 60px;max-width:900px;margin:0 auto;text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px}
-.ph-eye{font-size:.6rem;letter-spacing:5px;text-transform:uppercase;color:var(--or)}
-.ph-title{font-size:clamp(2.2rem,6vw,4rem);font-weight:900;letter-spacing:-1.5px;line-height:1}
-.ph-sub{font-size:.9rem;color:var(--text2);line-height:1.8;max-width:500px}
+.page-hero{padding:80px 40px 60px;max-width:900px;margin:0 auto;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px}
+.ph-crown{font-size:1.6rem;filter:drop-shadow(0 0 12px var(--gold-glow))}
+.ph-eye{font-size:.54rem;letter-spacing:7px;text-transform:uppercase;color:rgba(212,175,55,.6)}
+.ph-title{font-size:clamp(2.2rem,6vw,4rem);font-weight:900;letter-spacing:-1.5px;line-height:.95}
+.ph-sub{font-size:.88rem;color:var(--text2);line-height:1.85;max-width:500px}
+@media(max-width:600px){.page-hero{padding:60px 24px 40px}}
 
 /* STATS */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--border);max-width:900px;margin:0 auto;padding:0 32px}
-.stat-box{background:var(--card);padding:28px 20px;text-align:center}
-.stat-n{font-size:1.8rem;font-weight:800;color:var(--or)}
-.stat-l{font-size:.58rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--text3);margin-top:6px}
-@media(max-width:600px){.stats-row{grid-template-columns:1fr 1fr}.page-hero{padding:60px 24px 40px}}
+.stats-wrap{background:var(--em);background-image:radial-gradient(circle,rgba(255,255,255,.02) 1px,transparent 1px);background-size:7px 7px;position:relative}
+.stats-wrap::before,.stats-wrap::after{content:'';position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(212,175,55,.3),transparent)}
+.stats-wrap::before{top:0}
+.stats-wrap::after{bottom:0}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(0,0,0,.3);max-width:900px;margin:0 auto}
+.stat-box{background:rgba(0,0,0,.5);padding:32px 20px;text-align:center}
+.stat-n{font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,var(--gold-l),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:.54rem;text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,.3);margin-top:8px}
+@media(max-width:600px){.stats-row{grid-template-columns:1fr 1fr}}
 
-/* JOIN CARDS */
-.join-section{padding:60px 32px 80px;max-width:900px;margin:0 auto}
-.join-title{font-size:.6rem;letter-spacing:4px;text-transform:uppercase;color:var(--text3);margin-bottom:24px}
-.join-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--border)}
-.join-card{background:var(--card);padding:36px 32px;display:flex;flex-direction:column;gap:14px}
+/* JOIN */
+.join-section{padding:64px 32px 80px;max-width:900px;margin:0 auto}
+.join-label{font-size:.54rem;letter-spacing:5px;text-transform:uppercase;color:var(--text3);margin-bottom:24px}
+.join-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(212,175,55,.07)}
+.join-card{background:var(--card);padding:36px 32px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+.join-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,transparent,var(--gold),transparent);opacity:.5}
 .jc-icon{font-size:2rem}
-.jc-name{font-size:1.1rem;font-weight:800}
-.jc-desc{font-size:.8rem;color:var(--text2);line-height:1.7}
-.btn-tg{background:var(--tg);color:#fff;padding:11px 26px;border-radius:4px;font-weight:700;font-size:.78rem;letter-spacing:1px;display:inline-flex;align-items:center;gap:8px;transition:.2s;width:fit-content;margin-top:4px}
+.jc-name{font-size:1rem;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.jc-desc{font-size:.8rem;color:var(--text2);line-height:1.75}
+.btn-tg{background:var(--tg);color:#fff;padding:11px 26px;border-radius:3px;font-weight:700;font-size:.76rem;letter-spacing:1px;display:inline-flex;align-items:center;gap:8px;transition:.2s;width:fit-content;margin-top:4px}
 .btn-tg:hover{background:#1a8fc0;transform:translateY(-1px)}
 .btn-tg svg{width:18px;height:18px;fill:#fff;flex-shrink:0}
-.btn-or-sm{background:var(--or);color:#fff;padding:11px 26px;border-radius:4px;font-weight:700;font-size:.78rem;letter-spacing:1px;display:inline-flex;align-items:center;gap:8px;transition:.2s;width:fit-content;margin-top:4px}
-.btn-or-sm:hover{background:var(--or2);transform:translateY(-1px)}
+.btn-gold-sm{background:var(--gold);color:#000;padding:11px 26px;border-radius:3px;font-weight:800;font-size:.76rem;letter-spacing:1px;display:inline-flex;align-items:center;gap:8px;transition:.2s;width:fit-content;margin-top:4px}
+.btn-gold-sm:hover{background:var(--gold-l);transform:translateY(-1px);box-shadow:0 4px 20px var(--gold-glow)}
 @media(max-width:600px){.join-grid{grid-template-columns:1fr}}
 
 /* RULES */
-.rules-section{background:var(--bg2);padding:60px 32px;border-top:1px solid var(--border)}
+.rules-section{background:var(--em);background-image:radial-gradient(circle,rgba(255,255,255,.02) 1px,transparent 1px);background-size:7px 7px;padding:60px 32px;position:relative}
+.rules-section::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(212,175,55,.3),transparent)}
 .rules-inner{max-width:900px;margin:0 auto}
-.rules-title{font-size:.6rem;letter-spacing:4px;text-transform:uppercase;color:var(--text3);margin-bottom:24px}
-.rules-list{display:grid;gap:12px}
-.rule{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--or);padding:18px 20px;border-radius:2px;display:flex;gap:14px;align-items:flex-start}
-.rule-n{font-size:.6rem;font-weight:800;color:var(--or);min-width:20px;margin-top:2px}
-.rule-t{font-size:.85rem;font-weight:700;margin-bottom:3px}
-.rule-d{font-size:.77rem;color:var(--text2);line-height:1.6}
+.rules-label{font-size:.54rem;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:24px}
+.rules-list{display:grid;gap:2px}
+.rule{background:rgba(0,0,0,.45);border-left:2px solid var(--gold);padding:18px 22px;display:flex;gap:14px;align-items:flex-start}
+.rule-n{font-size:.58rem;font-weight:800;color:var(--gold);min-width:22px;margin-top:2px}
+.rule-t{font-size:.85rem;font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.rule-d{font-size:.78rem;color:rgba(255,255,255,.45);line-height:1.7}
 
-footer{background:#040404;border-top:1px solid #1a1a1a;padding:20px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.foot-logo img{height:28px;opacity:.45;filter:drop-shadow(0 0 4px rgba(224,112,32,.2))}
-.foot-r{font-size:.66rem;color:var(--text3)}
+footer{background:var(--bg2);border-top:1px solid var(--border2);padding:20px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.foot-logo img{height:28px;opacity:.4;filter:drop-shadow(0 0 4px var(--gold-glow))}
+.foot-r{font-size:.63rem;color:var(--text3);letter-spacing:1px}
 </style>
 </head>
 <body>
@@ -94,28 +111,28 @@ footer{background:#040404;border-top:1px solid #1a1a1a;padding:20px 40px;display
 </div>
 
 <div class="page-hero">
+  <div class="ph-crown">♛</div>
   <div class="ph-eye">Hamjamiyat</div>
   <h1 class="ph-title">Billiardchilar<br>Jamoasi</h1>
   <p class="ph-sub">Mingdan ortiq billiardchilar — turnir yangiliklari, uskunalar haqida maslahat, do'stlar bilan o'yin.</p>
 </div>
 
-<div class="stats-row">
-  <div class="stat-box"><div class="stat-n" id="s-members">1 240+</div><div class="stat-l">A'zolar</div></div>
-  <div class="stat-box"><div class="stat-n" id="s-trn">—</div><div class="stat-l">Turnir O'tkazildi</div></div>
-  <div class="stat-box"><div class="stat-n">4</div><div class="stat-l">Filial</div></div>
-  <div class="stat-box"><div class="stat-n">4.9★</div><div class="stat-l">Reyting</div></div>
+<div class="stats-wrap">
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-n" id="s-members">1 240+</div><div class="stat-l">A'zolar</div></div>
+    <div class="stat-box"><div class="stat-n" id="s-trn">—</div><div class="stat-l">Turnir O'tkazildi</div></div>
+    <div class="stat-box"><div class="stat-n">4</div><div class="stat-l">Filial</div></div>
+    <div class="stat-box"><div class="stat-n">4.9★</div><div class="stat-l">Reyting</div></div>
+  </div>
 </div>
 
 <div class="join-section">
-  <div class="join-title">Qanday qo'shilish mumkin?</div>
+  <div class="join-label">Qanday qo'shilish mumkin?</div>
   <div class="join-grid">
     <div class="join-card">
       <div class="jc-icon">🤖</div>
       <div class="jc-name">Telegram Bot</div>
-      <div class="jc-desc">
-        Asosiy platforma — turnirga ro'yxatdan o'tish, klip so'rash, natijalar va barcha ma'lumotlar bot orqali.
-        Tez, qulay, 24/7 ishlaydi.
-      </div>
+      <div class="jc-desc">Asosiy platforma — turnirga ro'yxatdan o'tish, klip so'rash, natijalar va barcha ma'lumotlar bot orqali. Tez, qulay, 24/7 ishlaydi.</div>
       <a href="https://t.me/BilliardKingBot" target="_blank" class="btn-tg">
         <svg viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.014 9.488c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.877.733z"/></svg>
         @BilliardKingBot
@@ -124,37 +141,20 @@ footer{background:#040404;border-top:1px solid #1a1a1a;padding:20px 40px;display
     <div class="join-card">
       <div class="jc-icon">🏟️</div>
       <div class="jc-name">Filiallarimiz</div>
-      <div class="jc-desc">
-        Jismonan kelib o'ynang, tanishing, turnirga qatnashing.
-        4 ta filial — Chilonzor, Yunusobod, Mirzo Ulugbek, Uchtepa.
-      </div>
-      <a href="/turnirlar" class="btn-or-sm">
-        🏆 Faol Turnirlar
-      </a>
+      <div class="jc-desc">Jismonan kelib o'ynang, tanishing, turnirga qatnashing. 4 ta filial — Chilonzor, Yunusobod, Mirzo Ulugbek, Uchtepa.</div>
+      <a href="/turnirlar" class="btn-gold-sm">🏆 Faol Turnirlar</a>
     </div>
   </div>
 </div>
 
 <div class="rules-section">
   <div class="rules-inner">
-    <div class="rules-title">Jamiyat qoidalari</div>
+    <div class="rules-label">Jamiyat qoidalari</div>
     <div class="rules-list">
-      <div class="rule">
-        <div class="rule-n">01</div>
-        <div><div class="rule-t">Hurmat</div><div class="rule-d">Barcha o'yinchilar va xodimlarga hurmat bilan muomala qiling. Haqoratlash, kamsitish qat'iyan taqiqlangan.</div></div>
-      </div>
-      <div class="rule">
-        <div class="rule-n">02</div>
-        <div><div class="rule-t">Adolatli o'yin</div><div class="rule-d">Natijalarni soxtalashtirish, aldash yoki xijolat qilish platformadan chiqarilishga olib keladi.</div></div>
-      </div>
-      <div class="rule">
-        <div class="rule-n">03</div>
-        <div><div class="rule-t">Turnirga kelish</div><div class="rule-d">Ro'yxatdan o'tib, turnirga kelmagan o'yinchi keyingi turnirlardan vaqtincha mahrum qilinishi mumkin.</div></div>
-      </div>
-      <div class="rule">
-        <div class="rule-n">04</div>
-        <div><div class="rule-t">Natijalar</div><div class="rule-d">Match natijalari faqat admin tomonidan kiritiladi. Savollar uchun botga yozing.</div></div>
-      </div>
+      <div class="rule"><div class="rule-n">01</div><div><div class="rule-t">Hurmat</div><div class="rule-d">Barcha o'yinchilar va xodimlarga hurmat bilan muomala qiling. Haqoratlash, kamsitish qat'iyan taqiqlangan.</div></div></div>
+      <div class="rule"><div class="rule-n">02</div><div><div class="rule-t">Adolatli o'yin</div><div class="rule-d">Natijalarni soxtalashtirish, aldash yoki xijolat qilish platformadan chiqarilishga olib keladi.</div></div></div>
+      <div class="rule"><div class="rule-n">03</div><div><div class="rule-t">Turnirga kelish</div><div class="rule-d">Ro'yxatdan o'tib, turnirga kelmagan o'yinchi keyingi turnirlardan vaqtincha mahrum qilinishi mumkin.</div></div></div>
+      <div class="rule"><div class="rule-n">04</div><div><div class="rule-t">Natijalar</div><div class="rule-d">Match natijalari faqat admin tomonidan kiritiladi. Savollar uchun botga yozing.</div></div></div>
     </div>
   </div>
 </div>
@@ -168,7 +168,6 @@ footer{background:#040404;border-top:1px solid #1a1a1a;padding:20px 40px;display
 const bg = document.getElementById('burger'), nm = document.getElementById('nav-mobile');
 bg.addEventListener('click', () => { bg.classList.toggle('open'); nm.classList.toggle('open'); });
 nm.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { bg.classList.remove('open'); nm.classList.remove('open'); }));
-
 fetch('/api/tournaments').then(r => r.ok ? r.json() : []).then(all => {
   document.getElementById('s-trn').textContent = (all || []).length;
 }).catch(() => {});
