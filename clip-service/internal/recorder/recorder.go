@@ -186,19 +186,19 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
 	log.Printf("[klip#%d] RTSP: %s", clipID, maskRTSP(rtspURL))
 
-	timeout := time.Duration(durationSec*2+120) * time.Second
+	// -c:v copy: HEVC decode qilmaymiz (buzilgan stream muammolarini chetlab o'tish)
+	// compressIfNeeded keyinchalik H.264 ga o'giradi (>40MB bo'lsa)
+	timeout := time.Duration(durationSec+120) * time.Second
 
 	err := runFFmpeg(outPath, timeout, []string{
 		"-loglevel", "warning",
 		"-fflags", "+genpts+igndts+discardcorrupt",
-		"-err_detect", "ignore_err",
 		"-rtsp_transport", "tcp",
 		"-i", rtspURL,
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-map", "0:v:0",
 		"-map", "0:a:0?",
-		"-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
-		"-threads", "2",
+		"-c:v", "copy",
 		"-c:a", "aac", "-ar", "44100", "-b:a", "64k",
 		"-avoid_negative_ts", "make_zero",
 		"-max_muxing_queue_size", "9999",
@@ -229,15 +229,14 @@ func (r *Recorder) Record(clipID int64, rtspURL string, durationSec int) (string
 	args = append(args,
 		"-map", "0:v:0",
 		"-map", "0:a:0?",
-		"-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
-		"-threads", "2",
+		"-c:v", "copy",
 		"-c:a", "aac", "-ar", "44100", "-b:a", "64k",
 		"-avoid_negative_ts", "make_zero",
 		"-max_muxing_queue_size", "9999",
 		"-movflags", "+faststart",
 		"-y", outPath,
 	)
-	timeout := time.Duration(durationSec*2+120) * time.Second
+	timeout := time.Duration(durationSec+120) * time.Second
 	if err := runFFmpeg(outPath, timeout, args); err != nil {
 		return "", err
 	}
