@@ -144,7 +144,7 @@ func compressIfNeeded(clipID int64, path string, durationSec int) error {
 }
 
 // RecordFromNVR — NVR arxividan RTSP orqali klip yozib oladi.
-// Jarayon: ISAPI search (kesh) → RTSP -c copy (original sifat, decode yo'q)
+// Jarayon: RTSP → MPEG-TS (timestamp tolerant) → H.264 MP4 (Telegram)
 func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string, nvrPort, channel int, startTime, endTime time.Time) (string, error) {
 	outPath := r.ClipPath(clipID)
 	durationSec := int(endTime.Sub(startTime).Seconds())
@@ -155,15 +155,17 @@ func (r *Recorder) RecordFromNVR(clipID int64, nvrHost, nvrUser, nvrPass string,
 	log.Printf("[klip#%d] start: kanal=%d %s→%s (%ds)",
 		clipID, channel, startTime.In(tashkentTZ).Format("15:04:05"), endTime.In(tashkentTZ).Format("15:04:05"), durationSec)
 
-	path, err := r.recordRTSP(clipID, nvrHost, nvrUser, nvrPass, nvrPort, channel, startTime, endTime, durationSec, outPath)
+	tsPath, err := r.recordRTSP(clipID, nvrHost, nvrUser, nvrPass, nvrPort, channel, startTime, endTime, durationSec, outPath)
 	if err != nil {
 		return "", err
 	}
-	if cErr := compressIfNeeded(clipID, path, durationSec); cErr != nil {
-		os.Remove(path)
-		return "", fmt.Errorf("siqishda xatolik: %v", cErr)
+	defer os.Remove(tsPath)
+
+	if err := transcodeToH264(clipID, tsPath, outPath, durationSec); err != nil {
+		return "", fmt.Errorf("transcode: %v", err)
 	}
-	return path, nil
+	logDone(clipID, durationSec, outPath)
+	return outPath, nil
 }
 
 // maskRTSP — RTSP URL dagi parolni yashiradi (log uchun).
@@ -181,17 +183,16 @@ func maskRTSP(url string) string {
 	return url
 }
 
-// recordRTSP — NVR RTSP orqali klip yozadi (H.264 encode — hamma telefon qo'llab-quvvatlaydi).
+// recordRTSP — RTSP → MPEG-TS (timestamp muammosiga bardoshli format).
+// MP4 muxer timestamp bo'lmasa osilib qoladi; TS muxer PCR ishlatadi.
 func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nvrPort, channel int, startTime, endTime time.Time, durationSec int, outPath string) (string, error) {
 	rtspURL := HikvisionPlaybackRTSP(nvrUser, nvrPass, nvrHost, nvrPort, channel, startTime, endTime)
 	log.Printf("[klip#%d] RTSP: %s", clipID, maskRTSP(rtspURL))
 
-	// -c:v copy: HEVC decode qilmaymiz (buzilgan stream muammolarini chetlab o'tish)
-	// compressIfNeeded keyinchalik H.264 ga o'giradi
-	// -stimeout: 25s inactivity timeout — CSeq mismatch/gap bo'lsa tez chiqadi
+	tsPath := outPath + ".ts"
 	timeout := time.Duration(durationSec+120) * time.Second
 
-	err := runFFmpeg(outPath, timeout, []string{
+	err := runFFmpeg(tsPath, timeout, []string{
 		"-loglevel", "warning",
 		"-fflags", "+genpts+igndts+discardcorrupt",
 		"-rtsp_transport", "tcp",
@@ -200,19 +201,59 @@ func (r *Recorder) recordRTSP(clipID int64, nvrHost, nvrUser, nvrPass string, nv
 		"-t", fmt.Sprintf("%d", durationSec),
 		"-map", "0:v:0",
 		"-map", "0:a:0?",
-		"-c:v", "copy",
-		"-c:a", "aac", "-ar", "44100", "-b:a", "64k",
-		"-avoid_negative_ts", "make_zero",
-		"-max_muxing_queue_size", "9999",
+		"-c", "copy",
+		"-f", "mpegts",
+		"-y", tsPath,
+	})
+	if err != nil {
+		os.Remove(tsPath)
+		return "", fmt.Errorf("RTSP yozish: %v", err)
+	}
+
+	if info, err2 := os.Stat(tsPath); err2 == nil {
+		log.Printf("[klip#%d] TS yozildi: %.1fMB, %ds", clipID, float64(info.Size())/1024/1024, durationSec)
+	}
+	return tsPath, nil
+}
+
+// transcodeToH264 — TS faylni H.264 MP4 ga o'giradi (Telegram uchun).
+func transcodeToH264(clipID int64, inPath, outPath string, durationSec int) error {
+	var sizeMB float64
+	if info, err := os.Stat(inPath); err == nil {
+		sizeMB = float64(info.Size()) / 1024 / 1024
+	}
+	targetKbps := (38*1024*8 - 64*durationSec) / durationSec
+	if targetKbps < 300 {
+		targetKbps = 300
+	}
+	log.Printf("[klip#%d] H.264 ga o'girish: %.1fMB → %d kbps", clipID, sizeMB, targetKbps)
+
+	err := runFFmpeg(outPath, time.Duration(durationSec*3+120)*time.Second, []string{
+		"-loglevel", "warning",
+		"-fflags", "+genpts+igndts+discardcorrupt",
+		"-err_detect", "ignore_err",
+		"-i", inPath,
+		"-c:v", "libx264",
+		"-b:v", fmt.Sprintf("%dk", targetKbps),
+		"-maxrate", fmt.Sprintf("%dk", targetKbps*2),
+		"-bufsize", fmt.Sprintf("%dk", targetKbps*4),
+		"-preset", "ultrafast",
+		"-threads", "2",
+		"-c:a", "aac",
+		"-ar", "44100",
+		"-b:a", "64k",
 		"-movflags", "+faststart",
 		"-y", outPath,
 	})
 	if err != nil {
-		return "", fmt.Errorf("RTSP encode: %v", err)
+		os.Remove(outPath)
+		return err
 	}
 
-	logDone(clipID, durationSec, outPath)
-	return outPath, nil
+	if info, err2 := os.Stat(outPath); err2 == nil {
+		log.Printf("[klip#%d] siqildi: %.1fMB → %.1fMB", clipID, sizeMB, float64(info.Size())/1024/1024)
+	}
+	return nil
 }
 
 // Record — RTSPUrl bilan stollar uchun (-c copy, H.265 decode yo'q).
