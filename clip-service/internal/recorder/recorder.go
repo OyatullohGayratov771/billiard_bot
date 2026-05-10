@@ -112,6 +112,8 @@ func compressIfNeeded(clipID int64, path string, durationSec int) error {
 	tmpPath := path + ".tmp.mp4"
 	err = runFFmpeg(tmpPath, time.Duration(durationSec*3+120)*time.Second, []string{
 		"-loglevel", "warning",
+		"-fflags", "+genpts+igndts+discardcorrupt",
+		"-err_detect", "ignore_err",
 		"-i", path,
 		"-c:v", "libx264",
 		"-b:v", fmt.Sprintf("%dk", targetKbps),
