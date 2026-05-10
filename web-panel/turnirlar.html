@@ -122,7 +122,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <header class="hdr">
   <div class="hdr-inner">
     <div class="logo">
-      <a href="/"><img src="logo.jpg" alt="Billiard King" class="logo-img"></a>
+      <a href="/"><img src="/logo.jpg" alt="Billiard King" class="logo-img"></a>
     </div>
     <div class="hdr-right" id="upd">—</div>
   </div>
@@ -135,7 +135,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
 <footer class="foot">
   <span>billiardking.uz</span>
-  <div class="foot-logo"><img src="logo.jpg" alt="Billiard King"></div>
+  <div class="foot-logo"><img src="/logo.jpg" alt="Billiard King"></div>
 </footer>
 
 <script>
@@ -195,7 +195,7 @@ function mkCards(list) {
 
 function mkCard(t) {
   const a = document.createElement('a');
-  a.href = '/tournament.html?id=' + t.id;
+  a.href = '/turnir/' + t.id;
   const isActive = t.status === 'registration' || t.status === 'in_progress';
   a.className = 'card ' + (isActive ? 'active' : 'finished');
 

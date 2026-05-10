@@ -109,8 +109,8 @@ body{background:#1c1c1c;color:#ccc;font-family:'Segoe UI',system-ui,sans-serif;m
 <div class="overlay" id="ov"><div class="spinner"></div></div>
 
 <header class="hdr">
-  <a class="back-btn" href="/turnirlar.html">‹ Turnirlar</a>
-  <img src="logo.jpg" alt="Billiard King" class="hdr-logo">
+  <a class="back-btn" href="/turnirlar">‹ Turnirlar</a>
+  <img src="/logo.jpg" alt="Billiard King" class="hdr-logo">
   <div class="hdr-title" id="tname">Yuklanmoqda…</div>
   <div class="live-badge" id="live-badge" style="display:none"><span class="dot"></span><span>JONLI</span></div>
   <div class="hdr-meta" id="tmeta"></div>
@@ -127,9 +127,9 @@ body{background:#1c1c1c;color:#ccc;font-family:'Segoe UI',system-ui,sans-serif;m
 
 <script>
 const API = '/api';
-const params = new URLSearchParams(location.search);
-const TRN_ID = params.get('id');
-if (!TRN_ID) location.href = '/';
+const pathMatch = location.pathname.match(/\/turnir\/(\d+)/);
+const TRN_ID = pathMatch ? pathMatch[1] : new URLSearchParams(location.search).get('id');
+if (!TRN_ID) location.href = '/turnirlar';
 
 // Layout constants
 const CARD_H   = 66;  // height of one match card (2 rows × 32px + 2px divider)

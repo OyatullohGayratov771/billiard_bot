@@ -501,7 +501,7 @@ footer{background:#060606;border-top:1px solid var(--border);padding:60px 0 32px
     <img src="logo.jpg" alt="Billiard King">
   </a>
   <div class="nav-links">
-    <a href="/turnirlar.html">Turnirlar</a>
+    <a href="/turnirlar">Turnirlar</a>
     <a href="#shop">Do'kon</a>
     <a href="#community">Jamiyat</a>
     <a href="#profiles">Reyting</a>
@@ -512,7 +512,7 @@ footer{background:#060606;border-top:1px solid var(--border);padding:60px 0 32px
   </button>
 </nav>
 <div class="nav-mobile" id="nav-mobile">
-  <a href="/turnirlar.html">🏆 Turnirlar</a>
+  <a href="/turnirlar">🏆 Turnirlar</a>
   <a href="#shop">🛒 Do'kon</a>
   <a href="#community">👥 Jamiyat</a>
   <a href="#profiles">🎯 Reyting</a>
@@ -593,7 +593,7 @@ footer{background:#060606;border-top:1px solid var(--border);padding:60px 0 32px
     </div>
 
     <div class="faceit-more reveal">
-      <a href="/turnirlar.html" class="btn-outline">Barcha turnirlarni ko'rish →</a>
+      <a href="/turnirlar" class="btn-outline">Barcha turnirlarni ko'rish →</a>
     </div>
   </div>
 </section>
@@ -921,7 +921,7 @@ footer{background:#060606;border-top:1px solid var(--border);padding:60px 0 32px
       <div>
         <div class="footer-col-title">Platforma</div>
         <div class="footer-links">
-          <a href="/turnirlar.html">Turnirlar</a>
+          <a href="/turnirlar">Turnirlar</a>
           <a href="#shop">Do'kon</a>
           <a href="#profiles">Reyting</a>
           <a href="#">Klip Xizmati</a>
@@ -1035,7 +1035,7 @@ async function loadTrn() {
     animateCount(document.getElementById('cnt-clubs'), 4, '');
   } catch(e) {
     document.getElementById('trn-grid').innerHTML =
-      '<div class="trn-empty">⚠️ Serverga ulanib bo\'lmadi.<br><a href="/turnirlar.html" style="color:var(--orange);text-decoration:underline">Qayta urinish →</a></div>';
+      '<div class="trn-empty">⚠️ Serverga ulanib bo\'lmadi.<br><a href="/turnirlar" style="color:var(--orange);text-decoration:underline">Qayta urinish →</a></div>';
   }
 }
 
@@ -1065,7 +1065,7 @@ function renderTrn(all) {
   grid.querySelectorAll('.trn-card[data-id]').forEach(card => {
     card.addEventListener('click', e => {
       if(e.target.closest('.trn-join')) return;
-      window.location.href = '/tournament.html?id=' + card.dataset.id;
+      window.location.href = '/turnir/' + card.dataset.id;
     });
   });
 }
@@ -1085,10 +1085,10 @@ function trnCard(t) {
     : '<div class="trn-badge closed">❌ BEKOR</div>';
 
   const joinBtn = live
-    ? '<a class="trn-join disabled" href="/tournament.html?id='+t.id+'">Bracket →</a>'
+    ? '<a class="trn-join disabled" href="/turnir/'+t.id+'">Bracket →</a>'
     : reg
     ? '<a class="trn-join" href="https://t.me/BilliardKingBot" target="_blank">Ro\'yxat</a>'
-    : '<a class="trn-join disabled" href="/tournament.html?id='+t.id+'">Natijalar →</a>';
+    : '<a class="trn-join disabled" href="/turnir/'+t.id+'">Natijalar →</a>';
 
   return `<div class="trn-card${live?' live-card':''}" data-id="${t.id}">
     <div class="trn-top">
