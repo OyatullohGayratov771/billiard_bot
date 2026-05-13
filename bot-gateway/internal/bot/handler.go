@@ -15,6 +15,7 @@ type Handler struct {
 	tableSvc      TableService
 	clipSvc       ClipService
 	tournamentSvc TournamentService
+	webSvc        WebService
 
 	states    *StateManager
 	userCache *UserCache
@@ -26,12 +27,14 @@ func NewHandler(
 	tableSvc TableService,
 	clipSvc ClipService,
 	tournamentSvc TournamentService,
+	webSvc WebService,
 ) *Handler {
 	return &Handler{
 		userSvc:       userSvc,
 		tableSvc:      tableSvc,
 		clipSvc:       clipSvc,
 		tournamentSvc: tournamentSvc,
+		webSvc:        webSvc,
 		states:        NewStateManager(),
 		userCache:     newUserCache(),
 		limiter:       newRateLimiter(),
@@ -127,6 +130,10 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 		h.showSettings(bot, chatID, user)
 	case "👤 Akkaunt":
 		h.showMyProfile(bot, chatID, user)
+	case "🌐 Sahifam":
+		h.sendWebLink(bot, chatID, user)
+	case "🌐 Panel":
+		h.sendWebLink(bot, chatID, user)
 	default:
 		send(bot, chatID, "❓ Noma'lum buyruq. Pastdagi tugmalardan foydalaning.")
 	}

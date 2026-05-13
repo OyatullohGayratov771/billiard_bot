@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -655,4 +656,31 @@ func (h *Handler) notifyAdminsNewClip(bot *tgbotapi.BotAPI, cr *models.ClipReque
 			_, _ = bot.Send(msg)
 		}
 	}
+}
+
+// sendWebLink — foydalanuvchiga shaxsiy web sahifa havolasini yuboradi
+func (h *Handler) sendWebLink(bot *tgbotapi.BotAPI, chatID int64, user *models.User) {
+	if h.webSvc == nil {
+		send(bot, chatID, "❌ Web xizmat ulangan emas.")
+		return
+	}
+	url, err := h.webSvc.CreateAuthURL(user.TelegramID, user.Role)
+	if err != nil {
+		log.Printf("sendWebLink: %v", err)
+		send(bot, chatID, "❌ Havola yaratishda xatolik.")
+		return
+	}
+
+	var text string
+	if user.IsStaff() {
+		text = "🌐 <b>Admin Panel</b>\n\n" +
+			"Sahifa 5 daqiqa davomida ochilishi kerak — undan keyin token eskiradi.\n\n" +
+			"🔗 " + url
+	} else {
+		text = "🌐 <b>Mening Sahifam</b>\n\n" +
+			"Shaxsiy akkaunt, kliplar va turnirlaringiz.\n" +
+			"Havola 5 daqiqa amal qiladi.\n\n" +
+			"🔗 " + url
+	}
+	send(bot, chatID, text)
 }

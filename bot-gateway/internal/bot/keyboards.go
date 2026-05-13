@@ -20,10 +20,12 @@ func mainMenuKeyboard(user *models.User) tgbotapi.ReplyKeyboardMarkup {
 		kb.Keyboard = [][]tgbotapi.KeyboardButton{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
 			{btn("👥 Xodimlar"), btn("⚙️ Sozlamalar")},
+			{btn("🌐 Panel")},
 		}
 	case models.RoleAdmin:
 		kb.Keyboard = [][]tgbotapi.KeyboardButton{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
+			{btn("🌐 Panel")},
 		}
 	case models.RoleOperator:
 		kb.Keyboard = [][]tgbotapi.KeyboardButton{
@@ -32,7 +34,7 @@ func mainMenuKeyboard(user *models.User) tgbotapi.ReplyKeyboardMarkup {
 	default: // client
 		kb.Keyboard = [][]tgbotapi.KeyboardButton{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
-			{btn("👤 Akkaunt")},
+			{btn("👤 Akkaunt"), btn("🌐 Sahifam")},
 		}
 	}
 

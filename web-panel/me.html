@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<title>Billiard King — Mening Sahifam</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+:root{
+  --gold:#D4AF37;--gold2:#B8941F;--gold-l:#F0D878;--gold-glow:rgba(212,175,55,.32);
+  --bg:#0E0E0E;--bg2:#080808;--card:#141414;--card2:#1A1A1A;
+  --border:rgba(212,175,55,.15);--border2:rgba(212,175,55,.07);
+  --text:#F0F0F0;--text2:#888;--text3:#4A4A4A;
+  --green:#2ECC71;--red:#E74C3C;--blue:#3498DB;--orange:#E67E22;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+a{text-decoration:none;color:inherit}
+
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:64px;background:rgba(8,8,8,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2)}
+.nav-logo img{height:44px;filter:drop-shadow(0 0 10px var(--gold-glow))}
+.nav-links{display:flex;gap:32px;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3)}
+.nav-links a:hover{color:var(--gold)}
+.nav-cta{background:var(--gold);color:#000;padding:9px 22px;border-radius:2px;font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase}
+@media(max-width:700px){.nav-links,.nav-cta{display:none}}
+
+/* AUTH STATES */
+#state-loading,#state-error,#state-main{display:none}
+#state-loading.show,#state-error.show,#state-main.show{display:block}
+
+.center-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center;color:var(--text2)}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-icon{font-size:3rem}
+.err-title{font-size:1.2rem;font-weight:700;color:var(--text)}
+.err-sub{font-size:.82rem;max-width:340px}
+
+/* HERO */
+.hero{padding:48px 40px 32px;max-width:900px;margin:0 auto;display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.avatar{width:80px;height:80px;border-radius:6px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:2.4rem;flex-shrink:0}
+.hero-info{flex:1}
+.hero-name{font-size:1.6rem;font-weight:900;letter-spacing:-.5px}
+.hero-at{color:var(--text2);font-size:.82rem;margin-top:4px}
+.role-badge{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:2px;font-size:.62rem;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+.role-client{background:rgba(212,175,55,.12);color:var(--gold);border:1px solid rgba(212,175,55,.3)}
+.role-admin{background:rgba(52,152,219,.12);color:#3498DB;border:1px solid rgba(52,152,219,.3)}
+.role-superadmin{background:rgba(46,204,113,.12);color:#2ECC71;border:1px solid rgba(46,204,113,.3)}
+.role-operator{background:rgba(230,126,34,.12);color:#E67E22;border:1px solid rgba(230,126,34,.3)}
+@media(max-width:600px){.hero{padding:32px 20px 24px}}
+
+/* INFO CARDS */
+.info-row{max-width:900px;margin:0 auto;padding:0 40px 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border2)}
+.info-card{background:var(--card);padding:16px 20px}
+.ic-l{font-size:.5rem;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.ic-v{font-size:.88rem;font-weight:600}
+@media(max-width:600px){.info-row{grid-template-columns:1fr 1fr;padding:0 20px 16px}}
+
+/* TABS */
+.tabs-wrap{max-width:900px;margin:0 auto;padding:0 40px;border-bottom:1px solid var(--border2)}
+.tabs{display:flex;gap:0}
+.tab{padding:14px 24px;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:.2s}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+@media(max-width:600px){.tabs-wrap{padding:0 16px}.tab{padding:12px 14px;font-size:.66rem}}
+
+/* TAB CONTENT */
+.tab-pane{display:none;max-width:900px;margin:0 auto;padding:24px 40px 80px}
+.tab-pane.active{display:block}
+@media(max-width:600px){.tab-pane{padding:20px 16px 60px}}
+
+.section-label{font-size:.52rem;letter-spacing:5px;text-transform:uppercase;color:var(--text3);margin-bottom:16px}
+
+/* CLIP ITEMS */
+.clip-list{display:flex;flex-direction:column;gap:1px;background:var(--border2)}
+.clip-item{background:var(--card);padding:14px 18px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;transition:background .15s}
+.clip-item:hover{background:var(--card2)}
+.clip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-pending{background:#888}
+.dot-paid{background:var(--blue)}
+.dot-processing{background:var(--orange)}
+.dot-done{background:var(--green)}
+.dot-failed,.dot-refunded{background:var(--red)}
+.clip-main .clip-title{font-size:.84rem;font-weight:700}
+.clip-main .clip-sub{font-size:.66rem;color:var(--text2);margin-top:2px}
+.clip-status{font-size:.62rem;font-weight:700;padding:3px 8px;border-radius:2px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+.st-pending{background:rgba(136,136,136,.12);color:#888}
+.st-paid{background:rgba(52,152,219,.12);color:var(--blue)}
+.st-processing{background:rgba(230,126,34,.12);color:var(--orange)}
+.st-done{background:rgba(46,204,113,.12);color:var(--green)}
+.st-failed{background:rgba(231,76,60,.12);color:var(--red)}
+.st-refunded{background:rgba(231,76,60,.08);color:var(--red)}
+
+/* TOURNAMENT ITEMS */
+.trn-list{display:flex;flex-direction:column;gap:1px;background:var(--border2)}
+.trn-item{background:var(--card);padding:14px 18px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;transition:background .15s}
+.trn-item:hover{background:var(--card2)}
+.trn-name{font-size:.86rem;font-weight:700}
+.trn-sub{font-size:.66rem;color:var(--text2);margin-top:2px}
+
+.empty-note{color:var(--text3);font-size:.8rem;padding:32px 0;text-align:center}
+
+footer{background:var(--bg2);border-top:1px solid var(--border2);padding:20px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.foot-logo img{height:28px;opacity:.4}
+.foot-r{font-size:.63rem;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo"><img src="/logo.jpg" alt="Billiard King"></a>
+  <div class="nav-links">
+    <a href="/turnirlar">Turnirlar</a>
+    <a href="/shop">Do'kon</a>
+    <a href="/jamiyat">Jamiyat</a>
+    <a href="/reyting">Reyting</a>
+  </div>
+  <a href="https://t.me/BilliardKingBot" class="nav-cta" target="_blank">Bot</a>
+</nav>
+
+<!-- Loading -->
+<div id="state-loading" class="show">
+  <div class="center-msg">
+    <div class="spinner"></div>
+    <div>Yuklanmoqda…</div>
+  </div>
+</div>
+
+<!-- Error -->
+<div id="state-error">
+  <div class="center-msg">
+    <div class="err-icon">🔒</div>
+    <div class="err-title" id="err-title">Kirish mumkin emas</div>
+    <div class="err-sub" id="err-sub">Telegram botdan havola orqali kiring.</div>
+    <a href="https://t.me/BilliardKingBot" target="_blank" style="margin-top:12px;background:var(--gold);color:#000;padding:10px 24px;border-radius:2px;font-size:.72rem;font-weight:800;letter-spacing:2px;text-transform:uppercase">Botga o'tish</a>
+  </div>
+</div>
+
+<!-- Main content -->
+<div id="state-main">
+  <div class="hero">
+    <div class="avatar" id="avatar">🎱</div>
+    <div class="hero-info">
+      <div class="hero-name" id="hero-name">—</div>
+      <div class="hero-at" id="hero-at"></div>
+      <div class="role-badge" id="role-badge"></div>
+    </div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-card"><div class="ic-l">Telefon</div><div class="ic-v" id="info-phone">—</div></div>
+    <div class="info-card"><div class="ic-l">Telegram ID</div><div class="ic-v" id="info-tgid">—</div></div>
+    <div class="info-card"><div class="ic-l">A'zo bo'lgan</div><div class="ic-v" id="info-joined">—</div></div>
+  </div>
+
+  <div class="tabs-wrap">
+    <div class="tabs">
+      <div class="tab active" data-tab="clips">🎬 Kliplar</div>
+      <div class="tab" data-tab="trns">🏆 Turnirlar</div>
+    </div>
+  </div>
+
+  <div class="tab-pane active" id="tab-clips">
+    <div class="section-label">Klip tarixi</div>
+    <div class="clip-list" id="clips-list"></div>
+  </div>
+  <div class="tab-pane" id="tab-trns">
+    <div class="section-label">Turnir tarixi</div>
+    <div class="trn-list" id="trns-list"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-logo"><img src="/logo.jpg" alt="Billiard King"></div>
+  <div class="foot-r">© 2026 Billiard King · billiardking.uz</div>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const show = id => { $('state-loading').className=''; $('state-error').className=''; $('state-main').className=''; $(id).className='show'; };
+
+const ROLE_LABELS = {client:'Mijoz', operator:'Operator', admin:'Admin', superadmin:'Superadmin'};
+const STATUS_UZ = {pending:'Kutilmoqda', paid:'To\'langan', processing:'Jarayonda', done:'Tayyor', failed:'Rad etildi', refunded:'Qaytarildi'};
+const TRN_STATUS = {registration:'Ro\'yxat', in_progress:'Jarayonda', finished:'Yakunlandi', cancelled:'Bekor'};
+const REG_STATUS = {pending:'⏳ Kutilmoqda', approved:'✅ Tasdiqlandi', rejected:'❌ Rad etildi'};
+
+function fmtDate(s) {
+  if (!s) return '—';
+  const d = new Date(s);
+  return d.toLocaleDateString('uz-UZ', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + d.toLocaleTimeString('uz-UZ', {hour:'2-digit', minute:'2-digit'});
+}
+
+async function init() {
+  const params = new URLSearchParams(location.search);
+  const t = params.get('t');
+
+  // Check existing JWT
+  let jwt = localStorage.getItem('bk_jwt');
+
+  if (t) {
+    // Exchange token for JWT
+    try {
+      const r = await fetch('/api/auth/session?t=' + encodeURIComponent(t));
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Token xato');
+      jwt = data.jwt;
+      localStorage.setItem('bk_jwt', jwt);
+      // Remove token from URL
+      history.replaceState({}, '', '/me');
+    } catch(e) {
+      show('state-error');
+      $('err-title').textContent = 'Token eskirgan';
+      $('err-sub').textContent = 'Telegram botdan yangi havola so\'rang.';
+      return;
+    }
+  }
+
+  if (!jwt) {
+    show('state-error');
+    return;
+  }
+
+  const headers = { Authorization: 'Bearer ' + jwt };
+
+  // Load profile
+  try {
+    const r = await fetch('/api/me', { headers });
+    if (r.status === 401) {
+      localStorage.removeItem('bk_jwt');
+      show('state-error');
+      return;
+    }
+    const u = await r.json();
+    renderProfile(u);
+  } catch(e) {
+    show('state-error');
+    $('err-title').textContent = 'Xatolik yuz berdi';
+    $('err-sub').textContent = e.message;
+    return;
+  }
+
+  // Load clips & tournaments in parallel
+  const [clipsR, trnsR] = await Promise.all([
+    fetch('/api/me/clips', { headers }),
+    fetch('/api/me/tournaments', { headers })
+  ]);
+  const clips = clipsR.ok ? await clipsR.json() : [];
+  const trns = trnsR.ok ? await trnsR.json() : [];
+
+  renderClips(clips);
+  renderTrns(trns);
+  show('state-main');
+}
+
+function renderProfile(u) {
+  $('hero-name').textContent = [u.first_name, u.last_name].filter(Boolean).join(' ') || '—';
+  $('hero-at').textContent = u.username ? '@' + u.username : 'Telegram ID: ' + u.tg_id;
+  const badge = $('role-badge');
+  badge.textContent = ROLE_LABELS[u.role] || u.role;
+  badge.className = 'role-badge role-' + u.role;
+  $('info-phone').textContent = u.phone || '—';
+  $('info-tgid').textContent = u.tg_id;
+  $('info-joined').textContent = fmtDate(u.created_at);
+}
+
+function renderClips(list) {
+  const el = $('clips-list');
+  if (!list.length) { el.innerHTML = '<div class="empty-note">Hali klip so\'rovlari yo\'q</div>'; return; }
+  el.innerHTML = list.map(c => `
+    <div class="clip-item">
+      <div class="clip-dot dot-${c.status}"></div>
+      <div class="clip-main">
+        <div class="clip-title">${esc(c.branch_name)} · Stol ${c.table_num}</div>
+        <div class="clip-sub">${fmtDate(c.start_time)} – ${fmtDate(c.end_time)}${c.notes ? ' · ' + esc(c.notes) : ''}</div>
+      </div>
+      <div class="clip-status st-${c.status}">${STATUS_UZ[c.status] || c.status}</div>
+    </div>`).join('');
+}
+
+function renderTrns(list) {
+  const el = $('trns-list');
+  if (!list.length) { el.innerHTML = '<div class="empty-note">Hali turnirlar yo\'q</div>'; return; }
+  el.innerHTML = list.map(t => `
+    <div class="trn-item">
+      <div>
+        <div class="trn-name">${esc(t.name)}</div>
+        <div class="trn-sub">${esc(t.branch_name)} · ${fmtDate(t.scheduled_at)} · ${TRN_STATUS[t.tournament_status]||t.tournament_status}</div>
+      </div>
+      <div class="clip-status st-${t.reg_status}">${REG_STATUS[t.reg_status] || t.reg_status}</div>
+    </div>`).join('');
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+init().catch(console.error);
+</script>
+</body>
+</html>

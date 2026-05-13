@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<title>Billiard King — Admin Panel</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+:root{
+  --gold:#D4AF37;--gold2:#B8941F;--gold-l:#F0D878;--gold-glow:rgba(212,175,55,.32);
+  --bg:#0A0A0A;--bg2:#050505;--card:#111;--card2:#181818;
+  --border:rgba(212,175,55,.15);--border2:rgba(212,175,55,.07);
+  --text:#F0F0F0;--text2:#888;--text3:#4A4A4A;
+  --green:#2ECC71;--red:#E74C3C;--blue:#3498DB;--orange:#E67E22;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+a{text-decoration:none;color:inherit}
+
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:64px;background:rgba(5,5,5,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2)}
+.nav-logo img{height:44px;filter:drop-shadow(0 0 10px var(--gold-glow))}
+.nav-badge{background:rgba(212,175,55,.1);border:1px solid var(--border);padding:4px 12px;border-radius:2px;font-size:.62rem;font-weight:700;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-user{font-size:.72rem;color:var(--text2)}
+.nav-logout{font-size:.66rem;color:var(--text3);cursor:pointer;letter-spacing:1px}
+.nav-logout:hover{color:var(--red)}
+
+/* AUTH STATES */
+#state-loading,#state-error,#state-main{display:none}
+#state-loading.show,#state-error.show,#state-main.show{display:block}
+.center-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center;color:var(--text2)}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* HERO */
+.hero{padding:40px 40px 28px;max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.hero-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;letter-spacing:-.5px}
+.hero-sub{color:var(--text2);font-size:.78rem;margin-top:4px}
+.refresh-btn{background:var(--card2);border:1px solid var(--border);padding:8px 18px;border-radius:2px;font-size:.66rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--text2);transition:.2s}
+.refresh-btn:hover{color:var(--gold);border-color:var(--gold)}
+@media(max-width:600px){.hero{padding:24px 20px 16px}}
+
+/* STATS */
+.stats{max-width:1200px;margin:0 auto;padding:0 40px 32px;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border2)}
+.stat-card{background:var(--card);padding:20px 16px}
+.sc-n{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,var(--gold-l),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sc-l{font-size:.5rem;text-transform:uppercase;letter-spacing:3px;color:var(--text3);margin-top:6px}
+@media(max-width:800px){.stats{grid-template-columns:1fr 1fr;padding:0 20px 20px}}
+@media(max-width:400px){.stats{grid-template-columns:1fr}}
+
+/* TABS */
+.tabs-wrap{max-width:1200px;margin:0 auto;padding:0 40px;border-bottom:1px solid var(--border2)}
+.tabs{display:flex}
+.tab{padding:13px 22px;font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+@media(max-width:600px){.tabs-wrap{padding:0 12px;overflow-x:auto}.tab{padding:11px 14px;font-size:.62rem}}
+
+/* TAB PANES */
+.tab-pane{display:none;max-width:1200px;margin:0 auto;padding:24px 40px 80px}
+.tab-pane.active{display:block}
+@media(max-width:600px){.tab-pane{padding:16px 16px 60px}}
+
+.sec-label{font-size:.52rem;letter-spacing:5px;text-transform:uppercase;color:var(--text3);margin-bottom:14px}
+
+/* FILTER ROW */
+.filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{padding:5px 14px;border-radius:2px;font-size:.62rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--text3);transition:.2s}
+.filter-btn:hover,.filter-btn.active{color:var(--gold);border-color:var(--gold)}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:.76rem}
+.data-table th{padding:9px 12px;text-align:left;font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2)}
+.data-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:top}
+.data-table tr:hover td{background:var(--card2)}
+.data-table .name-cell{font-weight:700}
+.data-table .sub-cell{font-size:.66rem;color:var(--text2);margin-top:2px}
+.status-pill{display:inline-block;padding:2px 8px;border-radius:2px;font-size:.58rem;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.sp-pending{background:rgba(136,136,136,.12);color:#888}
+.sp-paid{background:rgba(52,152,219,.12);color:var(--blue)}
+.sp-processing{background:rgba(230,126,34,.12);color:var(--orange)}
+.sp-done{background:rgba(46,204,113,.12);color:var(--green)}
+.sp-failed,.sp-refunded{background:rgba(231,76,60,.1);color:var(--red)}
+.sp-registration{background:rgba(212,175,55,.1);color:var(--gold)}
+.sp-in_progress{background:rgba(52,152,219,.12);color:var(--blue)}
+.sp-finished{background:rgba(46,204,113,.12);color:var(--green)}
+.sp-cancelled{background:rgba(231,76,60,.1);color:var(--red)}
+.sp-client{background:rgba(136,136,136,.08);color:#888}
+.sp-operator{background:rgba(230,126,34,.08);color:var(--orange)}
+.sp-admin{background:rgba(52,152,219,.08);color:var(--blue)}
+.sp-superadmin{background:rgba(46,204,113,.08);color:var(--green)}
+.empty-note{color:var(--text3);font-size:.8rem;padding:40px;text-align:center}
+.loading-note{color:var(--text3);font-size:.78rem;padding:24px;text-align:center}
+
+/* Mobile scroll */
+.table-wrap{overflow-x:auto}
+
+footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.foot-logo img{height:24px;opacity:.3}
+.foot-r{font-size:.6rem;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo"><img src="/logo.jpg" alt="Billiard King"></a>
+  <span class="nav-badge">Admin Panel</span>
+  <div class="nav-right">
+    <span class="nav-user" id="nav-user"></span>
+    <span class="nav-logout" onclick="logout()">Chiqish</span>
+  </div>
+</nav>
+
+<div id="state-loading" class="show">
+  <div class="center-msg"><div class="spinner"></div><div>Yuklanmoqda…</div></div>
+</div>
+<div id="state-error">
+  <div class="center-msg">
+    <div style="font-size:3rem">🔒</div>
+    <div style="font-size:1.1rem;font-weight:700;color:var(--text)" id="err-title">Kirish ruxsati yo'q</div>
+    <div style="font-size:.8rem;max-width:300px" id="err-sub">Faqat admin va superadminlar kirishi mumkin.</div>
+    <a href="https://t.me/BilliardKingBot" target="_blank" style="margin-top:12px;background:var(--gold);color:#000;padding:10px 24px;border-radius:2px;font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase">Botga o'tish</a>
+  </div>
+</div>
+
+<div id="state-main">
+  <div class="hero">
+    <div>
+      <div class="hero-title">Boshqaruv Paneli</div>
+      <div class="hero-sub" id="hero-sub">Billiard King — Admin</div>
+    </div>
+    <button class="refresh-btn" onclick="refresh()">↺ Yangilash</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card"><div class="sc-n" id="s-users">—</div><div class="sc-l">Foydalanuvchilar</div></div>
+    <div class="stat-card"><div class="sc-n" id="s-pending">—</div><div class="sc-l">Kutilmoqda</div></div>
+    <div class="stat-card"><div class="sc-n" id="s-paid">—</div><div class="sc-l">To'langan</div></div>
+    <div class="stat-card"><div class="sc-n" id="s-processing">—</div><div class="sc-l">Jarayonda</div></div>
+    <div class="stat-card"><div class="sc-n" id="s-trns">—</div><div class="sc-l">Faol Turnirlar</div></div>
+  </div>
+
+  <div class="tabs-wrap">
+    <div class="tabs">
+      <div class="tab active" data-tab="clips">🎬 Kliplar</div>
+      <div class="tab" data-tab="tournaments">🏆 Turnirlar</div>
+      <div class="tab" data-tab="users">👥 Foydalanuvchilar</div>
+    </div>
+  </div>
+
+  <!-- CLIPS TAB -->
+  <div class="tab-pane active" id="tab-clips">
+    <div class="filter-row">
+      <button class="filter-btn active" data-status="">Hammasi</button>
+      <button class="filter-btn" data-status="pending">Kutilmoqda</button>
+      <button class="filter-btn" data-status="paid">To'langan</button>
+      <button class="filter-btn" data-status="processing">Jarayonda</button>
+      <button class="filter-btn" data-status="done">Tayyor</button>
+      <button class="filter-btn" data-status="failed">Rad etildi</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Mijoz</th><th>Filial · Stol</th><th>Vaqt</th><th>Holat</th><th>Sana</th></tr></thead>
+        <tbody id="clips-body"><tr><td colspan="6" class="loading-note">Yuklanmoqda…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TOURNAMENTS TAB -->
+  <div class="tab-pane" id="tab-tournaments">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Nom · Filial</th><th>Sana</th><th>Holat</th><th>Ishtirokchi</th></tr></thead>
+        <tbody id="trns-body"><tr><td colspan="5" class="loading-note">Yuklanmoqda…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- USERS TAB -->
+  <div class="tab-pane" id="tab-users">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>ID</th><th>Ism</th><th>Username</th><th>Rol</th><th>Qo'shilgan</th></tr></thead>
+        <tbody id="users-body"><tr><td colspan="5" class="loading-note">Yuklanmoqda…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-logo"><img src="/logo.jpg" alt="Billiard King"></div>
+  <div class="foot-r">© 2026 Billiard King · Admin Panel</div>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const show = id => { $('state-loading').className=''; $('state-error').className=''; $('state-main').className=''; $(id).className='show'; };
+
+const STATUS_UZ = {pending:'Kutilmoqda', paid:'To\'langan', processing:'Jarayonda', done:'Tayyor', failed:'Rad etildi', refunded:'Qaytarildi'};
+const TRN_STATUS = {registration:'Ro\'yxat', in_progress:'Jarayonda', finished:'Yakunlandi', cancelled:'Bekor'};
+
+function fmtDate(s) {
+  if (!s) return '—';
+  const d = new Date(s);
+  return d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'});
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+let jwt = null;
+let currentClipStatus = '';
+
+function logout() {
+  localStorage.removeItem('bk_jwt');
+  location.href = '/';
+}
+
+async function init() {
+  const params = new URLSearchParams(location.search);
+  const t = params.get('t');
+  jwt = localStorage.getItem('bk_jwt');
+
+  if (t) {
+    try {
+      const r = await fetch('/api/auth/session?t=' + encodeURIComponent(t));
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      jwt = data.jwt;
+      localStorage.setItem('bk_jwt', jwt);
+      history.replaceState({}, '', '/panel');
+    } catch(e) {
+      show('state-error');
+      $('err-title').textContent = 'Token eskirgan';
+      $('err-sub').textContent = 'Telegram botdan yangi havola so\'rang.';
+      return;
+    }
+  }
+
+  if (!jwt) { show('state-error'); return; }
+
+  // Verify & load stats
+  try {
+    const r = await fetch('/api/admin/stats', { headers: auth() });
+    if (r.status === 401 || r.status === 403) {
+      localStorage.removeItem('bk_jwt');
+      show('state-error');
+      return;
+    }
+    const s = await r.json();
+    $('s-users').textContent = s.users ?? '—';
+    $('s-pending').textContent = s.pending_clips ?? '—';
+    $('s-paid').textContent = s.paid_clips ?? '—';
+    $('s-processing').textContent = s.processing_clips ?? '—';
+    $('s-trns').textContent = s.active_tournaments ?? '—';
+  } catch(e) {
+    show('state-error');
+    $('err-title').textContent = 'Server xatosi';
+    return;
+  }
+
+  // Parse JWT payload for name display
+  try {
+    const payload = JSON.parse(atob(jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    $('nav-user').textContent = payload.role + ' · ' + payload.tg_id;
+    $('hero-sub').textContent = 'Billiard King — ' + (payload.role === 'superadmin' ? 'Superadmin' : 'Admin');
+  } catch(_){}
+
+  show('state-main');
+  loadClips('');
+}
+
+function auth() { return { Authorization: 'Bearer ' + jwt }; }
+
+async function loadClips(status) {
+  currentClipStatus = status;
+  const url = '/api/admin/clips' + (status ? '?status=' + status : '');
+  const body = $('clips-body');
+  body.innerHTML = '<tr><td colspan="6" class="loading-note">Yuklanmoqda…</td></tr>';
+  try {
+    const r = await fetch(url, { headers: auth() });
+    const list = r.ok ? await r.json() : [];
+    if (!list.length) { body.innerHTML = '<tr><td colspan="6" class="empty-note">Kliplar topilmadi</td></tr>'; return; }
+    body.innerHTML = list.map(c => `<tr>
+      <td>${c.id}</td>
+      <td><div class="name-cell">${esc(c.client_name)}</div></td>
+      <td>${esc(c.branch_name)} · Stol ${c.table_num}</td>
+      <td><div>${fmtDate(c.start_time)}</div><div class="sub-cell">– ${fmtDate(c.end_time)}</div></td>
+      <td><span class="status-pill sp-${c.status}">${STATUS_UZ[c.status]||c.status}</span>${c.notes?'<div class="sub-cell">'+esc(c.notes)+'</div>':''}</td>
+      <td>${fmtDate(c.created_at)}</td>
+    </tr>`).join('');
+  } catch(e) { body.innerHTML = '<tr><td colspan="6" class="empty-note">Xatolik: '+esc(e.message)+'</td></tr>'; }
+}
+
+async function loadTournaments() {
+  const body = $('trns-body');
+  body.innerHTML = '<tr><td colspan="5" class="loading-note">Yuklanmoqda…</td></tr>';
+  try {
+    const r = await fetch('/api/admin/tournaments', { headers: auth() });
+    const list = r.ok ? await r.json() : [];
+    if (!list.length) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Turnirlar topilmadi</td></tr>'; return; }
+    body.innerHTML = list.map(t => `<tr>
+      <td>${t.id}</td>
+      <td><div class="name-cell">${esc(t.name)}</div><div class="sub-cell">${esc(t.branch_name)}</div></td>
+      <td>${fmtDate(t.scheduled_at)}</td>
+      <td><span class="status-pill sp-${t.status}">${TRN_STATUS[t.status]||t.status}</span></td>
+      <td>${t.registered} / ${t.max_players}</td>
+    </tr>`).join('');
+  } catch(e) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Xatolik</td></tr>'; }
+}
+
+async function loadUsers() {
+  const body = $('users-body');
+  body.innerHTML = '<tr><td colspan="5" class="loading-note">Yuklanmoqda…</td></tr>';
+  try {
+    const r = await fetch('/api/admin/users', { headers: auth() });
+    const list = r.ok ? await r.json() : [];
+    if (!list.length) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Foydalanuvchilar topilmadi</td></tr>'; return; }
+    body.innerHTML = list.map(u => `<tr>
+      <td>${u.tg_id}</td>
+      <td class="name-cell">${esc(u.first_name)}</td>
+      <td>${u.username ? '@'+esc(u.username) : '—'}</td>
+      <td><span class="status-pill sp-${u.role}">${u.role}</span></td>
+      <td>${fmtDate(u.created_at)}</td>
+    </tr>`).join('');
+  } catch(e) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Xatolik</td></tr>'; }
+}
+
+async function refresh() {
+  const r = await fetch('/api/admin/stats', { headers: auth() });
+  if (r.ok) {
+    const s = await r.json();
+    $('s-users').textContent = s.users;
+    $('s-pending').textContent = s.pending_clips;
+    $('s-paid').textContent = s.paid_clips;
+    $('s-processing').textContent = s.processing_clips;
+    $('s-trns').textContent = s.active_tournaments;
+  }
+  const active = document.querySelector('.tab.active')?.dataset?.tab;
+  if (active === 'clips') loadClips(currentClipStatus);
+  else if (active === 'tournaments') loadTournaments();
+  else if (active === 'users') loadUsers();
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'tournaments') loadTournaments();
+    else if (tab.dataset.tab === 'users') loadUsers();
+    else loadClips(currentClipStatus);
+  });
+});
+
+// Clip filters
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadClips(btn.dataset.status);
+  });
+});
+
+init().catch(console.error);
+</script>
+</body>
+</html>
