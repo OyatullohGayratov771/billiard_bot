@@ -12,6 +12,7 @@ type Config struct {
 	Port        string
 	JWTSecret   string
 	BaseURL     string
+	BotToken    string
 }
 
 var AppConfig Config
@@ -23,6 +24,7 @@ func LoadConfig() {
 		Port:        getEnv("WEB_SERVICE_PORT", "8085"),
 		JWTSecret:   mustEnv("JWT_SECRET"),
 		BaseURL:     getEnv("WEB_BASE_URL", "https://billiardking.uz"),
+		BotToken:    mustEnv("TELEGRAM_TOKEN"),
 	}
 	log.Println("✅ web-service config yuklandi")
 }

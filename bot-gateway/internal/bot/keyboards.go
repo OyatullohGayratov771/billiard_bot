@@ -11,38 +11,60 @@ import (
 
 // ===================== MAIN MENU =====================
 
-func mainMenuKeyboard(user *models.User) tgbotapi.ReplyKeyboardMarkup {
-	kb := tgbotapi.NewReplyKeyboard()
-	kb.ResizeKeyboard = true
+func mainMenuKeyboard(user *models.User) replyKeyboard {
+	var rows [][]replyBtn
 
 	switch user.Role {
 	case models.RoleSuperadmin:
-		kb.Keyboard = [][]tgbotapi.KeyboardButton{
+		rows = [][]replyBtn{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
 			{btn("👥 Xodimlar"), btn("⚙️ Sozlamalar")},
-			{btn("🌐 Panel")},
+			{webAppBtn("🌐 Panel", "https://billiardking.uz/panel")},
 		}
 	case models.RoleAdmin:
-		kb.Keyboard = [][]tgbotapi.KeyboardButton{
+		rows = [][]replyBtn{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
-			{btn("🌐 Panel")},
+			{webAppBtn("🌐 Panel", "https://billiardking.uz/panel")},
 		}
 	case models.RoleOperator:
-		kb.Keyboard = [][]tgbotapi.KeyboardButton{
+		rows = [][]replyBtn{
 			{btn("🎬 Kliplar")},
+			{webAppBtn("🌐 Panel", "https://billiardking.uz/panel")},
 		}
 	default: // client
-		kb.Keyboard = [][]tgbotapi.KeyboardButton{
+		rows = [][]replyBtn{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
-			{btn("👤 Akkaunt"), btn("🌐 Sahifam")},
+			{btn("👤 Akkaunt"), webAppBtn("🌐 Sahifam", "https://billiardking.uz/me")},
 		}
 	}
 
-	return kb
+	return replyKeyboard{Keyboard: rows, ResizeKeyboard: true}
 }
 
-func btn(text string) tgbotapi.KeyboardButton {
-	return tgbotapi.NewKeyboardButton(text)
+func btn(text string) replyBtn {
+	return replyBtn{Text: text}
+}
+
+func webAppBtn(text, url string) replyBtn {
+	return replyBtn{Text: text, WebApp: &webAppInfo{URL: url}}
+}
+
+// replyBtn is a KeyboardButton superset that includes web_app (not in v5.5.1).
+type replyBtn struct {
+	Text            string       `json:"text"`
+	RequestContact  bool         `json:"request_contact,omitempty"`
+	RequestLocation bool         `json:"request_location,omitempty"`
+	WebApp          *webAppInfo  `json:"web_app,omitempty"`
+}
+
+type webAppInfo struct {
+	URL string `json:"url"`
+}
+
+type replyKeyboard struct {
+	Keyboard        [][]replyBtn `json:"keyboard"`
+	ResizeKeyboard  bool         `json:"resize_keyboard,omitempty"`
+	OneTimeKeyboard bool         `json:"one_time_keyboard,omitempty"`
 }
 
 // ===================== CONFIRM / CANCEL =====================

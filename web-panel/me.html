@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <title>Billiard King — Mening Sahifam</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
 :root{
@@ -189,26 +190,25 @@ function fmtDate(s) {
 }
 
 async function init() {
-  const params = new URLSearchParams(location.search);
-  const t = params.get('t');
-
-  // Check existing JWT
+  const tg = window.Telegram?.WebApp;
   let jwt = localStorage.getItem('bk_jwt');
 
-  if (t) {
-    // Exchange token for JWT
+  // If opened from Telegram Mini App, exchange initData for fresh JWT
+  if (tg?.initData) {
     try {
-      const r = await fetch('/api/auth/session?t=' + encodeURIComponent(t));
+      const r = await fetch('/api/auth/tg', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({init_data: tg.initData})
+      });
       const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Token xato');
+      if (!r.ok) throw new Error(data.error || 'Auth xato');
       jwt = data.jwt;
       localStorage.setItem('bk_jwt', jwt);
-      // Remove token from URL
-      history.replaceState({}, '', '/me');
     } catch(e) {
       show('state-error');
-      $('err-title').textContent = 'Token eskirgan';
-      $('err-sub').textContent = 'Telegram botdan yangi havola so\'rang.';
+      $('err-title').textContent = 'Kirish xatosi';
+      $('err-sub').textContent = e.message;
       return;
     }
   }

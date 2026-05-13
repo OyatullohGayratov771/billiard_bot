@@ -167,6 +167,7 @@ services:
       WEB_SERVICE_PORT: "8085"
       JWT_SECRET: "${JWT_SECRET}"
       WEB_BASE_URL: "${TV_BASE_URL:-https://billiardking.uz}"
+      TELEGRAM_TOKEN: "${TELEGRAM_TOKEN}"
     expose:
       - "8085"
     security_opt:

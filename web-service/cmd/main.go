@@ -19,7 +19,7 @@ func main() {
 	}
 	defer database.Close()
 
-	h := handler.New(database, cfg.JWTSecret, cfg.BaseURL)
+	h := handler.New(database, cfg.JWTSecret, cfg.BaseURL, cfg.BotToken)
 	mux := http.NewServeMux()
 	h.RegisterRoutes(mux)
 

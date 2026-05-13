@@ -3,39 +3,41 @@ package handler
 import (
 	"context"
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"log"
+	"errors"
 	"net/http"
+	"net/url"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
 
 type Handler struct {
-	db      *sql.DB
-	secret  string
-	baseURL string
+	db       *sql.DB
+	secret   string
+	baseURL  string
+	botToken string
 }
 
-func New(db *sql.DB, secret, baseURL string) *Handler {
-	return &Handler{db: db, secret: secret, baseURL: baseURL}
+func New(db *sql.DB, secret, baseURL, botToken string) *Handler {
+	return &Handler{db: db, secret: secret, baseURL: baseURL, botToken: botToken}
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /health", h.health)
-	mux.HandleFunc("POST /internal/token", h.createToken)
-	mux.HandleFunc("GET /api/auth/session", h.session)
+	mux.HandleFunc("POST /api/auth/tg", h.authTelegram)
 	mux.HandleFunc("GET /api/me", h.withAuth(h.me))
 	mux.HandleFunc("GET /api/me/clips", h.withAuth(h.myClips))
 	mux.HandleFunc("GET /api/me/tournaments", h.withAuth(h.myTournaments))
-	mux.HandleFunc("GET /api/admin/stats", h.withRole(h.adminStats, "admin", "superadmin"))
-	mux.HandleFunc("GET /api/admin/clips", h.withRole(h.adminClips, "admin", "superadmin"))
-	mux.HandleFunc("GET /api/admin/tournaments", h.withRole(h.adminTournaments, "admin", "superadmin"))
-	mux.HandleFunc("GET /api/admin/users", h.withRole(h.adminUsers, "admin", "superadmin", "operator"))
+	mux.HandleFunc("GET /api/admin/stats", h.withRole(h.adminStats, "admin", "superadmin", "operator"))
+	mux.HandleFunc("GET /api/admin/clips", h.withRole(h.adminClips, "admin", "superadmin", "operator"))
+	mux.HandleFunc("GET /api/admin/tournaments", h.withRole(h.adminTournaments, "admin", "superadmin", "operator"))
+	mux.HandleFunc("GET /api/admin/users", h.withRole(h.adminUsers, "admin", "superadmin"))
 }
 
 // ─── JWT (HMAC-SHA256, no external library) ───
@@ -84,16 +86,63 @@ func (h *Handler) verifyJWT(token string) (*Claims, bool) {
 
 func b64u(b []byte) string { return base64.RawURLEncoding.EncodeToString(b) }
 
+// ─── Telegram initData verification ───
+
+func (h *Handler) verifyInitData(initData string) (int64, error) {
+	params, err := url.ParseQuery(initData)
+	if err != nil {
+		return 0, err
+	}
+	hash := params.Get("hash")
+	if hash == "" {
+		return 0, errors.New("no hash")
+	}
+	params.Del("hash")
+
+	var parts []string
+	for k, v := range params {
+		if len(v) > 0 {
+			parts = append(parts, k+"="+v[0])
+		}
+	}
+	sort.Strings(parts)
+	dataCheck := strings.Join(parts, "\n")
+
+	// secret_key = HMAC-SHA256(key="WebAppData", data=botToken)
+	mac1 := hmac.New(sha256.New, []byte("WebAppData"))
+	mac1.Write([]byte(h.botToken))
+	secretKey := mac1.Sum(nil)
+
+	// sig = hex(HMAC-SHA256(key=secretKey, data=dataCheck))
+	mac2 := hmac.New(sha256.New, secretKey)
+	mac2.Write([]byte(dataCheck))
+	sig := hex.EncodeToString(mac2.Sum(nil))
+
+	if sig != hash {
+		return 0, errors.New("hash mismatch")
+	}
+
+	// Check auth_date not older than 24h
+	if authDate, _ := strconv.ParseInt(params.Get("auth_date"), 10, 64); authDate > 0 {
+		if time.Now().Unix()-authDate > 86400 {
+			return 0, errors.New("initData too old")
+		}
+	}
+
+	var user struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.Unmarshal([]byte(params.Get("user")), &user); err != nil || user.ID == 0 {
+		return 0, errors.New("invalid user")
+	}
+	return user.ID, nil
+}
+
 // ─── Middleware ───
 
 func (h *Handler) extractClaims(r *http.Request) *Claims {
 	if auth := r.Header.Get("Authorization"); strings.HasPrefix(auth, "Bearer ") {
 		if c, ok := h.verifyJWT(strings.TrimPrefix(auth, "Bearer ")); ok {
-			return c
-		}
-	}
-	if cookie, err := r.Cookie("bk_jwt"); err == nil {
-		if c, ok := h.verifyJWT(cookie.Value); ok {
 			return c
 		}
 	}
@@ -128,67 +177,32 @@ func getClaims(r *http.Request) *Claims {
 	return r.Context().Value(ctxKey{}).(*Claims)
 }
 
-// ─── Handlers ───
+// ─── Auth ───
 
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
-func (h *Handler) createToken(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) authTelegram(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		TgID int64  `json:"tg_id"`
-		Role string `json:"role"`
+		InitData string `json:"init_data"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.TgID == 0 {
-		writeErr(w, 400, "invalid request")
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.InitData == "" {
+		writeErr(w, 400, "missing init_data")
 		return
 	}
-	if req.Role == "" {
-		req.Role = "client"
-	}
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	token := hex.EncodeToString(b)
 
-	_, _ = h.db.Exec(`DELETE FROM web_tokens WHERE expires_at < NOW()`)
-	if _, err := h.db.Exec(
-		`INSERT INTO web_tokens(token,tg_id,role,expires_at) VALUES($1,$2,$3,$4)`,
-		token, req.TgID, req.Role, time.Now().Add(5*time.Minute),
-	); err != nil {
-		log.Printf("createToken: %v", err)
-		writeErr(w, 500, "db error")
-		return
-	}
-	page := "/me"
-	if req.Role == "admin" || req.Role == "superadmin" || req.Role == "operator" {
-		page = "/panel"
-	}
-	writeJSON(w, 200, map[string]string{
-		"token": token,
-		"url":   h.baseURL + page + "?t=" + token,
-	})
-}
-
-func (h *Handler) session(w http.ResponseWriter, r *http.Request) {
-	token := r.URL.Query().Get("t")
-	if token == "" {
-		writeErr(w, 400, "missing token")
-		return
-	}
-	var tgID int64
-	var role string
-	err := h.db.QueryRow(
-		`DELETE FROM web_tokens WHERE token=$1 AND expires_at > NOW() RETURNING tg_id, role`,
-		token,
-	).Scan(&tgID, &role)
-	if err == sql.ErrNoRows {
-		writeErr(w, 401, "token expired or invalid")
-		return
-	}
+	tgID, err := h.verifyInitData(req.InitData)
 	if err != nil {
-		writeErr(w, 500, "db error")
+		writeErr(w, 401, err.Error())
 		return
 	}
+
+	var role string
+	if err := h.db.QueryRow(`SELECT role FROM users WHERE tg_id=$1`, tgID).Scan(&role); err != nil {
+		role = "client"
+	}
+
 	jwt := h.signJWT(Claims{TgID: tgID, Role: role, Exp: time.Now().Add(24 * time.Hour).Unix()})
 	writeJSON(w, 200, map[string]any{"jwt": jwt, "role": role, "tg_id": tgID})
 }
@@ -294,14 +308,13 @@ func (h *Handler) myTournaments(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) adminStats(w http.ResponseWriter, r *http.Request) {
 	stats := map[string]int{}
-	queries := map[string]string{
+	for k, q := range map[string]string{
 		"users":              `SELECT COUNT(*) FROM users`,
 		"pending_clips":      `SELECT COUNT(*) FROM clip_requests WHERE status='pending'`,
 		"paid_clips":         `SELECT COUNT(*) FROM clip_requests WHERE status='paid'`,
 		"processing_clips":   `SELECT COUNT(*) FROM clip_requests WHERE status='processing'`,
 		"active_tournaments": `SELECT COUNT(*) FROM tournaments WHERE status IN ('registration','in_progress')`,
-	}
-	for k, q := range queries {
+	} {
 		var n int
 		_ = h.db.QueryRow(q).Scan(&n)
 		stats[k] = n
