@@ -12,30 +12,25 @@ import (
 // ===================== MAIN MENU =====================
 
 func mainMenuKeyboard(user *models.User) replyKeyboard {
-	king := webAppBtn("🌐 King", "https://billiardking.uz")
-
 	var rows [][]replyBtn
 	switch user.Role {
 	case models.RoleSuperadmin:
 		rows = [][]replyBtn{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
 			{btn("👥 Xodimlar"), btn("⚙️ Sozlamalar")},
-			{king},
 		}
 	case models.RoleAdmin:
 		rows = [][]replyBtn{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
-			{king},
 		}
 	case models.RoleOperator:
 		rows = [][]replyBtn{
 			{btn("🎬 Kliplar")},
-			{king},
 		}
 	default: // client
 		rows = [][]replyBtn{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
-			{btn("👤 Akkaunt"), king},
+			{btn("👤 Akkaunt")},
 		}
 	}
 
