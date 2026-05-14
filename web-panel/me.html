@@ -194,13 +194,17 @@ async function init() {
   if (tg) { tg.ready(); tg.expand(); }
   let jwt = localStorage.getItem('bk_jwt');
 
-  // Opened from Telegram Mini App — exchange initData for fresh JWT
-  if (tg?.initData) {
+  // initData: from WebApp API or from URL hash (Telegram Desktop fallback)
+  const hashParams = new URLSearchParams(window.location.hash.slice(1));
+  const rawHashData = hashParams.get('tgWebAppData');
+  const initData = (tg?.initData) || (rawHashData ? decodeURIComponent(rawHashData) : '');
+
+  if (initData) {
     try {
       const r = await fetch('/api/auth/tg', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({init_data: tg.initData})
+        body: JSON.stringify({init_data: initData})
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || 'Auth xato');
