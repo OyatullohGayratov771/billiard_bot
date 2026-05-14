@@ -233,6 +233,7 @@ function logout() {
 
 async function init() {
   const tg = window.Telegram?.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
   jwt = localStorage.getItem('bk_jwt');
 
   if (tg?.initData) {
@@ -243,7 +244,7 @@ async function init() {
         body: JSON.stringify({init_data: tg.initData})
       });
       const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Auth xato');
+      if (!r.ok) throw new Error(data.error || 'Auth xato: ' + r.status);
       jwt = data.jwt;
       localStorage.setItem('bk_jwt', jwt);
     } catch(e) {
@@ -254,7 +255,12 @@ async function init() {
     }
   }
 
-  if (!jwt) { show('state-error'); return; }
+  if (!jwt) {
+    show('state-error');
+    $('err-title').textContent = 'Telegram orqali kiring';
+    $('err-sub').textContent = 'Bu panel faqat Telegram bot orqali ochiladi.';
+    return;
+  }
 
   // Parse JWT payload for role/name
   try {
@@ -270,9 +276,18 @@ async function init() {
   // Verify & load stats
   try {
     const r = await fetch('/api/admin/stats', { headers: auth() });
-    if (r.status === 401 || r.status === 403) {
+    if (r.status === 401) {
       localStorage.removeItem('bk_jwt');
       show('state-error');
+      $('err-title').textContent = 'Sessiya tugagan';
+      $('err-sub').textContent = 'Qayta kirish uchun botdagi tugmani bosing.';
+      return;
+    }
+    if (r.status === 403) {
+      localStorage.removeItem('bk_jwt');
+      show('state-error');
+      $('err-title').textContent = 'Ruxsat yo\'q';
+      $('err-sub').textContent = 'Bu panel faqat admin va operatorlar uchun.';
       return;
     }
     const s = await r.json();
@@ -283,7 +298,8 @@ async function init() {
     $('s-trns').textContent = s.active_tournaments ?? '—';
   } catch(e) {
     show('state-error');
-    $('err-title').textContent = 'Server xatosi';
+    $('err-title').textContent = 'Server bilan bog\'lanib bo\'lmadi';
+    $('err-sub').textContent = e.message;
     return;
   }
 

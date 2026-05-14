@@ -191,9 +191,10 @@ function fmtDate(s) {
 
 async function init() {
   const tg = window.Telegram?.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
   let jwt = localStorage.getItem('bk_jwt');
 
-  // If opened from Telegram Mini App, exchange initData for fresh JWT
+  // Opened from Telegram Mini App — exchange initData for fresh JWT
   if (tg?.initData) {
     try {
       const r = await fetch('/api/auth/tg', {
@@ -215,6 +216,8 @@ async function init() {
 
   if (!jwt) {
     show('state-error');
+    $('err-title').textContent = 'Telegram orqali kiring';
+    $('err-sub').textContent = 'Bu sahifa faqat Telegram bot orqali ochiladi. Quyidagi tugmani bosing:';
     return;
   }
 
