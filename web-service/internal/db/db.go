@@ -27,6 +27,7 @@ func New(dsn string) (*sql.DB, error) {
 			expires_at TIMESTAMPTZ NOT NULL
 		);
 		CREATE INDEX IF NOT EXISTS idx_web_tokens_expires ON web_tokens(expires_at);
+		ALTER TABLE users ADD COLUMN IF NOT EXISTS name_customized BOOLEAN NOT NULL DEFAULT false;
 	`); err != nil {
 		return nil, err
 	}

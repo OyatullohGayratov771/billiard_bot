@@ -222,8 +222,8 @@ func (h *Handler) authTelegram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Auto-register new users; update username for existing users.
-	// ON CONFLICT keeps is_active and role unchanged for existing rows.
+	// Auto-register new users; sync username always.
+	// Name synced from Telegram only if user hasn't manually customized it (name_customized=false).
 	var role string
 	var isActive bool
 	err = h.db.QueryRow(`
@@ -231,8 +231,10 @@ func (h *Handler) authTelegram(w http.ResponseWriter, r *http.Request) {
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (telegram_id) DO UPDATE
 		  SET username   = EXCLUDED.username,
-		      first_name = COALESCE(NULLIF(EXCLUDED.first_name, ''), users.first_name),
-		      last_name  = COALESCE(NULLIF(EXCLUDED.last_name,  ''), users.last_name)
+		      first_name = CASE WHEN users.name_customized THEN users.first_name
+		                        ELSE COALESCE(NULLIF(EXCLUDED.first_name,''), users.first_name) END,
+		      last_name  = CASE WHEN users.name_customized THEN users.last_name
+		                        ELSE COALESCE(NULLIF(EXCLUDED.last_name,''),  users.last_name)  END
 		RETURNING role, is_active
 	`, tgUser.ID, tgUser.Username, tgUser.FirstName, tgUser.LastName).Scan(&role, &isActive)
 	if err != nil {
@@ -611,7 +613,7 @@ func (h *Handler) meUpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, err := h.db.Exec(
-		`UPDATE users SET first_name=$1, last_name=NULLIF($2,'') WHERE telegram_id=$3`,
+		`UPDATE users SET first_name=$1, last_name=NULLIF($2,''), name_customized=true WHERE telegram_id=$3`,
 		req.FirstName, req.LastName, claims.TgID,
 	)
 	if err != nil {
