@@ -96,8 +96,45 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:24px 40
 .foot-r{font-size:.63rem;color:var(--text3);letter-spacing:1px}
 @media(max-width:500px){footer{flex-direction:column;align-items:flex-start}}
 </style>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
+
+<!-- Telegram Mini App: auth & redirect overlay -->
+<div id="tg-redir" style="display:none;position:fixed;inset:0;z-index:9999;background:#080808;align-items:center;justify-content:center;flex-direction:column;gap:18px">
+  <div style="width:52px;height:52px;border:3px solid rgba(212,175,55,.18);border-top-color:#D4AF37;border-radius:50%;animation:tgspin .8s linear infinite"></div>
+  <div style="font-size:.64rem;letter-spacing:4px;text-transform:uppercase;color:rgba(212,175,55,.55)">Yuklanmoqda…</div>
+</div>
+<style>@keyframes tgspin{to{transform:rotate(360deg)}}</style>
+<script>
+(async function(){
+  const tg = window.Telegram?.WebApp;
+  if(tg){ tg.ready(); }
+
+  const hp = new URLSearchParams(window.location.hash.slice(1));
+  const raw = hp.get('tgWebAppData');
+  const initData = (tg?.initData) || (raw ? decodeURIComponent(raw) : '');
+  if(!initData) return; // oddiy brauzer — sahifani normal ko'rsat
+
+  const el = document.getElementById('tg-redir');
+  el.style.display = 'flex';
+
+  try {
+    const r = await fetch('/api/auth/tg', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({init_data: initData})
+    });
+    if(!r.ok) throw new Error('auth failed');
+    const d = await r.json();
+    localStorage.setItem('bk_jwt', d.jwt);
+    const staff = ['superadmin','admin','operator'];
+    window.location.replace(staff.includes(d.role) ? '/panel' : '/me');
+  } catch(_){
+    el.style.display = 'none'; // xato bo'lsa sahifani ko'rsat
+  }
+})();
+</script>
 
 <nav id="navbar">
   <a href="/" class="nav-logo"><img src="/logo.jpg" alt="Billiard King"></a>
