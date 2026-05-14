@@ -51,11 +51,6 @@ type TournamentService interface {
 	PushTVUpdate(token string) (int, error)
 }
 
-// WebService — web-service bilan ishlash interfeysi
-type WebService interface {
-	CreateAuthURL(tgID int64, role string) (string, error)
-}
-
 // ClipService — clip-service bilan ishlash interfeysi
 type ClipService interface {
 	CreateRequest(in models.ClipRequestInput) (*models.ClipRequest, error)
