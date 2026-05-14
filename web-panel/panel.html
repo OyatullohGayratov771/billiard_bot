@@ -448,7 +448,7 @@ async function loadUsers(search='', role='') {
     const url='/api/admin/users'+(p.length?'?'+p.join('&'):'');
     const r=await fetch(url,{headers:auth()});
     if(!r.ok) throw new Error('HTTP '+r.status);
-    allUsers=await r.json();
+    allUsers=await r.json()||[];
   } catch(e){
     $('user-grid').innerHTML=`<div class="empty-note" style="grid-column:1/-1">Xatolik: ${esc(e.message)}</div>`;
     return;

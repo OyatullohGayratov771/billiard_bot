@@ -70,7 +70,7 @@ func (r *Repo) ListTournaments(status string) ([]*models.Tournament, error) {
 	}
 	defer rows.Close()
 
-	var list []*models.Tournament
+	list := make([]*models.Tournament, 0)
 	for rows.Next() {
 		t := &models.Tournament{}
 		if err := rows.Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.Type, &t.CreatedBy, &t.CreatedAt, &t.JoinCode); err != nil {
@@ -156,7 +156,7 @@ func (r *Repo) ListRegistrations(tournamentID int64) ([]*models.Registration, er
 		return nil, err
 	}
 	defer rows.Close()
-	var list []*models.Registration
+	list := make([]*models.Registration, 0)
 	for rows.Next() {
 		reg := &models.Registration{}
 		if err := rows.Scan(&reg.ID, &reg.TournamentID, &reg.UserTgID, &reg.UserName, &reg.Status, &reg.RegisteredAt, &reg.DecidedAt); err != nil {
@@ -175,7 +175,7 @@ func (r *Repo) ListApprovedRegistrations(tournamentID int64) ([]*models.Registra
 		return nil, err
 	}
 	defer rows.Close()
-	var list []*models.Registration
+	list := make([]*models.Registration, 0)
 	for rows.Next() {
 		reg := &models.Registration{}
 		if err := rows.Scan(&reg.ID, &reg.TournamentID, &reg.UserTgID, &reg.UserName, &reg.Status, &reg.RegisteredAt, &reg.DecidedAt); err != nil {
@@ -216,7 +216,7 @@ func (r *Repo) GetUserTournaments(userTgID int64) ([]*models.Registration, error
 		return nil, err
 	}
 	defer rows.Close()
-	var list []*models.Registration
+	list := make([]*models.Registration, 0)
 	for rows.Next() {
 		reg := &models.Registration{}
 		if err := rows.Scan(&reg.ID, &reg.TournamentID, &reg.UserTgID, &reg.UserName, &reg.Status, &reg.RegisteredAt, &reg.DecidedAt, &reg.TournamentName); err != nil {
@@ -341,7 +341,7 @@ func (r *Repo) GetBracket(tournamentID int64) ([]*models.Match, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var list []*models.Match
+	list := make([]*models.Match, 0)
 	for rows.Next() {
 		m := &models.Match{}
 		if err := rows.Scan(&m.ID, &m.TournamentID, &m.Round, &m.MatchNum,

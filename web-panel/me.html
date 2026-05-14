@@ -471,7 +471,7 @@ function renderHero(u) {
 async function loadMyClips() {
   try {
     const r = await fetch('/api/me/clips', { headers: auth() });
-    myClips = r.ok ? await r.json() : [];
+    myClips = r.ok ? (await r.json() || []) : [];
   } catch(_) { myClips = []; }
   $('sn-clips').textContent = myClips.length;
   renderClips();
@@ -495,7 +495,7 @@ function renderClips() {
 async function loadMyTrns() {
   try {
     const r = await fetch('/api/me/tournaments', { headers: auth() });
-    myTrns = r.ok ? await r.json() : [];
+    myTrns = r.ok ? (await r.json() || []) : [];
   } catch(_) { myTrns = []; }
   // Build lookup map
   myTrnsMap = {};
@@ -526,7 +526,7 @@ async function loadOpenTrns() {
   const el = $('open-trns');
   try {
     const r = await fetch('/api/tournaments?status=registration');
-    openTrns = r.ok ? await r.json() : [];
+    openTrns = r.ok ? (await r.json() || []) : [];
   } catch(_) { openTrns = []; }
   renderOpenTrns();
 }
