@@ -54,6 +54,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 
 	// Tournament registration proxy (auth via JWT, proxies to tournament-service)
 	mux.HandleFunc("POST /api/me/tournaments/{id}/register", h.withAuth(h.meTournamentRegister))
+
+	// Profile update
+	mux.HandleFunc("PUT /api/me/profile", h.withAuth(h.meUpdateProfile))
 }
 
 // ─── JWT (HMAC-SHA256, no external library) ───
@@ -585,6 +588,37 @@ func (h *Handler) meTournamentRegister(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body) //nolint
+}
+
+func (h *Handler) meUpdateProfile(w http.ResponseWriter, r *http.Request) {
+	claims := getClaims(r)
+	var req struct {
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErr(w, 400, "bad request")
+		return
+	}
+	req.FirstName = strings.TrimSpace(req.FirstName)
+	req.LastName = strings.TrimSpace(req.LastName)
+	if req.FirstName == "" {
+		writeErr(w, 400, "first_name is required")
+		return
+	}
+	if len(req.FirstName) > 64 || len(req.LastName) > 64 {
+		writeErr(w, 400, "name too long")
+		return
+	}
+	_, err := h.db.Exec(
+		`UPDATE users SET first_name=$1, last_name=NULLIF($2,'') WHERE telegram_id=$3`,
+		req.FirstName, req.LastName, claims.TgID,
+	)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

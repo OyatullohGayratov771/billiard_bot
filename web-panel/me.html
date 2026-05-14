@@ -27,23 +27,88 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #st-err{align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:14px;padding:24px;text-align:center}
 .err-ico{font-size:3rem}
 .err-ttl{font-size:1.1rem;font-weight:700}
-.err-sub{font-size:.8rem;color:var(--text2);max-width:300px}
+.err-sub{font-size:.8rem;color:var(--text2);max-width:300px;line-height:1.5}
 .err-btn{margin-top:8px;background:var(--gold);color:#000;padding:10px 26px;border-radius:3px;font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;text-decoration:none}
 
 /* ─── APP SHELL ─── */
 #st-app{flex-direction:column;height:100%;overflow:hidden}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.content::-webkit-scrollbar{display:none}
+.tp{display:none}
+.tp.on{display:block}
 
-/* ─── HERO ─── */
-.hero{flex-shrink:0;padding:20px 20px 0;background:linear-gradient(180deg,rgba(212,175,55,.06) 0%,transparent 100%);border-bottom:1px solid var(--border2)}
-.hero-top{display:flex;gap:14px;align-items:center;margin-bottom:16px}
+/* ─── HOME TAB ─── */
+.home-hdr{padding:20px 16px 16px;background:linear-gradient(180deg,rgba(212,175,55,.06) 0%,transparent 100%);border-bottom:1px solid var(--border2)}
+.home-user{display:flex;align-items:center;gap:13px}
 .av-wrap{position:relative;flex-shrink:0}
-.av-img{width:68px;height:68px;border-radius:50%;border:2.5px solid var(--gold);object-fit:cover;display:none}
-.av-init{width:68px;height:68px;border-radius:50%;border:2.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:900;color:#fff;flex-shrink:0;text-transform:uppercase}
-.av-badge{position:absolute;bottom:1px;right:1px;width:18px;height:18px;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem}
-.hero-info{flex:1;min-width:0}
-.hi-name{font-size:1.1rem;font-weight:800;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hi-un{font-size:.72rem;color:var(--text2);margin-top:2px}
-.hi-badges{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.av-img{width:54px;height:54px;border-radius:50%;border:2.5px solid var(--gold);object-fit:cover;display:none}
+.av-init{width:54px;height:54px;border-radius:50%;border:2.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;color:#fff;flex-shrink:0}
+.av-badge{position:absolute;bottom:0;right:0;width:17px;height:17px;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.62rem}
+.home-greet{flex:1;min-width:0}
+.greet-time{font-size:.65rem;color:var(--text2);letter-spacing:.5px}
+.greet-name{font-size:1.05rem;font-weight:800;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.greet-bd{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:.52rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;border:1px solid;margin-top:6px}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border2);margin-bottom:0}
+.sg-card{background:var(--bg);padding:14px 8px;text-align:center;cursor:pointer;transition:.15s}
+.sg-card:hover{background:var(--card)}
+.sg-n{font-size:1.35rem;font-weight:900;background:linear-gradient(135deg,var(--gold-l),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sg-l{font-size:.48rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-top:3px}
+
+/* Quick actions */
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px 4px}
+.qa-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:14px 14px 12px;cursor:pointer;transition:.2s;text-decoration:none;color:var(--text)}
+.qa-card:hover{border-color:rgba(212,175,55,.3);background:var(--card2)}
+.qa-ico{font-size:1.5rem;line-height:1}
+.qa-lbl{font-size:.76rem;font-weight:700}
+.qa-sub{font-size:.6rem;color:var(--text3)}
+
+/* Section headers */
+.sec-hd{font-size:.5rem;letter-spacing:4px;text-transform:uppercase;color:var(--text3);padding:14px 16px 8px}
+
+/* My reg mini cards */
+.mreg-card{background:var(--card);border:1px solid var(--border2);border-radius:8px;margin:0 16px 8px;padding:12px 14px;display:flex;align-items:center;gap:11px;transition:border-color .2s}
+.mreg-card:hover{border-color:rgba(212,175,55,.2)}
+.mreg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.mreg-info{flex:1;min-width:0}
+.mreg-name{font-size:.84rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mreg-sub{font-size:.63rem;color:var(--text2);margin-top:3px}
+
+/* View all link */
+.view-all{display:flex;align-items:center;justify-content:center;gap:5px;margin:4px 16px 16px;padding:10px;background:none;border:1px dashed var(--border2);border-radius:8px;color:var(--text3);font-size:.64rem;font-weight:700;letter-spacing:1px;cursor:pointer;text-transform:uppercase;transition:.2s;width:calc(100% - 32px)}
+.view-all:hover{color:var(--gold);border-color:rgba(212,175,55,.25)}
+
+/* ─── TOURNAMENT CARDS ─── */
+.trn-section{padding:0 0 8px}
+.trn-card{background:var(--card);border:1px solid var(--border2);border-radius:8px;margin:0 16px 8px;overflow:hidden;transition:border-color .2s}
+.trn-card:hover{border-color:rgba(212,175,55,.25)}
+.tc-body{padding:13px 14px}
+.tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.tc-name{font-size:.88rem;font-weight:700;flex:1}
+.tc-type{font-size:.55rem;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid rgba(212,175,55,.2);padding:2px 7px;border-radius:10px;font-weight:700;letter-spacing:.5px;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.tc-meta{font-size:.64rem;color:var(--text2);display:flex;flex-wrap:wrap;gap:7px}
+.tc-meta span{display:inline-flex;align-items:center;gap:3px}
+.tc-foot{padding:9px 14px;border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tc-slots{font-size:.62rem;color:var(--text3);display:flex;align-items:center;gap:6px}
+.slots-bar{display:inline-block;width:48px;height:3px;background:var(--card2);border-radius:2px;overflow:hidden;vertical-align:middle}
+.slots-fill{height:100%;background:var(--gold);border-radius:2px;transition:.3s}
+.slots-fill.full{background:var(--red)}
+.reg-btn{background:var(--gold);color:#000;border:none;padding:7px 14px;border-radius:4px;font-size:.64rem;font-weight:800;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:.2s;white-space:nowrap}
+.reg-btn:hover{background:var(--gold-l)}
+.reg-btn:disabled{background:var(--card2);color:var(--text3);cursor:default}
+.reg-pill{display:inline-flex;align-items:center;gap:3px;padding:5px 9px;border-radius:4px;font-size:.6rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.rp-pending{background:rgba(136,136,136,.12);color:#888}
+.rp-approved{background:rgba(46,204,113,.1);color:var(--green)}
+.rp-rejected{background:rgba(231,76,60,.1);color:var(--red)}
+
+/* ─── PROFILE TAB ─── */
+.profile-hdr{padding:28px 16px 20px;text-align:center;background:linear-gradient(180deg,rgba(212,175,55,.06) 0%,transparent 100%);border-bottom:1px solid var(--border2)}
+.ph-av{width:84px;height:84px;border-radius:50%;border:2.5px solid var(--gold);object-fit:cover;display:none;margin:0 auto 14px}
+.ph-init{width:84px;height:84px;border-radius:50%;border:2.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:2.1rem;font-weight:900;color:#fff;margin:0 auto 14px}
+.ph-name{font-size:1.2rem;font-weight:800;letter-spacing:-.3px}
+.ph-un{font-size:.72rem;color:var(--text2);margin-top:3px}
+.ph-badges{display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap}
 .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.58rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;border:1px solid}
 .bd-client{background:rgba(212,175,55,.1);color:var(--gold);border-color:rgba(212,175,55,.3)}
 .bd-operator{background:rgba(230,126,34,.1);color:var(--orange);border-color:rgba(230,126,34,.3)}
@@ -52,108 +117,44 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .bd-active{background:rgba(46,204,113,.08);color:var(--green);border-color:rgba(46,204,113,.2)}
 .bd-blocked{background:rgba(231,76,60,.08);color:var(--red);border-color:rgba(231,76,60,.2)}
 
-/* Stats row */
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border2);margin-top:16px}
-.stat{background:var(--bg);padding:12px 0;text-align:center;cursor:pointer;transition:.15s}
-.stat:hover{background:var(--card)}
-.stat-n{font-size:1.25rem;font-weight:900;background:linear-gradient(135deg,var(--gold-l),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.stat-l{font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-top:3px}
-
-/* ─── SCROLL CONTENT ─── */
-.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.content::-webkit-scrollbar{display:none}
-
-/* ─── TAB PANES ─── */
-.tp{display:none;padding:16px 16px calc(var(--nav-h) + var(--safe-b) + 12px)}
-.tp.on{display:block}
-
-/* Section headers */
-.sec-hd{font-size:.52rem;letter-spacing:4px;text-transform:uppercase;color:var(--text3);margin:20px 0 10px}
-.sec-hd:first-child{margin-top:0}
-
-/* ─── PROFILE TAB ─── */
-.info-card{background:var(--card);border:1px solid var(--border2);border-radius:5px;overflow:hidden;margin-bottom:10px}
-.ic-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border2)}
+.info-card{background:var(--card);border:1px solid var(--border2);border-radius:8px;overflow:hidden;margin:0 16px 10px}
+.ic-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border2)}
 .ic-row:last-child{border-bottom:none}
 .ic-icon{width:32px;height:32px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
-.ic-lbl{font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:2px}
+.ic-lbl{font-size:.58rem;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:2px}
 .ic-val{font-size:.82rem;font-weight:600}
 .ic-val.muted{color:var(--text2);font-weight:400}
-.sync-note{background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.12);border-radius:5px;padding:12px 14px;font-size:.72rem;color:var(--text2);line-height:1.5}
+.sync-note{background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.12);border-radius:8px;padding:12px 14px;font-size:.72rem;color:var(--text2);line-height:1.5;margin:0 16px 16px}
 .sync-note strong{color:var(--gold)}
 
-/* ─── TOURNAMENT TAB ─── */
-.trn-card{background:var(--card);border:1px solid var(--border2);border-radius:5px;margin-bottom:8px;overflow:hidden;transition:border-color .2s}
-.trn-card:hover{border-color:rgba(212,175,55,.25)}
-.tc-body{padding:13px 14px}
-.tc-name{font-size:.88rem;font-weight:700;margin-bottom:4px}
-.tc-meta{font-size:.65rem;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px}
-.tc-meta span{display:inline-flex;align-items:center;gap:4px}
-.tc-foot{padding:10px 14px;border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:8px}
-.tc-slots{font-size:.62rem;color:var(--text3)}
-.slots-bar{display:inline-block;width:60px;height:4px;background:var(--card2);border-radius:2px;overflow:hidden;margin-left:4px;vertical-align:middle}
-.slots-fill{height:100%;background:var(--gold);border-radius:2px;transition:.3s}
-.slots-fill.full{background:var(--red)}
-.reg-btn{background:var(--gold);color:#000;border:none;padding:7px 16px;border-radius:3px;font-size:.66rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:.2s;white-space:nowrap}
-.reg-btn:hover{background:var(--gold-l)}
-.reg-btn:disabled{background:var(--card2);color:var(--text3);cursor:default}
-.reg-pill{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
-.rp-pending{background:rgba(136,136,136,.12);color:#888}
-.rp-approved{background:rgba(46,204,113,.1);color:var(--green)}
-.rp-rejected{background:rgba(231,76,60,.1);color:var(--red)}
-
-/* My tournament items */
-.mtrn-item{background:var(--card);border:1px solid var(--border2);border-radius:5px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
-.mtrn-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.mtrn-info{flex:1;min-width:0}
-.mtrn-name{font-size:.84rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mtrn-sub{font-size:.64rem;color:var(--text2);margin-top:3px}
-
-/* ─── CLIPS TAB ─── */
-.clip-item{background:var(--card);border:1px solid var(--border2);border-radius:5px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
-.clip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:2px}
-.dot-pending{background:#666}
-.dot-paid{background:var(--blue)}
-.dot-processing{background:var(--orange)}
-.dot-done{background:var(--green)}
-.dot-failed,.dot-refunded{background:var(--red)}
-.clip-info{flex:1;min-width:0}
-.clip-title{font-size:.84rem;font-weight:700}
-.clip-sub{font-size:.64rem;color:var(--text2);margin-top:3px}
-.clip-pill{font-size:.58rem;font-weight:700;padding:3px 8px;border-radius:3px;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;flex-shrink:0}
-.cp-pending{background:rgba(136,136,136,.1);color:#888}
-.cp-paid{background:rgba(52,152,219,.1);color:var(--blue)}
-.cp-processing{background:rgba(230,126,34,.1);color:var(--orange)}
-.cp-done{background:rgba(46,204,113,.1);color:var(--green)}
-.cp-failed,.cp-refunded{background:rgba(231,76,60,.1);color:var(--red)}
-
 /* ─── SETTINGS TAB ─── */
-.set-card{background:var(--card);border:1px solid var(--border2);border-radius:5px;overflow:hidden;margin-bottom:10px}
-.set-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border2);cursor:pointer;transition:.15s;text-decoration:none;color:inherit}
+.set-card{background:var(--card);border:1px solid var(--border2);border-radius:8px;overflow:hidden;margin:0 16px 10px}
+.set-row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--border2);cursor:pointer;transition:.15s;text-decoration:none;color:inherit}
 .set-row:last-child{border-bottom:none}
 .set-row:hover{background:var(--card2)}
-.set-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
+.set-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
 .set-text{flex:1}
 .set-lbl{font-size:.82rem;font-weight:600}
-.set-sub{font-size:.66rem;color:var(--text2);margin-top:1px}
-.set-arr{color:var(--text3);font-size:.8rem}
-.logout-row{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;transition:.15s;width:100%;background:none;border:none;text-align:left;font-family:inherit}
+.set-sub{font-size:.64rem;color:var(--text2);margin-top:1px}
+.set-arr{color:var(--text3);font-size:.95rem}
+.logout-row{display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;transition:.15s;width:100%;background:none;border:none;text-align:left;font-family:inherit}
 .logout-row:hover{background:rgba(231,76,60,.06)}
 .logout-row .set-lbl{color:var(--red)}
 
-/* ─── EMPTY / LOADING ─── */
-.empty{padding:40px 0;text-align:center;color:var(--text3);font-size:.8rem}
-.loading{padding:24px 0;text-align:center;color:var(--text3);font-size:.76rem}
-.skel{background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);background-size:200% 100%;animation:sk 1.4s ease infinite;border-radius:5px;margin-bottom:8px}
+/* ─── EMPTY / SKEL ─── */
+.empty{padding:36px 0;text-align:center;color:var(--text3);font-size:.78rem}
+.skel{background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);background-size:200% 100%;animation:sk 1.4s ease infinite;border-radius:8px;margin:0 16px 8px}
 @keyframes sk{from{background-position:200% 0}to{background-position:-200% 0}}
 
 /* ─── BOTTOM NAV ─── */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));background:rgba(5,5,5,.97);border-top:1px solid var(--border2);display:flex;z-index:200;padding-bottom:var(--safe-b);backdrop-filter:blur(20px)}
-.bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--text3);transition:.2s;border:none;background:none;font-family:inherit}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--text3);transition:.2s;border:none;background:none;font-family:inherit;position:relative}
 .bn:hover{color:var(--text2)}
 .bn.on{color:var(--gold)}
 .bn-ic{font-size:1.3rem;line-height:1}
-.bn-lb{font-size:.52rem;letter-spacing:.8px;text-transform:uppercase;font-weight:700}
+.bn-lb{font-size:.5rem;letter-spacing:.8px;text-transform:uppercase;font-weight:700}
+.bn-dot{position:absolute;top:8px;right:calc(50% - 16px);width:7px;height:7px;background:var(--red);border-radius:50%;display:none;border:1.5px solid var(--bg)}
+.bn-dot.on{display:block}
 
 /* ─── TOAST ─── */
 .toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 12px);left:50%;transform:translateX(-50%) translateY(10px);background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:20px;font-size:.74rem;font-weight:600;z-index:300;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
@@ -161,14 +162,35 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .toast.err{border-color:rgba(231,76,60,.4);color:var(--red)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ─── PULL INDICATOR ─── */
-.pull-hint{text-align:center;padding:8px 0 0;font-size:.62rem;color:var(--text3);letter-spacing:1px}
+/* ─── TAB PADDING ─── */
+.tab-pad{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px)}
+
+/* ─── NAME EDIT MODAL ─── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:.2s}
+.modal-bg.on{opacity:1;pointer-events:all}
+.modal{background:var(--card);border-radius:14px 14px 0 0;padding:20px 20px calc(20px + var(--safe-b));width:100%;max-width:480px;transform:translateY(20px);transition:.25s}
+.modal-bg.on .modal{transform:translateY(0)}
+.modal-title{font-size:.88rem;font-weight:800;margin-bottom:16px}
+.modal-inp{background:var(--card2);border:1px solid var(--border2);border-radius:6px;padding:11px 13px;color:var(--text);font-size:.88rem;font-family:inherit;width:100%;margin-bottom:10px;outline:none;transition:.2s}
+.modal-inp:focus{border-color:rgba(212,175,55,.4)}
+.modal-inp::placeholder{color:var(--text3)}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.modal-cancel{background:var(--card2);border:1px solid var(--border2);color:var(--text2);border-radius:6px;padding:11px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s}
+.modal-cancel:hover{color:var(--text)}
+.modal-save{background:var(--gold);border:none;color:#000;border-radius:6px;padding:11px;font-size:.76rem;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:.2s}
+.modal-save:hover{background:var(--gold-l)}
+.modal-save:disabled{background:var(--card2);color:var(--text3);cursor:default}
+.edit-btn{background:none;border:1px solid var(--border2);color:var(--text3);border-radius:6px;padding:5px 12px;font-size:.62rem;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:.2s;margin-left:auto;display:block;margin-top:10px}
+.edit-btn:hover{color:var(--gold);border-color:rgba(212,175,55,.3)}
 </style>
 </head>
 <body>
 
 <!-- Loading -->
-<div id="st-load" class="on"><div class="spinner"></div><div style="font-size:.8rem;color:var(--text2)">Yuklanmoqda…</div></div>
+<div id="st-load" class="on">
+  <div class="spinner"></div>
+  <div style="font-size:.8rem;color:var(--text2)">Yuklanmoqda…</div>
+</div>
 
 <!-- Error -->
 <div id="st-err">
@@ -180,35 +202,98 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 <!-- App -->
 <div id="st-app">
+  <div class="content">
 
-  <!-- Hero -->
-  <div class="hero">
-    <div class="hero-top">
-      <div class="av-wrap">
-        <img id="av-img" class="av-img" src="" alt="">
-        <div id="av-init" class="av-init"></div>
-        <div class="av-badge" id="av-status">✅</div>
-      </div>
-      <div class="hero-info">
-        <div class="hi-name" id="hi-name">—</div>
-        <div class="hi-un" id="hi-un">—</div>
-        <div class="hi-badges">
-          <span class="badge" id="role-bd"></span>
-          <span class="badge" id="stat-bd"></span>
+    <!-- ════ HOME ════ -->
+    <div class="tp on tab-pad" id="tp-home">
+
+      <!-- User header -->
+      <div class="home-hdr">
+        <div class="home-user">
+          <div class="av-wrap">
+            <img id="av-img" class="av-img" src="" alt="">
+            <div id="av-init" class="av-init"></div>
+            <div class="av-badge" id="av-status">✅</div>
+          </div>
+          <div class="home-greet">
+            <div class="greet-time" id="greet-time">Xayrli kun!</div>
+            <div class="greet-name" id="greet-name">—</div>
+            <span class="badge greet-bd" id="greet-bd"></span>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="stats-row">
-      <div class="stat" onclick="switchTab('clips')"><div class="stat-n" id="sn-clips">—</div><div class="stat-l">Kliplar</div></div>
-      <div class="stat" onclick="switchTab('trns')"><div class="stat-n" id="sn-trns">—</div><div class="stat-l">Turnirlar</div></div>
-      <div class="stat" onclick="switchTab('profile')"><div class="stat-n" id="sn-joined">—</div><div class="stat-l">A'zolik</div></div>
-    </div>
-  </div>
 
-  <!-- Scrollable content -->
-  <div class="content">
-    <!-- Profile tab -->
-    <div class="tp on" id="tp-profile">
+      <!-- Stats row -->
+      <div class="stats-grid">
+        <div class="sg-card" onclick="switchTab('trns')">
+          <div class="sg-n" id="sn-total">—</div>
+          <div class="sg-l">Turnirlar</div>
+        </div>
+        <div class="sg-card" onclick="switchTab('trns')">
+          <div class="sg-n" id="sn-pending">—</div>
+          <div class="sg-l">Kutilmoqda</div>
+        </div>
+        <div class="sg-card" onclick="switchTab('profile')">
+          <div class="sg-n" id="sn-year">—</div>
+          <div class="sg-l">A'zolik</div>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="qa-grid">
+        <a class="qa-card" href="https://t.me/BilliardKingBot" target="_blank">
+          <div class="qa-ico">🎬</div>
+          <div class="qa-lbl">Klip so'rash</div>
+          <div class="qa-sub">Bot orqali buyurtma</div>
+        </a>
+        <div class="qa-card" onclick="switchTab('trns')">
+          <div class="qa-ico">🏆</div>
+          <div class="qa-lbl">Turnirlar</div>
+          <div class="qa-sub">Ro'yxatdan o'tish</div>
+        </div>
+      </div>
+
+      <!-- My active registrations -->
+      <div class="sec-hd">Mening turnirlarim</div>
+      <div id="home-my-trns">
+        <div class="skel" style="height:60px"></div>
+        <div class="skel" style="height:60px"></div>
+      </div>
+      <button class="view-all" onclick="switchTab('trns')">Barcha turnirlar →</button>
+
+    </div><!-- tp-home -->
+
+    <!-- ════ TOURNAMENTS ════ -->
+    <div class="tp tab-pad" id="tp-trns">
+
+      <div class="sec-hd">Ochiq turnirlar</div>
+      <div id="open-trns">
+        <div class="skel" style="height:100px"></div>
+        <div class="skel" style="height:100px"></div>
+      </div>
+
+      <div class="sec-hd" style="margin-top:4px">Mening ro'yxatlarim</div>
+      <div id="my-trns">
+        <div class="skel" style="height:60px"></div>
+        <div class="skel" style="height:60px"></div>
+      </div>
+
+    </div><!-- tp-trns -->
+
+    <!-- ════ PROFILE ════ -->
+    <div class="tp tab-pad" id="tp-profile">
+
+      <div class="profile-hdr">
+        <img id="ph-img" class="ph-av" src="" alt="">
+        <div id="ph-init" class="ph-init"></div>
+        <div class="ph-name" id="ph-name">—</div>
+        <div class="ph-un" id="ph-un">—</div>
+        <div class="ph-badges">
+          <span class="badge" id="ph-role-bd"></span>
+          <span class="badge" id="ph-stat-bd"></span>
+        </div>
+      </div>
+
       <div class="sec-hd">Shaxsiy ma'lumotlar</div>
       <div class="info-card">
         <div class="ic-row">
@@ -232,25 +317,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div><div class="ic-lbl">A'zo bo'lgan sana</div><div class="ic-val" id="ic-joined">—</div></div>
         </div>
       </div>
-      <div class="sync-note">✨ <strong>Avtomatik sinxronizatsiya:</strong> Telegram'dagi ismingizni o'zgartirsangiz, Billiard King'dagi profilingiz ham keyingi kirishda yangilanadi.</div>
-    </div>
+      <div class="sync-note">✨ <strong>Avtomatik sinxronizatsiya:</strong> Telegram'dagi ismingizni o'zgartirsangiz, Billiard King'dagi profilingiz keyingi kirishda yangilanadi.</div>
 
-    <!-- Tournaments tab -->
-    <div class="tp" id="tp-trns">
-      <div class="sec-hd">Ochiq Turnirlar</div>
-      <div id="open-trns"><div class="skel" style="height:90px"></div><div class="skel" style="height:90px"></div></div>
-      <div class="sec-hd">Mening Turnirlarim</div>
-      <div id="my-trns"><div class="loading">Yuklanmoqda…</div></div>
-    </div>
+      <button class="edit-btn" onclick="openNameModal()">✏️ Ismni o'zgartirish</button>
 
-    <!-- Clips tab -->
-    <div class="tp" id="tp-clips">
-      <div class="sec-hd">Klip Tarixi</div>
-      <div id="clips-list"><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div></div>
-    </div>
+    </div><!-- tp-profile -->
 
-    <!-- Settings tab -->
-    <div class="tp" id="tp-settings">
+    <!-- ════ SETTINGS ════ -->
+    <div class="tp tab-pad" id="tp-settings">
+
       <div class="sec-hd">Akkaunt</div>
       <div class="info-card">
         <div class="ic-row">
@@ -261,13 +336,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="ic-icon">🔐</div>
           <div><div class="ic-lbl">Holat</div><div class="ic-val" id="st-active">—</div></div>
         </div>
+        <div class="ic-row">
+          <div class="ic-icon">🆔</div>
+          <div><div class="ic-lbl">Telegram ID</div><div class="ic-val" id="st-tid">—</div></div>
+        </div>
       </div>
 
       <div class="sec-hd">Qo'llab-quvvatlash</div>
       <div class="set-card">
         <a href="https://t.me/BilliardKingBot" target="_blank" class="set-row">
           <div class="set-ico" style="background:rgba(52,152,219,.15)">💬</div>
-          <div class="set-text"><div class="set-lbl">Telegram Bot</div><div class="set-sub">Klip so'rovlari va yordam</div></div>
+          <div class="set-text"><div class="set-lbl">Telegram Bot</div><div class="set-sub">Yordam, klip so'rovlari</div></div>
           <div class="set-arr">›</div>
         </a>
       </div>
@@ -287,16 +366,44 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="set-text"><div class="set-lbl">Chiqish</div><div class="set-sub">Sessiyani tugatish</div></div>
         </button>
       </div>
-    </div>
-  </div>
+
+    </div><!-- tp-settings -->
+
+  </div><!-- .content -->
 
   <!-- Bottom nav -->
   <nav class="bottom-nav">
-    <button class="bn on" data-tab="profile"><div class="bn-ic">👤</div><div class="bn-lb">Profil</div></button>
-    <button class="bn" data-tab="trns"><div class="bn-ic">🏆</div><div class="bn-lb">Turnirlar</div></button>
-    <button class="bn" data-tab="clips"><div class="bn-ic">🎬</div><div class="bn-lb">Kliplar</div></button>
-    <button class="bn" data-tab="settings"><div class="bn-ic">⚙️</div><div class="bn-lb">Sozlamalar</div></button>
+    <button class="bn on" data-tab="home">
+      <div class="bn-ic">🏠</div>
+      <div class="bn-lb">Bosh</div>
+    </button>
+    <button class="bn" data-tab="trns">
+      <div class="bn-ic">🏆</div>
+      <span class="bn-dot" id="bn-dot-trns"></span>
+      <div class="bn-lb">Turnirlar</div>
+    </button>
+    <button class="bn" data-tab="profile">
+      <div class="bn-ic">👤</div>
+      <div class="bn-lb">Profil</div>
+    </button>
+    <button class="bn" data-tab="settings">
+      <div class="bn-ic">⚙️</div>
+      <div class="bn-lb">Sozlamalar</div>
+    </button>
   </nav>
+</div><!-- st-app -->
+
+<!-- Name edit modal -->
+<div class="modal-bg" id="name-modal" onclick="closeNameModal(event)">
+  <div class="modal">
+    <div class="modal-title">✏️ Ismni o'zgartirish</div>
+    <input class="modal-inp" id="inp-fname" type="text" placeholder="Ism *" maxlength="64">
+    <input class="modal-inp" id="inp-lname" type="text" placeholder="Familiya (ixtiyoriy)" maxlength="64">
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeNameModal()">Bekor</button>
+      <button class="modal-save" id="name-save-btn" onclick="saveName()">Saqlash</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -306,23 +413,20 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
 function showState(id) {
-  ['st-load','st-err','st-app'].forEach(s => { $(s).className = s === id ? (s==='st-app'?'on':'') : ''; });
-  if (id==='st-app') $(id).className='on';
-  if (id==='st-load') $(id).className='on';
+  ['st-load','st-err','st-app'].forEach(s => $(s).className = '');
+  $(id).className = 'on';
 }
 
-const ROLE_UZ  = {client:'Mijoz', operator:'Operator', admin:'Admin', superadmin:'Superadmin'};
-const ROLE_BD  = {client:'bd-client', operator:'bd-operator', admin:'bd-admin', superadmin:'bd-superadmin'};
-const TRN_ST   = {registration:'Ro\'yxat', in_progress:'Jarayonda', finished:'Yakunlandi', cancelled:'Bekor'};
-const TRN_DOT  = {registration:'#D4AF37', in_progress:'#3498DB', finished:'#2ECC71', cancelled:'#E74C3C'};
-const REG_ST   = {pending:'rp-pending', approved:'rp-approved', rejected:'rp-rejected'};
-const REG_LBL  = {pending:'⏳ Kutilmoqda', approved:'✅ Tasdiqlandi', rejected:'❌ Rad etildi'};
-const CLIP_ST  = {pending:'Kutilmoqda', paid:'To\'langan', processing:'Jarayonda', done:'Tayyor', failed:'Rad etildi', refunded:'Qaytarildi'};
+const ROLE_UZ = {client:'Mijoz',operator:'Operator',admin:'Admin',superadmin:'Superadmin'};
+const ROLE_BD = {client:'bd-client',operator:'bd-operator',admin:'bd-admin',superadmin:'bd-superadmin'};
+const TRN_ST  = {registration:'Ro\'yxat',in_progress:'Jarayonda',finished:'Yakunlandi',cancelled:'Bekor'};
+const TRN_DOT = {registration:'#D4AF37',in_progress:'#3498DB',finished:'#2ECC71',cancelled:'#E74C3C'};
+const REG_ST  = {pending:'rp-pending',approved:'rp-approved',rejected:'rp-rejected'};
+const REG_LBL = {pending:'⏳ Kutilmoqda',approved:'✅ Tasdiqlandi',rejected:'❌ Rad etildi'};
 
 function fmtDate(s) {
   if (!s) return '—';
-  const d = new Date(s);
-  return d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'numeric'});
+  return new Date(s).toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
 function fmtDT(s) {
   if (!s) return '—';
@@ -330,36 +434,39 @@ function fmtDT(s) {
   return d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'2-digit'})
        + ' ' + d.toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'});
 }
-function yearOf(s) {
-  if (!s) return '—';
-  return new Date(s).getFullYear();
+
+function timeGreeting() {
+  const h = new Date().getHours();
+  if (h < 6)  return 'Xayrli tun! 🌙';
+  if (h < 12) return 'Xayrli tong! ☀️';
+  if (h < 17) return 'Xayrli kun! 👋';
+  if (h < 21) return 'Xayrli kech! 🌆';
+  return 'Xayrli tun! 🌙';
 }
 
 function showToast(msg, type='ok') {
   const t = $('toast');
-  t.textContent = msg; t.className = 'toast '+type;
-  requestAnimationFrame(()=>t.classList.add('show'));
+  t.textContent = msg; t.className = 'toast ' + type;
+  requestAnimationFrame(() => t.classList.add('show'));
   clearTimeout(t._t);
-  t._t = setTimeout(()=>{ t.classList.remove('show'); }, 2800);
+  t._t = setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-// ─── Avatar colors ───
 function avColor(n) {
   const p=['#9b3a2e','#2a6fa8','#277a50','#6d38a8','#a85b20','#1a7a6e','#883060','#47643a'];
-  let h=0; for(let i=0;i<(n||'').length;i++) h=(h*31+n.charCodeAt(i))&0xffffff;
-  return p[Math.abs(h)%p.length];
+  let h = 0;
+  for (let i = 0; i < (n||'').length; i++) h = (h * 31 + n.charCodeAt(i)) & 0xffffff;
+  return p[Math.abs(h) % p.length];
 }
 
-// ─── State ───
 let jwt = null;
 let userData = null;
-let myTrnsMap = {};  // tournament_id → reg object
-let myClips = [];
+let myTrnsMap = {};
 let myTrns = [];
 let openTrns = [];
-let pendingRegs = new Set();  // tournament IDs being registered
+let pendingRegs = new Set();
 
-// ─── AUTH & INIT ───
+// ─── AUTH ───
 async function init() {
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
@@ -377,17 +484,16 @@ async function init() {
 
   try {
     const r = await fetch('/api/auth/tg', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({init_data: initData})
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.error||'Auth xato');
+    if (!r.ok) throw new Error(d.error || 'Auth xato');
     jwt = d.jwt;
     localStorage.setItem('bk_jwt', jwt);
-
-    // Set Telegram photo from initDataUnsafe
     const tgUser = tg?.initDataUnsafe?.user;
-    if (tgUser?.photo_url) setAvatar(tgUser.photo_url);
+    if (tgUser?.photo_url) setAvatars(tgUser.photo_url);
   } catch(e) {
     showState('st-err');
     $('err-ttl').textContent = 'Kirish xatosi';
@@ -396,8 +502,19 @@ async function init() {
   }
 
   try {
-    const r = await fetch('/api/me', { headers: auth() });
-    if (r.status === 401) { localStorage.removeItem('bk_jwt'); showState('st-err'); return; }
+    const r = await fetch('/api/me', {headers: auth()});
+    if (r.status === 401) {
+      showState('st-err');
+      $('err-ttl').textContent = 'Sessiya tugagan';
+      $('err-sub').textContent = 'Qayta kirish uchun botni oching.';
+      return;
+    }
+    if (r.status === 403) {
+      showState('st-err');
+      $('err-ttl').textContent = 'Akkaunt bloklangan';
+      $('err-sub').textContent = 'Qo\'shimcha ma\'lumot uchun admin bilan bog\'laning.';
+      return;
+    }
     if (!r.ok) throw new Error('HTTP ' + r.status);
     userData = await r.json();
   } catch(e) {
@@ -407,119 +524,90 @@ async function init() {
     return;
   }
 
-  renderHero(userData);
+  renderAll(userData);
   showState('st-app');
-
-  // Load data in parallel
-  Promise.all([
-    loadMyClips(),
-    loadMyTrns(),
-    loadOpenTrns()
-  ]);
+  Promise.all([loadMyTrns(), loadOpenTrns()]);
 }
 
-function auth() { return { Authorization: 'Bearer ' + jwt }; }
+function auth() { return {Authorization: 'Bearer ' + jwt}; }
 
-function setAvatar(url) {
-  const img = $('av-img');
-  img.onload = () => { img.style.display='block'; $('av-init').style.display='none'; };
-  img.onerror = () => {};
-  img.src = url;
+function setAvatars(url) {
+  [['av-img','av-init'], ['ph-img','ph-init']].forEach(([imgId, initId]) => {
+    const img = $(imgId);
+    if (!img) return;
+    img.onload = () => { img.style.display = 'block'; $(initId).style.display = 'none'; };
+    img.src = url;
+  });
 }
 
-function renderHero(u) {
+function renderAll(u) {
   const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || '—';
+  const letter = (u.first_name || '?')[0].toUpperCase();
+  const color  = avColor(u.first_name);
 
-  // Avatar initials fallback
-  const init = $('av-init');
-  init.textContent = (u.first_name||'?')[0].toUpperCase();
-  init.style.background = avColor(u.first_name);
-
-  // Status icon
+  // Home header
+  ['av-init','ph-init'].forEach(id => {
+    $(id).textContent = letter;
+    $(id).style.background = color;
+  });
   $('av-status').textContent = u.is_active ? '✅' : '🚫';
+  $('greet-time').textContent = timeGreeting();
+  $('greet-name').textContent = u.first_name || name;
+  const gb = $('greet-bd');
+  gb.textContent = ROLE_UZ[u.role] || u.role;
+  gb.className = 'badge greet-bd ' + (ROLE_BD[u.role] || 'bd-client');
 
-  $('hi-name').textContent = name;
-  $('hi-un').textContent = u.username ? '@'+u.username : 'ID: '+u.tg_id;
+  // Stats (counts filled after loadMyTrns)
+  $('sn-year').textContent = u.created_at ? new Date(u.created_at).getFullYear() : '—';
 
-  const rb = $('role-bd');
-  rb.textContent = ROLE_UZ[u.role]||u.role;
-  rb.className = 'badge '+(ROLE_BD[u.role]||'bd-client');
+  // Profile hero
+  $('ph-name').textContent = name;
+  $('ph-un').textContent = u.username ? '@' + u.username : 'ID: ' + u.tg_id;
+  const prb = $('ph-role-bd');
+  prb.textContent = ROLE_UZ[u.role] || u.role;
+  prb.className = 'badge ' + (ROLE_BD[u.role] || 'bd-client');
+  const psb = $('ph-stat-bd');
+  psb.textContent = u.is_active ? 'Faol' : 'Bloklangan';
+  psb.className = 'badge ' + (u.is_active ? 'bd-active' : 'bd-blocked');
 
-  const sb = $('stat-bd');
-  sb.textContent = u.is_active ? 'Faol' : 'Bloklangan';
-  sb.className = 'badge '+(u.is_active ? 'bd-active' : 'bd-blocked');
-
-  $('sn-joined').textContent = yearOf(u.created_at);
-
-  // Profile tab
+  // Profile info
   $('ic-name').textContent = name;
-  $('ic-un').textContent = u.username ? '@'+u.username : '—';
-  $('ic-tid').textContent = u.tg_id;
+  $('ic-un').textContent   = u.username ? '@' + u.username : '—';
+  $('ic-tid').textContent  = u.tg_id;
   $('ic-phone').textContent = u.phone || '—';
   $('ic-joined').textContent = fmtDate(u.created_at);
 
-  // Settings tab
-  $('st-role').textContent = ROLE_UZ[u.role]||u.role;
+  // Settings
+  $('st-role').textContent   = ROLE_UZ[u.role] || u.role;
   $('st-active').textContent = u.is_active ? '✅ Faol' : '🚫 Bloklangan';
-}
-
-// ─── CLIPS ───
-async function loadMyClips() {
-  try {
-    const r = await fetch('/api/me/clips', { headers: auth() });
-    myClips = r.ok ? (await r.json() || []) : [];
-  } catch(_) { myClips = []; }
-  $('sn-clips').textContent = myClips.length;
-  renderClips();
-}
-
-function renderClips() {
-  const el = $('clips-list');
-  if (!myClips.length) { el.innerHTML='<div class="empty">Hali klip so\'rovlari yo\'q</div>'; return; }
-  el.innerHTML = myClips.map(c => `
-    <div class="clip-item">
-      <div class="clip-dot dot-${c.status}"></div>
-      <div class="clip-info">
-        <div class="clip-title">${esc(c.branch_name)} · Stol ${c.table_num}</div>
-        <div class="clip-sub">${fmtDT(c.start_time)} – ${fmtDT(c.end_time)}${c.notes?' · '+esc(c.notes):''}</div>
-      </div>
-      <div class="clip-pill cp-${c.status}">${CLIP_ST[c.status]||c.status}</div>
-    </div>`).join('');
+  $('st-tid').textContent    = u.tg_id;
 }
 
 // ─── MY TOURNAMENTS ───
 async function loadMyTrns() {
   try {
-    const r = await fetch('/api/me/tournaments', { headers: auth() });
+    const r = await fetch('/api/me/tournaments', {headers: auth()});
     myTrns = r.ok ? (await r.json() || []) : [];
   } catch(_) { myTrns = []; }
-  // Build lookup map
+
   myTrnsMap = {};
   myTrns.forEach(t => { myTrnsMap[t.tournament_id] = t; });
-  $('sn-trns').textContent = myTrns.length;
-  renderMyTrns();
-  renderOpenTrns(); // re-render open list with updated status
-}
 
-function renderMyTrns() {
-  const el = $('my-trns');
-  if (!myTrns.length) { el.innerHTML='<div class="empty">Hali turnirlar yo\'q</div>'; return; }
-  el.innerHTML = myTrns.map(t => {
-    const dot = TRN_DOT[t.tournament_status]||'#888';
-    return `<div class="mtrn-item">
-      <div class="mtrn-dot" style="background:${dot}"></div>
-      <div class="mtrn-info">
-        <div class="mtrn-name">${esc(t.name)}</div>
-        <div class="mtrn-sub">${esc(t.branch_name)} · ${fmtDT(t.scheduled_at)} · ${TRN_ST[t.tournament_status]||t.tournament_status}</div>
-      </div>
-      <span class="reg-pill ${REG_ST[t.reg_status]||'rp-pending'}">${REG_LBL[t.reg_status]||t.reg_status}</span>
-    </div>`;
-  }).join('');
+  const total   = myTrns.length;
+  const pending = myTrns.filter(t => t.reg_status === 'pending').length;
+  $('sn-total').textContent   = total;
+  $('sn-pending').textContent = pending;
+
+  const dot = $('bn-dot-trns');
+  dot.className = 'bn-dot' + (pending > 0 ? ' on' : '');
+
+  renderHomeMyTrns();
+  renderMyTrns();
+  renderOpenTrns();
 }
 
 // ─── OPEN TOURNAMENTS ───
 async function loadOpenTrns() {
-  const el = $('open-trns');
   try {
     const r = await fetch('/api/tournaments?status=registration');
     openTrns = r.ok ? (await r.json() || []) : [];
@@ -527,28 +615,72 @@ async function loadOpenTrns() {
   renderOpenTrns();
 }
 
+// ─── RENDER: Home my trns (active only, max 3) ───
+function renderHomeMyTrns() {
+  const el = $('home-my-trns');
+  const active = myTrns.filter(t => t.tournament_status !== 'finished' && t.tournament_status !== 'cancelled');
+  if (!active.length) {
+    el.innerHTML = '<div class="empty">Hali turnirga ro\'yxatdan o\'tmagansiz</div>';
+    return;
+  }
+  el.innerHTML = active.slice(0, 3).map(t => mregCard(t)).join('');
+}
+
+// ─── RENDER: Tournaments tab - my list ───
+function renderMyTrns() {
+  const el = $('my-trns');
+  if (!myTrns.length) {
+    el.innerHTML = '<div class="empty">Hali turnirlar yo\'q</div>';
+    return;
+  }
+  el.innerHTML = myTrns.map(t => mregCard(t, true)).join('');
+}
+
+function mregCard(t, showBranch) {
+  const dot = TRN_DOT[t.tournament_status] || '#888';
+  const sub = showBranch
+    ? `${esc(t.branch_name||'—')} · ${fmtDT(t.scheduled_at)} · ${TRN_ST[t.tournament_status]||t.tournament_status}`
+    : `${fmtDT(t.scheduled_at)} · ${TRN_ST[t.tournament_status]||t.tournament_status}`;
+  return `<div class="mreg-card">
+    <div class="mreg-dot" style="background:${dot}"></div>
+    <div class="mreg-info">
+      <div class="mreg-name">${esc(t.name)}</div>
+      <div class="mreg-sub">${sub}</div>
+    </div>
+    <span class="reg-pill ${REG_ST[t.reg_status]||'rp-pending'}">${REG_LBL[t.reg_status]||t.reg_status}</span>
+  </div>`;
+}
+
+// ─── RENDER: Open tournaments ───
 function renderOpenTrns() {
   const el = $('open-trns');
-  if (!openTrns.length) { el.innerHTML='<div class="empty">Hozircha ochiq turnirlar yo\'q</div>'; return; }
+  if (!openTrns.length) {
+    el.innerHTML = '<div class="empty">Hozircha ochiq turnirlar yo\'q</div>';
+    return;
+  }
   el.innerHTML = openTrns.map(t => {
     const reg = myTrnsMap[t.id];
-    const fill = Math.min(100, Math.round((t.registered/t.max_players)*100));
-    const isFull = t.registered >= t.max_players;
+    const fill = Math.min(100, Math.round(((t.registered||0) / t.max_players) * 100));
+    const isFull = (t.registered||0) >= t.max_players;
     let action = '';
     if (reg) {
       action = `<span class="reg-pill ${REG_ST[reg.reg_status]||'rp-pending'}">${REG_LBL[reg.reg_status]||'Ro\'yxatda'}</span>`;
     } else if (pendingRegs.has(t.id)) {
       action = `<span class="reg-pill rp-pending">⏳ Yuborildi</span>`;
     } else {
-      action = `<button class="reg-btn" ${isFull?'disabled':''} onclick="registerTrn(${t.id},this)">${isFull?'To\'ldi':'📝 Ro\'yxatdan o\'tish'}</button>`;
+      action = `<button class="reg-btn" ${isFull?'disabled':''} onclick="registerTrn(${t.id},this)">${isFull ? 'To\'ldi' : '📝 Ro\'yxat'}</button>`;
     }
+    const typeLabel = t.type === 'double_elimination' ? 'DE' : t.type === 'round_robin' ? 'RR' : 'SE';
     return `<div class="trn-card">
       <div class="tc-body">
-        <div class="tc-name">${esc(t.name)}</div>
+        <div class="tc-top">
+          <div class="tc-name">${esc(t.name)}</div>
+          <div class="tc-type">${typeLabel}</div>
+        </div>
         <div class="tc-meta">
           <span>📅 ${fmtDT(t.scheduled_at)}</span>
           <span>🏢 ${esc(t.branch_name||'—')}</span>
-          ${t.price>0 ? `<span>💰 ${t.price.toLocaleString()} so'm</span>` : '<span>🆓 Bepul</span>'}
+          ${t.price > 0 ? `<span>💰 ${t.price.toLocaleString()} so'm</span>` : '<span>🆓 Bepul</span>'}
         </div>
       </div>
       <div class="tc-foot">
@@ -562,13 +694,14 @@ function renderOpenTrns() {
   }).join('');
 }
 
+// ─── REGISTER ───
 async function registerTrn(trnId, btn) {
-  if (!jwt) { showToast('Avval kiring','err'); return; }
   btn.disabled = true;
   btn.textContent = '…';
   try {
     const r = await fetch(`/api/me/tournaments/${trnId}/register`, {
-      method:'POST', headers:{...auth(),'Content-Type':'application/json'}
+      method: 'POST',
+      headers: {...auth(), 'Content-Type': 'application/json'}
     });
     const d = await r.json();
     if (r.ok) {
@@ -576,21 +709,23 @@ async function registerTrn(trnId, btn) {
       showToast('✅ So\'rovingiz yuborildi!');
       loadMyTrns();
     } else {
-      showToast(d.error||'Xatolik yuz berdi','err');
+      showToast(d.error || 'Xatolik yuz berdi', 'err');
       renderOpenTrns();
     }
   } catch(e) {
-    showToast('Tarmoq xatosi','err');
+    showToast('Tarmoq xatosi', 'err');
     renderOpenTrns();
   }
 }
 
 // ─── TABS ───
 function switchTab(name) {
-  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.bn').forEach(b=>b.classList.remove('on'));
-  $('tp-'+name)?.classList.add('on');
+  document.querySelectorAll('.tp').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.bn').forEach(b => b.classList.remove('on'));
+  $('tp-' + name)?.classList.add('on');
   document.querySelector(`.bn[data-tab="${name}"]`)?.classList.add('on');
+  // Scroll to top on tab switch
+  document.querySelector('.content')?.scrollTo(0, 0);
 }
 
 document.querySelectorAll('.bn').forEach(b => {
@@ -602,7 +737,53 @@ function logout() {
   location.href = '/';
 }
 
-// ─── SHOW LOADING STATE ───
+// ─── NAME EDIT ───
+function openNameModal() {
+  $('inp-fname').value = userData?.first_name || '';
+  $('inp-lname').value = userData?.last_name  || '';
+  $('name-modal').classList.add('on');
+  setTimeout(() => $('inp-fname').focus(), 250);
+}
+
+function closeNameModal(e) {
+  if (e && e.target !== $('name-modal')) return;
+  $('name-modal').classList.remove('on');
+}
+
+async function saveName() {
+  const first = $('inp-fname').value.trim();
+  const last  = $('inp-lname').value.trim();
+  if (!first) { showToast('Ism kiritish shart', 'err'); $('inp-fname').focus(); return; }
+
+  const btn = $('name-save-btn');
+  btn.disabled = true; btn.textContent = '…';
+
+  try {
+    const r = await fetch('/api/me/profile', {
+      method: 'PUT',
+      headers: {...auth(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({first_name: first, last_name: last})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Xatolik');
+
+    // Update local userData and re-render
+    userData.first_name = first;
+    userData.last_name  = last;
+    renderAll(userData);
+    // Re-apply avatar if it was set
+    const img = $('av-img');
+    if (img.src && img.style.display !== 'none') setAvatars(img.src);
+
+    $('name-modal').classList.remove('on');
+    showToast('✅ Ism yangilandi!');
+  } catch(e) {
+    showToast(e.message, 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Saqlash';
+  }
+}
+
 showState('st-load');
 init().catch(e => {
   showState('st-err');
