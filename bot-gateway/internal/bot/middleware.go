@@ -197,6 +197,8 @@ func sendWithKeyboard(bot *tgbotapi.BotAPI, chatID int64, text string, kb interf
 		msg.ReplyMarkup = k
 	case tgbotapi.ReplyKeyboardRemove:
 		msg.ReplyMarkup = k
+	case replyKeyboard:
+		msg.ReplyMarkup = k
 	}
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("sendWithKeyboard error: %v", err)
