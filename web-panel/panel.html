@@ -295,42 +295,46 @@ function logout() {
 async function init() {
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
-  jwt = localStorage.getItem('bk_jwt');
 
   // initData: from WebApp API or from URL hash (Telegram Desktop fallback)
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
   const rawHashData = hashParams.get('tgWebAppData');
   const initData = (tg?.initData) || (rawHashData ? decodeURIComponent(rawHashData) : '');
 
-  if (initData) {
-    try {
-      const r = await fetch('/api/auth/tg', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({init_data: initData})
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Auth xato: ' + r.status);
-      jwt = data.jwt;
-      localStorage.setItem('bk_jwt', jwt);
-    } catch(e) {
-      show('state-error');
-      $('err-title').textContent = 'Kirish xatosi';
-      $('err-sub').textContent = e.message;
-      return;
-    }
+  if (!initData) {
+    show('state-error');
+    $('err-title').textContent = '🔒 Telegram orqali kirish kerak';
+    $('err-sub').textContent = 'Bu panel faqat Telegram ilovasidan ochiladi. Botga o\'ting va menyudan foydalaning.';
+    return;
   }
 
-  if (!jwt) {
+  try {
+    const r = await fetch('/api/auth/tg', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({init_data: initData})
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Auth xato: ' + r.status);
+    jwt = data.jwt;
+    localStorage.setItem('bk_jwt', jwt);
+  } catch(e) {
     show('state-error');
-    $('err-title').textContent = 'Telegram orqali kiring';
-    $('err-sub').textContent = 'Bu panel faqat Telegram bot orqali ochiladi.';
+    $('err-title').textContent = 'Kirish xatosi';
+    $('err-sub').textContent = e.message;
     return;
   }
 
   // Parse JWT payload for role/name
   try {
     const payload = JSON.parse(atob(jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+
+    // Clients belong on /me, not the admin panel
+    if (payload.role === 'client') {
+      window.location.replace('/me');
+      return;
+    }
+
     isSuperadmin = payload.role === 'superadmin';
     $('nav-user').textContent = (ROLE_UZ[payload.role] || payload.role) + ' · ' + payload.tg_id;
     $('hero-sub').textContent = 'Billiard King — ' + (ROLE_UZ[payload.role] || payload.role);

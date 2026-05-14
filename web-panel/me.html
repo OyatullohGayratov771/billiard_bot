@@ -364,38 +364,34 @@ async function init() {
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
 
-  jwt = localStorage.getItem('bk_jwt');
-
   const hp = new URLSearchParams(window.location.hash.slice(1));
   const raw = hp.get('tgWebAppData');
   const initData = (tg?.initData) || (raw ? decodeURIComponent(raw) : '');
 
-  if (initData) {
-    try {
-      const r = await fetch('/api/auth/tg', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({init_data: initData})
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error||'Auth xato');
-      jwt = d.jwt;
-      localStorage.setItem('bk_jwt', jwt);
-
-      // Set Telegram photo from initDataUnsafe
-      const tgUser = tg?.initDataUnsafe?.user;
-      if (tgUser?.photo_url) setAvatar(tgUser.photo_url);
-    } catch(e) {
-      showState('st-err');
-      $('err-ttl').textContent = 'Kirish xatosi';
-      $('err-sub').textContent = e.message;
-      return;
-    }
+  if (!initData) {
+    showState('st-err');
+    $('err-ttl').textContent = '🔒 Telegram orqali kirish kerak';
+    $('err-sub').textContent = 'Bu sahifa faqat Telegram ilovasidan ochiladi. Botga o\'ting va menyudan foydalaning.';
+    return;
   }
 
-  if (!jwt) {
+  try {
+    const r = await fetch('/api/auth/tg', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({init_data: initData})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error||'Auth xato');
+    jwt = d.jwt;
+    localStorage.setItem('bk_jwt', jwt);
+
+    // Set Telegram photo from initDataUnsafe
+    const tgUser = tg?.initDataUnsafe?.user;
+    if (tgUser?.photo_url) setAvatar(tgUser.photo_url);
+  } catch(e) {
     showState('st-err');
-    $('err-ttl').textContent = 'Telegram orqali kiring';
-    $('err-sub').textContent = 'Bu sahifa faqat Telegram bot orqali ochiladi.';
+    $('err-ttl').textContent = 'Kirish xatosi';
+    $('err-sub').textContent = e.message;
     return;
   }
 
