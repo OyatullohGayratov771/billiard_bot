@@ -438,25 +438,25 @@ func (h *Handler) adminTournaments(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) adminUsers(w http.ResponseWriter, r *http.Request) {
 	search := strings.TrimSpace(r.URL.Query().Get("q"))
+	roleFilter := strings.TrimSpace(r.URL.Query().Get("role"))
 
-	var (
-		rows *sql.Rows
-		err  error
-	)
+	q := `SELECT telegram_id, first_name, COALESCE(last_name,''), COALESCE(username,''),
+	             role, is_active, created_at FROM users WHERE 1=1`
+	var args []any
+
 	if search != "" {
-		like := "%" + search + "%"
-		rows, err = h.db.Query(`
-			SELECT telegram_id, first_name, COALESCE(last_name,''), COALESCE(username,''),
-			       role, is_active, created_at
-			FROM users
-			WHERE first_name ILIKE $1 OR username ILIKE $1
-			ORDER BY created_at DESC LIMIT 100`, like)
-	} else {
-		rows, err = h.db.Query(`
-			SELECT telegram_id, first_name, COALESCE(last_name,''), COALESCE(username,''),
-			       role, is_active, created_at
-			FROM users ORDER BY created_at DESC LIMIT 100`)
+		args = append(args, "%"+search+"%")
+		n := strconv.Itoa(len(args))
+		q += " AND (first_name ILIKE $" + n + " OR username ILIKE $" + n + ")"
 	}
+	validRoles := map[string]bool{"client": true, "operator": true, "admin": true, "superadmin": true}
+	if roleFilter != "" && validRoles[roleFilter] {
+		args = append(args, roleFilter)
+		q += " AND role=$" + strconv.Itoa(len(args))
+	}
+	q += " ORDER BY created_at DESC LIMIT 200"
+
+	rows, err := h.db.Query(q, args...)
 	if err != nil {
 		writeErr(w, 500, err.Error())
 		return

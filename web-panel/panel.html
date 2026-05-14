@@ -98,6 +98,63 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .foot-logo img{height:24px;opacity:.3}
 .foot-r{font-size:.6rem;color:var(--text3)}
+
+/* ─── USERS TAB ─── */
+.role-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.role-chip{padding:5px 14px;border-radius:20px;font-size:.62rem;font-weight:700;letter-spacing:.8px;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--text3);transition:.2s;white-space:nowrap}
+.role-chip:hover{border-color:var(--gold);color:var(--gold)}
+.role-chip.active{background:rgba(212,175,55,.12);border-color:var(--gold);color:var(--gold)}
+.chip-cnt{font-size:.55rem;opacity:.65;margin-left:5px;font-variant-numeric:tabular-nums}
+
+.user-search-bar{display:flex;gap:8px;margin-bottom:18px;align-items:center}
+.search-wrap{flex:1;display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--border2);border-radius:3px;padding:8px 13px;transition:.2s}
+.search-wrap:focus-within{border-color:rgba(212,175,55,.4)}
+.search-wrap input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:.76rem;font-family:inherit}
+.search-wrap input::placeholder{color:var(--text3)}
+.u-refresh{background:var(--card);border:1px solid var(--border2);color:var(--text3);width:37px;height:37px;border-radius:3px;cursor:pointer;font-size:1rem;transition:.2s;flex-shrink:0}
+.u-refresh:hover{color:var(--gold);border-color:var(--gold)}
+
+.user-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:960px){.user-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:540px){.user-grid{grid-template-columns:1fr}}
+
+.user-card{background:var(--card);border:1px solid var(--border2);border-radius:5px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s,transform .2s}
+.user-card:hover{border-color:rgba(212,175,55,.3);transform:translateY(-1px)}
+.uc-top{padding:14px 14px 10px;display:flex;gap:10px;align-items:flex-start}
+.uc-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:900;color:#fff;flex-shrink:0;text-transform:uppercase;letter-spacing:0}
+.uc-info{flex:1;min-width:0}
+.uc-name{font-weight:700;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.uc-un{font-size:.68rem;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uc-tid{font-size:.58rem;color:var(--text3);margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:.3px}
+.uc-pills{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0}
+.uc-foot{padding:9px 14px;border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
+.uc-date{font-size:.58rem;color:var(--text3)}
+.uc-acts{display:flex;gap:5px;align-items:center}
+.role-sel-u{background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:4px 6px;border-radius:3px;font-size:.64rem;cursor:pointer;outline:none;transition:border-color .2s;font-family:inherit}
+.role-sel-u:hover,.role-sel-u:focus{border-color:rgba(212,175,55,.4)}
+.act-tog{width:30px;height:28px;border-radius:3px;border:1px solid;background:transparent;cursor:pointer;font-size:.82rem;line-height:1;transition:.2s;flex-shrink:0}
+.act-tog.is-active{color:var(--red);border-color:rgba(231,76,60,.35)}
+.act-tog.is-active:hover{background:rgba(231,76,60,.1)}
+.act-tog.is-blocked{color:var(--green);border-color:rgba(46,204,113,.35)}
+.act-tog.is-blocked:hover{background:rgba(46,204,113,.1)}
+.act-tog.is-confirm{color:#f0c030;border-color:rgba(240,192,48,.5);width:auto;padding:0 7px;font-size:.58rem;font-weight:700}
+
+.skel{background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);background-size:200% 100%;animation:skel 1.4s ease infinite;border-radius:4px}
+@keyframes skel{from{background-position:200% 0}to{background-position:-200% 0}}
+.skel-uc{height:120px}
+
+.pagination{display:flex;align-items:center;justify-content:center;gap:5px;padding:22px 0 0;flex-wrap:wrap}
+.pg-btn{padding:5px 11px;border-radius:3px;font-size:.64rem;font-weight:700;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--text3);transition:.2s;min-width:32px;text-align:center}
+.pg-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.pg-btn.cur{background:rgba(212,175,55,.12);border-color:var(--gold);color:var(--gold)}
+.pg-btn:disabled{opacity:.3;cursor:default}
+.pg-info{font-size:.6rem;color:var(--text3);padding:0 6px}
+
+.toast{position:fixed;bottom:28px;right:24px;padding:10px 18px;border-radius:4px;font-size:.75rem;font-weight:600;z-index:9999;transform:translateY(16px);opacity:0;transition:.25s;pointer-events:none;max-width:300px;line-height:1.4}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:#0f2d1e;border:1px solid var(--green);color:var(--green)}
+.toast.err{background:#2d0f0f;border:1px solid var(--red);color:var(--red)}
+.toast.warn{background:#2d1f0f;border:1px solid var(--orange);color:var(--orange)}
 </style>
 </head>
 <body>
@@ -178,25 +235,22 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
 
   <!-- USERS TAB -->
   <div class="tab-pane" id="tab-users">
-    <div class="filter-row">
-      <input type="text" id="user-search" placeholder="🔍  Ism yoki username bo'yicha qidirish…"
-             style="flex:1;min-width:200px;background:var(--card);border:1px solid var(--border2);color:var(--text);padding:6px 12px;border-radius:2px;font-size:.74rem;outline:none"
-             oninput="searchUsers(this.value)">
+    <div class="role-chips">
+      <button class="role-chip active" data-role="">Barcha <span class="chip-cnt" id="chip-all">—</span></button>
+      <button class="role-chip" data-role="client">Mijoz <span class="chip-cnt" id="chip-cl">—</span></button>
+      <button class="role-chip" data-role="operator">Operator <span class="chip-cnt" id="chip-op">—</span></button>
+      <button class="role-chip" data-role="admin">Admin <span class="chip-cnt" id="chip-ad">—</span></button>
+      <button class="role-chip" data-role="superadmin">Superadmin <span class="chip-cnt" id="chip-sa">—</span></button>
     </div>
-    <div class="table-wrap">
-      <table class="data-table" id="users-table">
-        <thead><tr>
-          <th>TG ID</th>
-          <th>Ism</th>
-          <th>Username</th>
-          <th>Rol</th>
-          <th>Holat</th>
-          <th>Qo'shilgan</th>
-          <th id="actions-th" style="display:none">Amallar</th>
-        </tr></thead>
-        <tbody id="users-body"><tr><td colspan="7" class="loading-note">Yuklanmoqda…</td></tr></tbody>
-      </table>
+    <div class="user-search-bar">
+      <div class="search-wrap">
+        <svg width="14" height="14" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="user-search" placeholder="Ism yoki username bo'yicha qidirish…" oninput="searchUsers(this.value)" autocomplete="off">
+      </div>
+      <button class="u-refresh" onclick="refreshUsers()" title="Yangilash">↺</button>
     </div>
+    <div class="user-grid" id="user-grid"></div>
+    <div class="pagination" id="user-pg"></div>
   </div>
 </div>
 
@@ -225,6 +279,13 @@ let isSuperadmin = false;
 let searchTimer = null;
 const ROLES = ['client', 'operator', 'admin', 'superadmin'];
 const ROLE_UZ = {client:'Mijoz', operator:'Operator', admin:'Admin', superadmin:'Superadmin'};
+
+// users state
+let allUsers = [];
+let currentRoleFilter = '';
+let currentSearchQ = '';
+let currentPage = 1;
+const PAGE_SIZE = 18;
 
 function logout() {
   localStorage.removeItem('bk_jwt');
@@ -351,81 +412,193 @@ async function loadTournaments() {
   } catch(e) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Xatolik</td></tr>'; }
 }
 
-async function loadUsers(search = '') {
-  const body = $('users-body');
-  const cols = isSuperadmin ? 7 : 6;
-  body.innerHTML = `<tr><td colspan="${cols}" class="loading-note">Yuklanmoqda…</td></tr>`;
+// ─── Toast ───
+function showToast(msg, type='ok') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 280); }, 2600);
+}
+
+// ─── Users helpers ───
+function avatarBg(name) {
+  const pal = ['#b8442e','#2a7fbf','#27975a','#7a3dbf','#c46020','#1a8a7a','#9e3060','#4a6741'];
+  let h = 0; for (let i=0; i<(name||'').length; i++) h = (h*31+name.charCodeAt(i))&0xffffff;
+  return pal[Math.abs(h)%pal.length];
+}
+function fl(s){ return ((s||'?')[0]).toUpperCase(); }
+function fmtShort(s){
+  if(!s) return '—';
+  const d=new Date(s);
+  return d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+function showSkelUsers(){
+  $('user-grid').innerHTML=Array(9).fill('<div class="skel skel-uc"></div>').join('');
+  $('user-pg').innerHTML='';
+}
+
+async function loadUsers(search='', role='') {
+  showSkelUsers();
   try {
-    const url = '/api/admin/users' + (search ? '?q=' + encodeURIComponent(search) : '');
-    const r = await fetch(url, { headers: auth() });
-    const list = r.ok ? await r.json() : [];
-    if (!list.length) {
-      body.innerHTML = `<tr><td colspan="${cols}" class="empty-note">Foydalanuvchilar topilmadi</td></tr>`;
-      return;
-    }
-    body.innerHTML = list.map(u => {
-      const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || '—';
-      const roleCell = isSuperadmin
-        ? `<select class="role-sel" data-tgid="${u.tg_id}" onchange="setRole(this)" style="background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:3px 6px;border-radius:2px;font-size:.7rem;cursor:pointer">
-            ${ROLES.map(ro => `<option value="${ro}"${u.role===ro?' selected':''}>${ROLE_UZ[ro]}</option>`).join('')}
-           </select>`
-        : `<span class="status-pill sp-${u.role}">${ROLE_UZ[u.role]||u.role}</span>`;
-      const activeCell = `<span class="status-pill ${u.is_active ? 'sp-done' : 'sp-failed'}">${u.is_active ? 'Faol' : 'Bloklangan'}</span>`;
-      const actionsCell = isSuperadmin
-        ? `<td><button onclick="toggleActive(${u.tg_id},${!u.is_active})" style="background:var(--card2);border:1px solid var(--border2);color:${u.is_active?'var(--red)':'var(--green)'};padding:3px 10px;border-radius:2px;font-size:.62rem;cursor:pointer;white-space:nowrap">${u.is_active ? '🚫 Bloklash' : '✅ Faollashtirish'}</button></td>`
-        : '';
-      return `<tr>
-        <td style="font-size:.68rem;color:var(--text2)">${u.tg_id}</td>
-        <td class="name-cell">${esc(name)}</td>
-        <td>${u.username ? '@'+esc(u.username) : '—'}</td>
-        <td>${roleCell}</td>
-        <td>${activeCell}</td>
-        <td>${fmtDate(u.created_at)}</td>
-        ${actionsCell}
-      </tr>`;
-    }).join('');
-  } catch(e) {
-    body.innerHTML = `<tr><td colspan="${isSuperadmin ? 7 : 6}" class="empty-note">Xatolik: ${esc(e.message)}</td></tr>`;
+    const p=[];
+    if(search) p.push('q='+encodeURIComponent(search));
+    if(role) p.push('role='+encodeURIComponent(role));
+    const url='/api/admin/users'+(p.length?'?'+p.join('&'):'');
+    const r=await fetch(url,{headers:auth()});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    allUsers=await r.json();
+  } catch(e){
+    $('user-grid').innerHTML=`<div class="empty-note" style="grid-column:1/-1">Xatolik: ${esc(e.message)}</div>`;
+    return;
   }
+  updateChipCounts();
+  currentPage=1;
+  renderUserPage();
 }
 
-async function setRole(sel) {
-  const tgid = sel.dataset.tgid;
-  const role = sel.value;
-  try {
-    const r = await fetch(`/api/admin/users/${tgid}/role`, {
-      method: 'PUT',
-      headers: {...auth(), 'Content-Type': 'application/json'},
-      body: JSON.stringify({role})
-    });
-    if (!r.ok) {
-      const d = await r.json();
-      alert('Xatolik: ' + (d.error || r.status));
-      loadUsers($('user-search').value);
-    }
-  } catch(e) {
-    alert('Tarmoq xatosi');
-    loadUsers($('user-search').value);
+function updateChipCounts(){
+  const c={client:0,operator:0,admin:0,superadmin:0};
+  allUsers.forEach(u=>{ if(c[u.role]!==undefined) c[u.role]++; });
+  $('chip-all').textContent=allUsers.length;
+  $('chip-cl').textContent=c.client;
+  $('chip-op').textContent=c.operator;
+  $('chip-ad').textContent=c.admin;
+  $('chip-sa').textContent=c.superadmin;
+}
+
+function filteredUsers(){
+  return currentRoleFilter ? allUsers.filter(u=>u.role===currentRoleFilter) : allUsers;
+}
+
+function renderUserPage(){
+  const list=filteredUsers();
+  const total=list.length;
+  const pages=Math.ceil(total/PAGE_SIZE)||1;
+  if(currentPage>pages) currentPage=pages;
+  const slice=list.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+  const g=$('user-grid');
+
+  if(!slice.length){
+    g.innerHTML='<div class="empty-note" style="grid-column:1/-1">Foydalanuvchilar topilmadi</div>';
+    $('user-pg').innerHTML='';
+    return;
   }
+
+  g.innerHTML=slice.map(u=>{
+    const name=[u.first_name,u.last_name].filter(Boolean).join(' ')||'—';
+    const roleOpts=ROLES.map(ro=>`<option value="${ro}"${u.role===ro?' selected':''}>${ROLE_UZ[ro]}</option>`).join('');
+    const acts=isSuperadmin?`
+      <div class="uc-acts">
+        <select class="role-sel-u" data-tgid="${u.tg_id}" onchange="setRole(this)">${roleOpts}</select>
+        <button class="act-tog ${u.is_active?'is-active':'is-blocked'}"
+                onclick="confirmToggle(${u.tg_id},${u.is_active},this)"
+                title="${u.is_active?'Bloklash':'Faollashtirish'}">${u.is_active?'🚫':'✅'}</button>
+      </div>`:'';
+    return `<div class="user-card" id="uc-${u.tg_id}">
+      <div class="uc-top">
+        <div class="uc-av" style="background:${avatarBg(u.first_name)}">${fl(u.first_name)}</div>
+        <div class="uc-info">
+          <div class="uc-name" title="${esc(name)}">${esc(name)}</div>
+          <div class="uc-un">${u.username?'@'+esc(u.username):'—'}</div>
+          <div class="uc-tid">${u.tg_id}</div>
+        </div>
+        <div class="uc-pills">
+          <span class="status-pill sp-${u.role}">${ROLE_UZ[u.role]||u.role}</span>
+          <span class="status-pill ${u.is_active?'sp-done':'sp-failed'}">${u.is_active?'Faol':'Blok'}</span>
+        </div>
+      </div>
+      <div class="uc-foot">
+        <div class="uc-date">${fmtShort(u.created_at)}</div>
+        ${acts}
+      </div>
+    </div>`;
+  }).join('');
+
+  renderPg(pages, total);
 }
 
-async function toggleActive(tgid, active) {
-  const label = active ? 'faollashtirmoqchimisiz' : 'bloklamoqchimisiz';
-  if (!confirm(`Foydalanuvchini ${label}?`)) return;
-  try {
-    const r = await fetch(`/api/admin/users/${tgid}/active`, {
-      method: 'PUT',
-      headers: {...auth(), 'Content-Type': 'application/json'},
-      body: JSON.stringify({active})
-    });
-    if (r.ok) loadUsers($('user-search').value);
-    else alert('Xatolik');
-  } catch(e) { alert('Tarmoq xatosi'); }
+function renderPg(pages, total){
+  const el=$('user-pg');
+  if(pages<=1){
+    el.innerHTML=`<span class="pg-info">${total} ta foydalanuvchi</span>`;
+    return;
+  }
+  let h=`<button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>←</button>`;
+  for(let i=1;i<=pages;i++){
+    if(pages>7 && Math.abs(i-currentPage)>2 && i!==1 && i!==pages){
+      if(i===currentPage-3||i===currentPage+3) h+=`<span class="pg-info">…</span>`;
+      continue;
+    }
+    h+=`<button class="pg-btn${i===currentPage?' cur':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  h+=`<button class="pg-btn" onclick="goPage(${currentPage+1})" ${currentPage>=pages?'disabled':''}>→</button>`;
+  h+=`<span class="pg-info">${total} ta</span>`;
+  el.innerHTML=h;
 }
 
-function searchUsers(q) {
+function goPage(n){
+  const pages=Math.ceil(filteredUsers().length/PAGE_SIZE)||1;
+  if(n<1||n>pages) return;
+  currentPage=n;
+  renderUserPage();
+  $('tab-users').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function searchUsers(q){
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadUsers(q), 350);
+  currentSearchQ=q;
+  searchTimer=setTimeout(()=>{ currentPage=1; loadUsers(q,currentRoleFilter); },350);
+}
+
+function refreshUsers(){ loadUsers(currentSearchQ,currentRoleFilter); }
+
+async function setRole(sel){
+  const tgid=sel.dataset.tgid, role=sel.value;
+  try {
+    const r=await fetch(`/api/admin/users/${tgid}/role`,{
+      method:'PUT', headers:{...auth(),'Content-Type':'application/json'},
+      body:JSON.stringify({role})
+    });
+    if(r.ok){
+      const u=allUsers.find(x=>String(x.tg_id)===String(tgid));
+      if(u){ u.role=role; updateChipCounts(); renderUserPage(); }
+      showToast('Rol o\'zgartirildi: '+ROLE_UZ[role]);
+    } else {
+      const d=await r.json(); showToast(d.error||'Xatolik','err');
+      loadUsers(currentSearchQ,currentRoleFilter);
+    }
+  } catch(e){ showToast('Tarmoq xatosi','err'); }
+}
+
+function confirmToggle(tgid, isActive, btn){
+  if(!btn.dataset.confirm){
+    btn.dataset.confirm='1';
+    const orig=btn.textContent;
+    btn.className='act-tog is-confirm';
+    btn.textContent=isActive?'Bloklash?':'Faollashtirish?';
+    btn._t=setTimeout(()=>{
+      if(btn.dataset.confirm){ delete btn.dataset.confirm; btn.className='act-tog '+(isActive?'is-active':'is-blocked'); btn.textContent=orig; }
+    },3000);
+    return;
+  }
+  clearTimeout(btn._t); delete btn.dataset.confirm;
+  toggleActive(tgid,!isActive);
+}
+
+async function toggleActive(tgid, active){
+  try {
+    const r=await fetch(`/api/admin/users/${tgid}/active`,{
+      method:'PUT', headers:{...auth(),'Content-Type':'application/json'},
+      body:JSON.stringify({active})
+    });
+    if(r.ok){
+      const u=allUsers.find(x=>String(x.tg_id)===String(tgid));
+      if(u){ u.is_active=active; renderUserPage(); }
+      showToast(active?'Foydalanuvchi faollashtirildi':'Foydalanuvchi bloklandi', active?'ok':'warn');
+    } else { const d=await r.json(); showToast(d.error||'Xatolik','err'); }
+  } catch(e){ showToast('Tarmoq xatosi','err'); }
 }
 
 async function refresh() {
@@ -441,7 +614,7 @@ async function refresh() {
   const active = document.querySelector('.tab.active')?.dataset?.tab;
   if (active === 'clips') loadClips(currentClipStatus);
   else if (active === 'tournaments') loadTournaments();
-  else if (active === 'users') loadUsers($('user-search')?.value || '');
+  else if (active === 'users') refreshUsers();
 }
 
 // Tabs
@@ -452,7 +625,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'tournaments') loadTournaments();
-    else if (tab.dataset.tab === 'users') loadUsers();
+    else if (tab.dataset.tab === 'users') loadUsers(currentSearchQ, currentRoleFilter);
     else loadClips(currentClipStatus);
   });
 });
@@ -463,6 +636,17 @@ document.querySelectorAll('.filter-btn[data-status]').forEach(btn => {
     document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     loadClips(btn.dataset.status);
+  });
+});
+
+// Role chip filters
+document.querySelectorAll('.role-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    currentRoleFilter = chip.dataset.role;
+    currentPage = 1;
+    renderUserPage();
   });
 });
 
