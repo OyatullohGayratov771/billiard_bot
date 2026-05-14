@@ -178,10 +178,23 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
 
   <!-- USERS TAB -->
   <div class="tab-pane" id="tab-users">
+    <div class="filter-row">
+      <input type="text" id="user-search" placeholder="🔍  Ism yoki username bo'yicha qidirish…"
+             style="flex:1;min-width:200px;background:var(--card);border:1px solid var(--border2);color:var(--text);padding:6px 12px;border-radius:2px;font-size:.74rem;outline:none"
+             oninput="searchUsers(this.value)">
+    </div>
     <div class="table-wrap">
-      <table class="data-table">
-        <thead><tr><th>ID</th><th>Ism</th><th>Username</th><th>Rol</th><th>Qo'shilgan</th></tr></thead>
-        <tbody id="users-body"><tr><td colspan="5" class="loading-note">Yuklanmoqda…</td></tr></tbody>
+      <table class="data-table" id="users-table">
+        <thead><tr>
+          <th>TG ID</th>
+          <th>Ism</th>
+          <th>Username</th>
+          <th>Rol</th>
+          <th>Holat</th>
+          <th>Qo'shilgan</th>
+          <th id="actions-th" style="display:none">Amallar</th>
+        </tr></thead>
+        <tbody id="users-body"><tr><td colspan="7" class="loading-note">Yuklanmoqda…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -208,6 +221,10 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 
 let jwt = null;
 let currentClipStatus = '';
+let isSuperadmin = false;
+let searchTimer = null;
+const ROLES = ['client', 'operator', 'admin', 'superadmin'];
+const ROLE_UZ = {client:'Mijoz', operator:'Operator', admin:'Admin', superadmin:'Superadmin'};
 
 function logout() {
   localStorage.removeItem('bk_jwt');
@@ -218,7 +235,6 @@ async function init() {
   const tg = window.Telegram?.WebApp;
   jwt = localStorage.getItem('bk_jwt');
 
-  // If opened from Telegram Mini App, exchange initData for fresh JWT
   if (tg?.initData) {
     try {
       const r = await fetch('/api/auth/tg', {
@@ -240,6 +256,17 @@ async function init() {
 
   if (!jwt) { show('state-error'); return; }
 
+  // Parse JWT payload for role/name
+  try {
+    const payload = JSON.parse(atob(jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    isSuperadmin = payload.role === 'superadmin';
+    $('nav-user').textContent = (ROLE_UZ[payload.role] || payload.role) + ' · ' + payload.tg_id;
+    $('hero-sub').textContent = 'Billiard King — ' + (ROLE_UZ[payload.role] || payload.role);
+    if (isSuperadmin) {
+      $('actions-th').style.display = '';
+    }
+  } catch(_){}
+
   // Verify & load stats
   try {
     const r = await fetch('/api/admin/stats', { headers: auth() });
@@ -259,13 +286,6 @@ async function init() {
     $('err-title').textContent = 'Server xatosi';
     return;
   }
-
-  // Parse JWT payload for name display
-  try {
-    const payload = JSON.parse(atob(jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-    $('nav-user').textContent = payload.role + ' · ' + payload.tg_id;
-    $('hero-sub').textContent = 'Billiard King — ' + (payload.role === 'superadmin' ? 'Superadmin' : 'Admin');
-  } catch(_){}
 
   show('state-main');
   loadClips('');
@@ -310,21 +330,81 @@ async function loadTournaments() {
   } catch(e) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Xatolik</td></tr>'; }
 }
 
-async function loadUsers() {
+async function loadUsers(search = '') {
   const body = $('users-body');
-  body.innerHTML = '<tr><td colspan="5" class="loading-note">Yuklanmoqda…</td></tr>';
+  const cols = isSuperadmin ? 7 : 6;
+  body.innerHTML = `<tr><td colspan="${cols}" class="loading-note">Yuklanmoqda…</td></tr>`;
   try {
-    const r = await fetch('/api/admin/users', { headers: auth() });
+    const url = '/api/admin/users' + (search ? '?q=' + encodeURIComponent(search) : '');
+    const r = await fetch(url, { headers: auth() });
     const list = r.ok ? await r.json() : [];
-    if (!list.length) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Foydalanuvchilar topilmadi</td></tr>'; return; }
-    body.innerHTML = list.map(u => `<tr>
-      <td>${u.tg_id}</td>
-      <td class="name-cell">${esc(u.first_name)}</td>
-      <td>${u.username ? '@'+esc(u.username) : '—'}</td>
-      <td><span class="status-pill sp-${u.role}">${u.role}</span></td>
-      <td>${fmtDate(u.created_at)}</td>
-    </tr>`).join('');
-  } catch(e) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Xatolik</td></tr>'; }
+    if (!list.length) {
+      body.innerHTML = `<tr><td colspan="${cols}" class="empty-note">Foydalanuvchilar topilmadi</td></tr>`;
+      return;
+    }
+    body.innerHTML = list.map(u => {
+      const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || '—';
+      const roleCell = isSuperadmin
+        ? `<select class="role-sel" data-tgid="${u.tg_id}" onchange="setRole(this)" style="background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:3px 6px;border-radius:2px;font-size:.7rem;cursor:pointer">
+            ${ROLES.map(ro => `<option value="${ro}"${u.role===ro?' selected':''}>${ROLE_UZ[ro]}</option>`).join('')}
+           </select>`
+        : `<span class="status-pill sp-${u.role}">${ROLE_UZ[u.role]||u.role}</span>`;
+      const activeCell = `<span class="status-pill ${u.is_active ? 'sp-done' : 'sp-failed'}">${u.is_active ? 'Faol' : 'Bloklangan'}</span>`;
+      const actionsCell = isSuperadmin
+        ? `<td><button onclick="toggleActive(${u.tg_id},${!u.is_active})" style="background:var(--card2);border:1px solid var(--border2);color:${u.is_active?'var(--red)':'var(--green)'};padding:3px 10px;border-radius:2px;font-size:.62rem;cursor:pointer;white-space:nowrap">${u.is_active ? '🚫 Bloklash' : '✅ Faollashtirish'}</button></td>`
+        : '';
+      return `<tr>
+        <td style="font-size:.68rem;color:var(--text2)">${u.tg_id}</td>
+        <td class="name-cell">${esc(name)}</td>
+        <td>${u.username ? '@'+esc(u.username) : '—'}</td>
+        <td>${roleCell}</td>
+        <td>${activeCell}</td>
+        <td>${fmtDate(u.created_at)}</td>
+        ${actionsCell}
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    body.innerHTML = `<tr><td colspan="${isSuperadmin ? 7 : 6}" class="empty-note">Xatolik: ${esc(e.message)}</td></tr>`;
+  }
+}
+
+async function setRole(sel) {
+  const tgid = sel.dataset.tgid;
+  const role = sel.value;
+  try {
+    const r = await fetch(`/api/admin/users/${tgid}/role`, {
+      method: 'PUT',
+      headers: {...auth(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({role})
+    });
+    if (!r.ok) {
+      const d = await r.json();
+      alert('Xatolik: ' + (d.error || r.status));
+      loadUsers($('user-search').value);
+    }
+  } catch(e) {
+    alert('Tarmoq xatosi');
+    loadUsers($('user-search').value);
+  }
+}
+
+async function toggleActive(tgid, active) {
+  const label = active ? 'faollashtirmoqchimisiz' : 'bloklamoqchimisiz';
+  if (!confirm(`Foydalanuvchini ${label}?`)) return;
+  try {
+    const r = await fetch(`/api/admin/users/${tgid}/active`, {
+      method: 'PUT',
+      headers: {...auth(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({active})
+    });
+    if (r.ok) loadUsers($('user-search').value);
+    else alert('Xatolik');
+  } catch(e) { alert('Tarmoq xatosi'); }
+}
+
+function searchUsers(q) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadUsers(q), 350);
 }
 
 async function refresh() {
@@ -340,7 +420,7 @@ async function refresh() {
   const active = document.querySelector('.tab.active')?.dataset?.tab;
   if (active === 'clips') loadClips(currentClipStatus);
   else if (active === 'tournaments') loadTournaments();
-  else if (active === 'users') loadUsers();
+  else if (active === 'users') loadUsers($('user-search')?.value || '');
 }
 
 // Tabs
@@ -357,9 +437,9 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 // Clip filters
-document.querySelectorAll('.filter-btn').forEach(btn => {
+document.querySelectorAll('.filter-btn[data-status]').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     loadClips(btn.dataset.status);
   });

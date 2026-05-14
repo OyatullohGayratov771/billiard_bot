@@ -30,14 +30,24 @@ func New(db *sql.DB, secret, baseURL, botToken string) *Handler {
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /health", h.health)
+
+	// Auth
 	mux.HandleFunc("POST /api/auth/tg", h.authTelegram)
+
+	// Client routes
 	mux.HandleFunc("GET /api/me", h.withAuth(h.me))
 	mux.HandleFunc("GET /api/me/clips", h.withAuth(h.myClips))
 	mux.HandleFunc("GET /api/me/tournaments", h.withAuth(h.myTournaments))
-	mux.HandleFunc("GET /api/admin/stats", h.withRole(h.adminStats, "admin", "superadmin", "operator"))
-	mux.HandleFunc("GET /api/admin/clips", h.withRole(h.adminClips, "admin", "superadmin", "operator"))
-	mux.HandleFunc("GET /api/admin/tournaments", h.withRole(h.adminTournaments, "admin", "superadmin", "operator"))
+
+	// Admin routes (operator, admin, superadmin)
+	mux.HandleFunc("GET /api/admin/stats", h.withRole(h.adminStats, "operator", "admin", "superadmin"))
+	mux.HandleFunc("GET /api/admin/clips", h.withRole(h.adminClips, "operator", "admin", "superadmin"))
+	mux.HandleFunc("GET /api/admin/tournaments", h.withRole(h.adminTournaments, "operator", "admin", "superadmin"))
 	mux.HandleFunc("GET /api/admin/users", h.withRole(h.adminUsers, "admin", "superadmin"))
+
+	// Superadmin-only user management
+	mux.HandleFunc("PUT /api/admin/users/{tgid}/role", h.withRole(h.adminSetRole, "superadmin"))
+	mux.HandleFunc("PUT /api/admin/users/{tgid}/active", h.withRole(h.adminSetActive, "superadmin"))
 }
 
 // ─── JWT (HMAC-SHA256, no external library) ───
@@ -88,14 +98,21 @@ func b64u(b []byte) string { return base64.RawURLEncoding.EncodeToString(b) }
 
 // ─── Telegram initData verification ───
 
-func (h *Handler) verifyInitData(initData string) (int64, error) {
+type tgWebUser struct {
+	ID        int64  `json:"id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Username  string `json:"username"`
+}
+
+func (h *Handler) verifyInitData(initData string) (tgWebUser, error) {
 	params, err := url.ParseQuery(initData)
 	if err != nil {
-		return 0, err
+		return tgWebUser{}, err
 	}
 	hash := params.Get("hash")
 	if hash == "" {
-		return 0, errors.New("no hash")
+		return tgWebUser{}, errors.New("no hash")
 	}
 	params.Del("hash")
 
@@ -119,23 +136,21 @@ func (h *Handler) verifyInitData(initData string) (int64, error) {
 	sig := hex.EncodeToString(mac2.Sum(nil))
 
 	if sig != hash {
-		return 0, errors.New("hash mismatch")
+		return tgWebUser{}, errors.New("hash mismatch")
 	}
 
-	// Check auth_date not older than 24h
+	// Reject tokens older than 24 hours
 	if authDate, _ := strconv.ParseInt(params.Get("auth_date"), 10, 64); authDate > 0 {
 		if time.Now().Unix()-authDate > 86400 {
-			return 0, errors.New("initData too old")
+			return tgWebUser{}, errors.New("initData too old")
 		}
 	}
 
-	var user struct {
-		ID int64 `json:"id"`
-	}
+	var user tgWebUser
 	if err := json.Unmarshal([]byte(params.Get("user")), &user); err != nil || user.ID == 0 {
-		return 0, errors.New("invalid user")
+		return tgWebUser{}, errors.New("invalid user")
 	}
-	return user.ID, nil
+	return user, nil
 }
 
 // ─── Middleware ───
@@ -192,19 +207,41 @@ func (h *Handler) authTelegram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tgID, err := h.verifyInitData(req.InitData)
+	tgUser, err := h.verifyInitData(req.InitData)
 	if err != nil {
 		writeErr(w, 401, err.Error())
 		return
 	}
 
+	// Auto-register new users; update username for existing users.
+	// ON CONFLICT keeps is_active and role unchanged for existing rows.
 	var role string
-	if err := h.db.QueryRow(`SELECT role FROM users WHERE tg_id=$1`, tgID).Scan(&role); err != nil {
-		role = "client"
+	var isActive bool
+	err = h.db.QueryRow(`
+		INSERT INTO users (telegram_id, username, first_name, last_name)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (telegram_id) DO UPDATE
+		  SET username   = EXCLUDED.username,
+		      first_name = COALESCE(NULLIF(EXCLUDED.first_name, ''), users.first_name)
+		RETURNING role, is_active
+	`, tgUser.ID, tgUser.Username, tgUser.FirstName, tgUser.LastName).Scan(&role, &isActive)
+	if err != nil {
+		// Fallback: try plain select
+		_ = h.db.QueryRow(`SELECT role, is_active FROM users WHERE telegram_id=$1`,
+			tgUser.ID).Scan(&role, &isActive)
+		if role == "" {
+			role = "client"
+			isActive = true
+		}
 	}
 
-	jwt := h.signJWT(Claims{TgID: tgID, Role: role, Exp: time.Now().Add(24 * time.Hour).Unix()})
-	writeJSON(w, 200, map[string]any{"jwt": jwt, "role": role, "tg_id": tgID})
+	if !isActive {
+		writeErr(w, 403, "account blocked")
+		return
+	}
+
+	jwt := h.signJWT(Claims{TgID: tgUser.ID, Role: role, Exp: time.Now().Add(24 * time.Hour).Unix()})
+	writeJSON(w, 200, map[string]any{"jwt": jwt, "role": role, "tg_id": tgUser.ID})
 }
 
 // ─── /api/me ───
@@ -218,12 +255,15 @@ func (h *Handler) me(w http.ResponseWriter, r *http.Request) {
 		Username  string `json:"username"`
 		Phone     string `json:"phone"`
 		Role      string `json:"role"`
+		IsActive  bool   `json:"is_active"`
 		CreatedAt string `json:"created_at"`
 	}
 	err := h.db.QueryRow(
-		`SELECT tg_id, first_name, COALESCE(last_name,''), COALESCE(username,''),
-		        COALESCE(phone,''), role, created_at FROM users WHERE tg_id=$1`, tgID,
-	).Scan(&u.TgID, &u.FirstName, &u.LastName, &u.Username, &u.Phone, &u.Role, &u.CreatedAt)
+		`SELECT telegram_id, first_name, COALESCE(last_name,''), COALESCE(username,''),
+		        COALESCE(phone,''), role, is_active, created_at
+		 FROM users WHERE telegram_id=$1`, tgID,
+	).Scan(&u.TgID, &u.FirstName, &u.LastName, &u.Username,
+		&u.Phone, &u.Role, &u.IsActive, &u.CreatedAt)
 	if err == sql.ErrNoRows {
 		writeErr(w, 404, "user not found")
 		return
@@ -309,7 +349,7 @@ func (h *Handler) myTournaments(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) adminStats(w http.ResponseWriter, r *http.Request) {
 	stats := map[string]int{}
 	for k, q := range map[string]string{
-		"users":              `SELECT COUNT(*) FROM users`,
+		"users":              `SELECT COUNT(*) FROM users WHERE is_active=true`,
 		"pending_clips":      `SELECT COUNT(*) FROM clip_requests WHERE status='pending'`,
 		"paid_clips":         `SELECT COUNT(*) FROM clip_requests WHERE status='paid'`,
 		"processing_clips":   `SELECT COUNT(*) FROM clip_requests WHERE status='processing'`,
@@ -397,9 +437,26 @@ func (h *Handler) adminTournaments(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) adminUsers(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.db.Query(`
-		SELECT tg_id, first_name, COALESCE(username,''), role, created_at
-		FROM users ORDER BY created_at DESC LIMIT 100`)
+	search := strings.TrimSpace(r.URL.Query().Get("q"))
+
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if search != "" {
+		like := "%" + search + "%"
+		rows, err = h.db.Query(`
+			SELECT telegram_id, first_name, COALESCE(last_name,''), COALESCE(username,''),
+			       role, is_active, created_at
+			FROM users
+			WHERE first_name ILIKE $1 OR username ILIKE $1
+			ORDER BY created_at DESC LIMIT 100`, like)
+	} else {
+		rows, err = h.db.Query(`
+			SELECT telegram_id, first_name, COALESCE(last_name,''), COALESCE(username,''),
+			       role, is_active, created_at
+			FROM users ORDER BY created_at DESC LIMIT 100`)
+	}
 	if err != nil {
 		writeErr(w, 500, err.Error())
 		return
@@ -408,18 +465,90 @@ func (h *Handler) adminUsers(w http.ResponseWriter, r *http.Request) {
 	type item struct {
 		TgID      int64  `json:"tg_id"`
 		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
 		Username  string `json:"username"`
 		Role      string `json:"role"`
+		IsActive  bool   `json:"is_active"`
 		CreatedAt string `json:"created_at"`
 	}
 	list := []item{}
 	for rows.Next() {
 		var i item
-		if err := rows.Scan(&i.TgID, &i.FirstName, &i.Username, &i.Role, &i.CreatedAt); err == nil {
+		if err := rows.Scan(&i.TgID, &i.FirstName, &i.LastName, &i.Username,
+			&i.Role, &i.IsActive, &i.CreatedAt); err == nil {
 			list = append(list, i)
 		}
 	}
 	writeJSON(w, 200, list)
+}
+
+func (h *Handler) adminSetRole(w http.ResponseWriter, r *http.Request) {
+	tgID, err := strconv.ParseInt(r.PathValue("tgid"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid tg_id")
+		return
+	}
+	var req struct {
+		Role string `json:"role"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErr(w, 400, "bad request")
+		return
+	}
+	validRoles := map[string]bool{"client": true, "operator": true, "admin": true, "superadmin": true}
+	if !validRoles[req.Role] {
+		writeErr(w, 400, "invalid role")
+		return
+	}
+	// Prevent self-demotion
+	caller := getClaims(r)
+	if caller.TgID == tgID && req.Role != "superadmin" {
+		writeErr(w, 400, "cannot change own role")
+		return
+	}
+	result, err := h.db.Exec(`UPDATE users SET role=$1 WHERE telegram_id=$2`, req.Role, tgID)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	n, _ := result.RowsAffected()
+	if n == 0 {
+		writeErr(w, 404, "user not found")
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) adminSetActive(w http.ResponseWriter, r *http.Request) {
+	tgID, err := strconv.ParseInt(r.PathValue("tgid"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid tg_id")
+		return
+	}
+	var req struct {
+		Active bool `json:"active"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErr(w, 400, "bad request")
+		return
+	}
+	// Prevent self-deactivation
+	caller := getClaims(r)
+	if caller.TgID == tgID && !req.Active {
+		writeErr(w, 400, "cannot deactivate own account")
+		return
+	}
+	result, err := h.db.Exec(`UPDATE users SET is_active=$1 WHERE telegram_id=$2`, req.Active, tgID)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	n, _ := result.RowsAffected()
+	if n == 0 {
+		writeErr(w, 404, "user not found")
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
