@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -9,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -18,14 +20,15 @@ import (
 )
 
 type Handler struct {
-	db       *sql.DB
-	secret   string
-	baseURL  string
-	botToken string
+	db        *sql.DB
+	secret    string
+	baseURL   string
+	botToken  string
+	trnSvcURL string
 }
 
-func New(db *sql.DB, secret, baseURL, botToken string) *Handler {
-	return &Handler{db: db, secret: secret, baseURL: baseURL, botToken: botToken}
+func New(db *sql.DB, secret, baseURL, botToken, trnSvcURL string) *Handler {
+	return &Handler{db: db, secret: secret, baseURL: baseURL, botToken: botToken, trnSvcURL: trnSvcURL}
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
@@ -48,6 +51,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	// Superadmin-only user management
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/role", h.withRole(h.adminSetRole, "superadmin"))
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/active", h.withRole(h.adminSetActive, "superadmin"))
+
+	// Tournament registration proxy (auth via JWT, proxies to tournament-service)
+	mux.HandleFunc("POST /api/me/tournaments/{id}/register", h.withAuth(h.meTournamentRegister))
 }
 
 // ─── JWT (HMAC-SHA256, no external library) ───
@@ -222,7 +228,8 @@ func (h *Handler) authTelegram(w http.ResponseWriter, r *http.Request) {
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (telegram_id) DO UPDATE
 		  SET username   = EXCLUDED.username,
-		      first_name = COALESCE(NULLIF(EXCLUDED.first_name, ''), users.first_name)
+		      first_name = COALESCE(NULLIF(EXCLUDED.first_name, ''), users.first_name),
+		      last_name  = COALESCE(NULLIF(EXCLUDED.last_name,  ''), users.last_name)
 		RETURNING role, is_active
 	`, tgUser.ID, tgUser.Username, tgUser.FirstName, tgUser.LastName).Scan(&role, &isActive)
 	if err != nil {
@@ -549,6 +556,35 @@ func (h *Handler) adminSetActive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) meTournamentRegister(w http.ResponseWriter, r *http.Request) {
+	claims := getClaims(r)
+	trnID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	var firstName, lastName string
+	_ = h.db.QueryRow(`SELECT first_name, COALESCE(last_name,'') FROM users WHERE telegram_id=$1`,
+		claims.TgID).Scan(&firstName, &lastName)
+	name := strings.TrimSpace(firstName + " " + lastName)
+	if name == "" {
+		name = "Player"
+	}
+	body, _ := json.Marshal(map[string]any{"user_tg_id": claims.TgID, "user_name": name})
+	resp, err := http.Post(
+		h.trnSvcURL+"/tournaments/"+strconv.FormatInt(trnID, 10)+"/register",
+		"application/json", bytes.NewReader(body),
+	)
+	if err != nil {
+		writeErr(w, 502, "tournament service unavailable")
+		return
+	}
+	defer resp.Body.Close()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	io.Copy(w, resp.Body) //nolint
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
