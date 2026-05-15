@@ -24,8 +24,8 @@ func (r *UserRepo) Upsert(tgID int64, username, firstName, lastName string) (*mo
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (telegram_id) DO UPDATE
 		  SET username = EXCLUDED.username
-		RETURNING id, telegram_id, username, first_name, last_name, phone,
-		          role, branch_id, is_active, created_at
+		RETURNING id, telegram_id, COALESCE(username,''), first_name, COALESCE(last_name,''),
+		          COALESCE(phone,''), role, branch_id, is_active, created_at
 	`, tgID, username, firstName, lastName).Scan(
 		&u.ID, &u.TelegramID, &u.Username, &u.FirstName, &u.LastName, &u.Phone,
 		&u.Role, &u.BranchID, &u.IsActive, &u.CreatedAt,
@@ -36,8 +36,8 @@ func (r *UserRepo) Upsert(tgID int64, username, firstName, lastName string) (*mo
 func (r *UserRepo) GetByTelegramID(tgID int64) (*models.User, error) {
 	u := &models.User{}
 	err := r.db.QueryRow(`
-		SELECT id, telegram_id, username, first_name, last_name, phone,
-		       role, branch_id, is_active, created_at
+		SELECT id, telegram_id, COALESCE(username,''), first_name, COALESCE(last_name,''),
+		       COALESCE(phone,''), role, branch_id, is_active, created_at
 		FROM users WHERE telegram_id = $1
 	`, tgID).Scan(
 		&u.ID, &u.TelegramID, &u.Username, &u.FirstName, &u.LastName, &u.Phone,
@@ -72,8 +72,8 @@ func (r *UserRepo) SetRole(tgID int64, role string, branchID *int64) error {
 
 func (r *UserRepo) ListByRole(role string) ([]*models.User, error) {
 	rows, err := r.db.Query(`
-		SELECT id, telegram_id, username, first_name, last_name, phone,
-		       role, branch_id, is_active, created_at
+		SELECT id, telegram_id, COALESCE(username,''), first_name, COALESCE(last_name,''),
+		       COALESCE(phone,''), role, branch_id, is_active, created_at
 		FROM users WHERE role = $1 ORDER BY created_at DESC
 	`, role)
 	if err != nil {
@@ -85,8 +85,8 @@ func (r *UserRepo) ListByRole(role string) ([]*models.User, error) {
 
 func (r *UserRepo) ListAll() ([]*models.User, error) {
 	rows, err := r.db.Query(`
-		SELECT id, telegram_id, username, first_name, last_name, phone,
-		       role, branch_id, is_active, created_at
+		SELECT id, telegram_id, COALESCE(username,''), first_name, COALESCE(last_name,''),
+		       COALESCE(phone,''), role, branch_id, is_active, created_at
 		FROM users ORDER BY role, created_at DESC
 	`)
 	if err != nil {
