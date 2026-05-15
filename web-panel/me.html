@@ -652,7 +652,7 @@ function mregCard(t, showBranch) {
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
       <span class="reg-pill ${REG_ST[t.reg_status]||'rp-pending'}">${REG_LBL[t.reg_status]||t.reg_status}</span>
-      ${hasBracket ? `<button class="bracket-btn" onclick="openBracket(${t.tournament_id},this)">⚡ Setka</button>` : ''}
+      ${hasBracket ? `<button class="bracket-btn" onclick="openBracket(${t.tournament_id})">⚡ Setka</button>` : ''}
     </div>
   </div>`;
 }
@@ -670,7 +670,7 @@ function renderOpenTrns() {
     const isFull = (t.registered||0) >= t.max_players;
     let action = '';
     if (t.status === 'in_progress' || t.status === 'finished') {
-      action = `<button class="bracket-btn" onclick="openBracket(${t.id},this)">⚡ Setka ko'rish</button>`;
+      action = `<button class="bracket-btn" onclick="openBracket(${t.id})">⚡ Setka ko'rish</button>`;
     } else if (reg) {
       action = `<span class="reg-pill ${REG_ST[reg.reg_status]||'rp-pending'}">${REG_LBL[reg.reg_status]||'Ro\'yxatda'}</span>`;
     } else if (pendingRegs.has(t.id)) {
@@ -703,21 +703,8 @@ function renderOpenTrns() {
 }
 
 // ─── BRACKET ───
-async function openBracket(trnId, btn) {
-  const orig = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = '…';
-  try {
-    const r = await fetch(`/api/tournaments/${trnId}/tv-token`);
-    if (!r.ok) { showToast('Setka hali tayyor emas', 'err'); return; }
-    const d = await r.json();
-    window.open(`/tv/${d.token}`, '_blank');
-  } catch(e) {
-    showToast('Xatolik yuz berdi', 'err');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = orig;
-  }
+function openBracket(trnId) {
+  window.open(`/turnir/${trnId}`, '_blank');
 }
 
 // ─── REGISTER ───
