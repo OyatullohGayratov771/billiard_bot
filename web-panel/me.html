@@ -158,6 +158,85 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .bn-dot{position:absolute;top:8px;right:calc(50% - 16px);width:7px;height:7px;background:var(--red);border-radius:50%;display:none;border:1.5px solid var(--bg)}
 .bn-dot.on{display:block}
 
+/* ─── BRACKET OVERLAY ─── */
+.brk-ov{position:fixed;inset:0;z-index:500;background:#06060e;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.brk-ov.on{transform:translateX(0)}
+.brk-nav{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;background:rgba(6,6,14,.97);border-bottom:1px solid rgba(100,100,180,.1);flex-shrink:0}
+.brk-back{color:#6060a0;font-size:.7rem;display:flex;align-items:center;gap:4px;cursor:pointer;letter-spacing:.3px;background:none;border:none;font-family:inherit;padding:6px 0}
+.brk-back:active{color:var(--gold)}
+.brk-ttl{flex:1;font-size:.78rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e0e0f0}
+.brk-live{display:flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;border:1px solid #1a1a2a;font-size:.56rem;color:#30304a;white-space:nowrap;flex-shrink:0}
+.brk-live.on{border-color:#30b030;color:#30c030}
+.brk-ldot{width:5px;height:5px;border-radius:50%;background:#1a1a2a;flex-shrink:0}
+.brk-live.on .brk-ldot{background:#30c030;animation:pulse 1.4s infinite}
+.brk-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;color:#e0e0f0}
+.brk-body::-webkit-scrollbar{display:none}
+
+/* ─── BRACKET INNER CSS ─── */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:10px;font-size:.6rem;font-weight:700;letter-spacing:.5px;border:1px solid}
+.p-reg{background:rgba(212,175,55,.08);color:var(--gold);border-color:rgba(212,175,55,.25)}
+.p-prog{background:rgba(48,192,96,.08);color:#30c060;border-color:rgba(48,192,96,.25)}
+.p-fin{background:rgba(64,144,224,.08);color:#4090e0;border-color:rgba(64,144,224,.2)}
+.p-can{background:rgba(60,60,80,.1);color:#444;border-color:#1a1a28}
+.p-type{background:rgba(64,144,224,.06);color:#4090e0;border-color:rgba(64,144,224,.15)}
+.section{padding:0 0 24px}
+.sec-hdr{display:flex;align-items:center;gap:10px;padding:16px 16px 10px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#6060a0}
+.sec-hdr::after{content:'';flex:1;height:1px;background:currentColor;opacity:.15}
+.sec-hdr.wb{color:#c0a000}
+.sec-hdr.lb{color:#4080c0}
+.sec-hdr.gf{color:#c04080}
+.bracket{display:flex;align-items:stretch;padding:0 16px 4px;gap:0;overflow-x:auto;scrollbar-width:thin;scrollbar-color:rgba(100,100,180,.1) transparent}
+.bracket::-webkit-scrollbar{height:4px}
+.bracket::-webkit-scrollbar-thumb{background:rgba(100,100,180,.1);border-radius:2px}
+.round-col{display:flex;flex-direction:column;align-items:center;min-width:180px}
+.round-lbl{font-size:.56rem;text-transform:uppercase;letter-spacing:1.5px;color:#30304a;margin-bottom:8px;padding:2px 8px;background:rgba(255,255,255,.02);border-radius:4px;white-space:nowrap}
+.matches-col{display:flex;flex-direction:column;width:100%;flex:1}
+.match-slot{display:flex;align-items:center;flex:1;min-height:60px}
+.conn{display:flex;flex-direction:column;justify-content:center;width:24px;flex-shrink:0;align-self:stretch}
+.conn-line{border-top:1px solid rgba(100,100,180,.1);width:100%}
+.brk-card{width:168px;border-radius:8px;overflow:hidden;border:1px solid rgba(100,100,180,.1);background:linear-gradient(160deg,#0c0c20,#080818)}
+.brk-card.live{border-color:rgba(212,175,55,.5);box-shadow:0 0 16px rgba(212,175,55,.2)}
+.brk-card.done{border-color:rgba(48,192,96,.15);background:linear-gradient(160deg,#080f0a,#050d07)}
+.bplayer{padding:8px 10px;font-size:.78rem;display:flex;align-items:center;gap:6px;color:#e0e0f0}
+.bplayer+.bplayer{border-top:1px solid rgba(255,255,255,.05)}
+.bplayer.win{background:rgba(212,175,55,.12);color:var(--gold);font-weight:700}
+.bplayer.lose{color:#30304a}
+.bp-ico{width:14px;text-align:center;font-size:.65rem;flex-shrink:0}
+.bp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.bp-score{font-size:.7rem;font-weight:700;color:#6060a0;flex-shrink:0;min-width:14px;text-align:right}
+.bye-card{width:168px;padding:10px 12px;border-radius:8px;border:1px dashed rgba(100,100,180,.1);background:#06060e;color:#30304a;font-size:.72rem;font-style:italic}
+.void-card{width:168px;height:54px}
+.winner-col{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:120px;gap:6px;padding:16px}
+.w-trophy{font-size:2.8rem;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 10px rgba(212,175,55,.4))}
+.w-name{font-size:.95rem;font-weight:800;color:var(--gold);text-align:center}
+.w-sub{font-size:.55rem;color:#6060a0;text-transform:uppercase;letter-spacing:2px}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.gf-wrap{display:flex;align-items:center;justify-content:center;padding:8px 16px 16px;gap:16px;flex-wrap:wrap}
+.gf-lbl{font-size:.6rem;color:#c04080;text-align:center;margin-bottom:6px;text-transform:uppercase;letter-spacing:1.5px}
+.rr-wrap{padding:4px 16px 24px}
+.rr-matches{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.rr-card{border-radius:8px;border:1px solid rgba(100,100,180,.1);background:#0d0d1c;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:.8rem}
+.rr-card.live{border-color:rgba(212,175,55,.4)}
+.rr-card.done{border-color:rgba(48,192,96,.12);background:linear-gradient(160deg,#080f0a,#050d07)}
+.rr-num{font-size:.6rem;color:#30304a;min-width:20px;text-align:right}
+.rr-p{flex:1;text-align:center;color:#e0e0f0}
+.rr-p.win{color:var(--gold);font-weight:700}
+.rr-p.lose{color:#30304a}
+.rr-vs{color:#30304a;font-size:.7rem;flex-shrink:0}
+.rr-st{font-size:.7rem;min-width:18px;text-align:right;flex-shrink:0}
+.standings{border-radius:8px;border:1px solid rgba(100,100,180,.1);background:#0d0d1c;overflow:hidden}
+.st-hdr{padding:10px 14px;font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:#6060a0;border-bottom:1px solid rgba(100,100,180,.1)}
+.st-row{display:grid;grid-template-columns:26px 1fr 32px 32px 32px;align-items:center;gap:6px;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.03);font-size:.8rem;color:#e0e0f0}
+.st-row:last-child{border-bottom:none}
+.st-row.gold{background:rgba(212,175,55,.06)}
+.s-rank{font-size:.68rem;font-weight:700;color:#30304a}
+.s-rank.r1{color:var(--gold)}
+.s-rank.r2{color:#c0c0c0}
+.s-rank.r3{color:#c08060}
+.s-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s-num{text-align:center;color:#6060a0;font-size:.72rem}
+.s-num.w{color:#30c060;font-weight:700}
+
 /* ─── TOAST ─── */
 .toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 12px);left:50%;transform:translateX(-50%) translateY(10px);background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:20px;font-size:.74rem;font-weight:600;z-index:300;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
 .toast.ok{border-color:rgba(46,204,113,.4);color:var(--green)}
@@ -409,6 +488,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ─── BRACKET OVERLAY ─── -->
+<div class="brk-ov" id="brk-ov">
+  <div class="brk-nav">
+    <button class="brk-back" onclick="closeBracket()">‹ Orqaga</button>
+    <div class="brk-ttl" id="brk-ttl">Turnir</div>
+    <div class="brk-live" id="brk-live">
+      <div class="brk-ldot"></div>
+      <span id="brk-live-txt">—</span>
+    </div>
+  </div>
+  <div class="brk-body" id="brk-body"></div>
+</div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -803,6 +895,233 @@ init().catch(e => {
   $('err-ttl').textContent = 'Xatolik';
   $('err-sub').textContent = e.message;
 });
+
+// ─── BRACKET OVERLAY ───
+let brkSSE = null, brkRetry = 2000, brkTrnId = null;
+
+function openBracket(trnId) {
+  brkTrnId = trnId;
+  const ov = $('brk-ov');
+  $('brk-body').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;padding:60px;flex-direction:column;gap:12px;color:#30304a;font-size:.8rem"><div class="spinner"></div>Yuklanmoqda…</div>';
+  $('brk-ttl').textContent = 'Turnir';
+  setBrkLive(false);
+  if (brkSSE) { brkSSE.close(); brkSSE = null; }
+  ov.classList.add('on');
+  document.body.style.overflow = 'hidden';
+  Telegram?.WebApp?.BackButton?.show();
+  brkLoad(trnId);
+  brkConnectSSE(trnId);
+}
+
+function closeBracket() {
+  $('brk-ov').classList.remove('on');
+  document.body.style.overflow = '';
+  if (brkSSE) { brkSSE.close(); brkSSE = null; }
+  brkTrnId = null;
+  Telegram?.WebApp?.BackButton?.hide();
+}
+
+function setBrkLive(on) {
+  const l = $('brk-live');
+  if (!l) return;
+  l.className = 'brk-live' + (on ? ' on' : '');
+  $('brk-live-txt').textContent = on ? 'JONLI' : '—';
+}
+
+async function brkLoad(trnId) {
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch(`/api/tournaments/${trnId}`),
+      fetch(`/api/tournaments/${trnId}/bracket`)
+    ]);
+    if (!r1.ok) throw new Error('Turnir topilmadi');
+    const trn = await r1.json();
+    const ms = r2.ok ? (await r2.json() || []) : [];
+    $('brk-ttl').textContent = trn.name || 'Turnir';
+    const body = $('brk-body');
+    body.innerHTML = '';
+    body.appendChild(brkHdrEl(trn));
+    if (ms.length) {
+      brkRender(body, trn, ms);
+    } else if (trn.status === 'in_progress' || trn.status === 'finished') {
+      body.innerHTML += '<div style="padding:40px 16px;text-align:center;color:#30304a;font-size:.82rem;line-height:2">⏳<br>Bracket hali yaratilmagan</div>';
+    }
+  } catch(e) {
+    $('brk-body').innerHTML = `<div style="padding:40px;text-align:center;color:#e03040;font-size:.82rem">❌<br>${esc(e.message)}</div>`;
+  }
+}
+
+function brkHdrEl(t) {
+  const STATUS_CLS = {registration:'p-reg',in_progress:'p-prog',finished:'p-fin',cancelled:'p-can'};
+  const STATUS_LBL = {registration:"Ro'yxat",in_progress:'Jarayonda',finished:'Yakunlandi',cancelled:'Bekor'};
+  const TYPE_S = {single_elimination:'SE',double_elimination:'DE',round_robin:'RR'};
+  const TYPE_LBL = {single_elimination:'Single Elimination',double_elimination:'Double Elimination',round_robin:'Round Robin'};
+  const cnt = t.approved_count||0, fill = Math.min(100,Math.round(cnt/t.max_players*100)), full = cnt>=t.max_players;
+  function fmtDT(s){if(!s)return'—';const d=new Date(s);return d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'numeric'})+' · '+d.toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'})}
+  const div = brkEl('div');
+  div.style.cssText='padding:14px 16px 12px;border-bottom:1px solid rgba(100,100,180,.1);background:linear-gradient(180deg,rgba(212,175,55,.04) 0%,transparent 100%)';
+  div.innerHTML=`<div style="font-size:1.1rem;font-weight:900;color:var(--gold);margin-bottom:8px">${esc(t.name)}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+      <span class="pill ${STATUS_CLS[t.status]||'p-can'}">${STATUS_LBL[t.status]||t.status}</span>
+      <span class="pill p-type">${TYPE_S[t.type]||'SE'} · ${TYPE_LBL[t.type]||t.type}</span>
+    </div>
+    <div style="font-size:.68rem;color:#6060a0;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+      <span>📅 ${fmtDT(t.scheduled_at)}</span>
+      ${t.branch_name?`<span>🏢 ${esc(t.branch_name)}</span>`:''}
+      ${t.price>0?`<span>💰 ${t.price.toLocaleString()} so'm</span>`:'<span>🆓 Bepul</span>'}
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="flex:1;height:4px;background:#0d0d1c;border-radius:2px;overflow:hidden"><div style="height:100%;background:${full?'#e03040':'var(--gold)'};border-radius:2px;width:${fill}%"></div></div>
+      <div style="font-size:.62rem;color:#30304a;white-space:nowrap">${cnt} / ${t.max_players}</div>
+    </div>`;
+  return div;
+}
+
+function brkConnectSSE(trnId) {
+  if (brkSSE) brkSSE.close();
+  brkRetry = 2000;
+  brkSSE = new EventSource(`/api/tournaments/${trnId}/sse`);
+  brkSSE.onopen = () => { brkRetry=2000; setBrkLive(true); };
+  brkSSE.onmessage = e => { try{if(JSON.parse(e.data).type==='refresh') brkLoad(trnId);}catch(_){} };
+  brkSSE.onerror = () => {
+    setBrkLive(false);
+    brkSSE.close();
+    if (brkTrnId === trnId) {
+      setTimeout(() => brkConnectSSE(trnId), brkRetry);
+      brkRetry = Math.min(brkRetry*2, 30000);
+    }
+  };
+}
+
+// Telegram back button → close bracket overlay
+Telegram?.WebApp?.BackButton?.onClick(() => {
+  if ($('brk-ov')?.classList.contains('on')) closeBracket();
+});
+
+/* ── Bracket renderer (SE / DE / RR) ── */
+function brkRender(c, t, ms) {
+  if (t.type==='double_elimination') brkDE(c,t,ms);
+  else if (t.type==='round_robin')   brkRR(c,t,ms);
+  else                                brkSE(c,t,ms);
+}
+function brkSE(c,t,ms) {
+  const rounds=brkByRound(ms), nums=Object.keys(rounds).map(Number).sort((a,b)=>a-b);
+  if(!nums.length) return;
+  const maxR=nums[nums.length-1];
+  brkSecHdr(c,'🏆 Bracket','wb');
+  const br=brkEl('div','bracket');
+  nums.forEach((r,i)=>{
+    if(i>0) br.appendChild(brkConn());
+    br.appendChild(brkRoundCol(rounds[r],r===maxR?'Final':`${r}-bosqich`));
+  });
+  if(t.status==='finished'){
+    let w=null;
+    for(const m of rounds[maxR]||[]) if(m.status==='done'&&m.winner_name) w=m.winner_name;
+    br.appendChild(brkConn()); br.appendChild(brkWinner(w));
+  }
+  c.appendChild(br);
+}
+function brkDE(c,t,ms) {
+  const wb=ms.filter(m=>m.match_type==='winners'), lb=ms.filter(m=>m.match_type==='losers'), gf=ms.filter(m=>m.match_type==='grand_final');
+  if(wb.length){
+    const sec=brkEl('div','section'); brkSecHdr(sec,'🏆 Winners Bracket','wb');
+    const rounds=brkByRound(wb), nums=Object.keys(rounds).map(Number).sort((a,b)=>a-b), maxR=nums[nums.length-1];
+    const br=brkEl('div','bracket');
+    nums.forEach((r,i)=>{if(i>0)br.appendChild(brkConn());br.appendChild(brkRoundCol(rounds[r],r===maxR?'WB Final':'WB R'+r));});
+    sec.appendChild(br); c.appendChild(sec);
+  }
+  if(lb.length){
+    const sec=brkEl('div','section'); brkSecHdr(sec,'⬇ Losers Bracket','lb');
+    const rounds=brkByRound(lb), nums=Object.keys(rounds).map(Number).sort((a,b)=>a-b), maxR=nums[nums.length-1];
+    const br=brkEl('div','bracket');
+    nums.forEach((r,i)=>{if(i>0)br.appendChild(brkConn());const lbR=r-1000;br.appendChild(brkRoundCol(rounds[r],r===maxR?'LB Final':'LB R'+lbR));});
+    sec.appendChild(br); c.appendChild(sec);
+  }
+  if(gf.length){
+    const sec=brkEl('div','section'); brkSecHdr(sec,'🎯 Grand Final','gf');
+    const wrap=brkEl('div','gf-wrap');
+    for(const m of gf){const col=brkEl('div');const lbl=brkEl('div','gf-lbl');lbl.textContent='Grand Final';col.appendChild(lbl);col.appendChild(brkCard(m));wrap.appendChild(col);}
+    if(t.status==='finished'){let w=null;for(const m of gf)if(m.status==='done'&&m.winner_name)w=m.winner_name;wrap.appendChild(brkConn());wrap.appendChild(brkWinner(w));}
+    sec.appendChild(wrap); c.appendChild(sec);
+  }
+  if(!wb.length&&!lb.length&&!gf.length) brkSE(c,t,ms);
+}
+function brkRR(c,t,ms) {
+  const wrap=brkEl('div','rr-wrap');
+  const mSec=brkEl('div'); brkSecHdr(mSec,"⚽ O'yinlar",'wb');
+  const mList=brkEl('div','rr-matches');
+  ms.forEach((m,i)=>{
+    const done=m.status==='done', p1w=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player1_tg_id, p2w=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player2_tg_id;
+    const card=brkEl('div','rr-card'+(m.status==='ready'?' live':done?' done':''));
+    card.innerHTML=`<span class="rr-num">${i+1}.</span><span class="rr-p${p1w?' win':done&&!p1w?' lose':''}">${esc(m.player1_name||'—')}</span><span class="rr-vs">vs</span><span class="rr-p${p2w?' win':done&&!p2w?' lose':''}">${esc(m.player2_name||'—')}</span><span class="rr-st">${m.status==='ready'?'🎱':done?'✅':m.status==='pending'?'⏳':''}</span>`;
+    mList.appendChild(card);
+  });
+  mSec.appendChild(mList); wrap.appendChild(mSec);
+  const wins={}, played={}, players={};
+  for(const m of ms){
+    if(m.player1_tg_id&&m.player1_name) players[m.player1_tg_id]=m.player1_name;
+    if(m.player2_tg_id&&m.player2_name) players[m.player2_tg_id]=m.player2_name;
+    if(m.status==='done'&&m.winner_tg_id) wins[m.winner_tg_id]=(wins[m.winner_tg_id]||0)+1;
+    if(m.status==='done')[m.player1_tg_id,m.player2_tg_id].forEach(id=>{if(id)played[id]=(played[id]||0)+1;});
+  }
+  const sorted=Object.entries(players).sort((a,b)=>(wins[b[0]]||0)-(wins[a[0]]||0));
+  if(sorted.length){
+    const stSec=brkEl('div'); brkSecHdr(stSec,'📊 Jadval','lb');
+    const stand=brkEl('div','standings');
+    const shdr=brkEl('div','st-hdr'); shdr.innerHTML="<span style='grid-column:1/3'>O'YINCHI</span><span style='text-align:center;color:#404070;font-size:.6rem'>O</span><span style='text-align:center;color:#30c060;font-size:.6rem'>G</span><span style='text-align:center;color:#604040;font-size:.6rem'>M</span>";
+    stand.appendChild(shdr);
+    sorted.forEach(([id,name],idx)=>{
+      const w=wins[id]||0,p=played[id]||0,l=p-w;
+      const row=brkEl('div','st-row'+(idx===0?' gold':''));
+      const rc=['','r1','r2','r3'][idx]||'', ri=['','🥇','🥈','🥉'][idx]||idx+1;
+      row.innerHTML=`<span class="s-rank ${rc}">${ri}</span><span class="s-name">${esc(name)}</span><span class="s-num">${p}</span><span class="s-num w">${w}</span><span class="s-num">${l}</span>`;
+      stand.appendChild(row);
+    });
+    stSec.appendChild(stand); wrap.appendChild(stSec);
+  }
+  c.appendChild(wrap);
+}
+function brkEl(tag,cls){const e=document.createElement(tag||'div');if(cls)e.className=cls;return e;}
+function brkByRound(ms){const r={};for(const m of ms){if(!r[m.round])r[m.round]=[];r[m.round].push(m);}return r;}
+function brkConn(){const c=brkEl('div','conn');const l=brkEl('div','conn-line');c.appendChild(l);return c;}
+function brkSecHdr(p,txt,cls){const h=brkEl('div','sec-hdr'+(cls?' '+cls:''));h.textContent=txt;p.appendChild(h);}
+function brkRoundCol(msList,label){
+  const col=brkEl('div','round-col');
+  const lbl=brkEl('div','round-lbl');lbl.textContent=label;col.appendChild(lbl);
+  const mc=brkEl('div','matches-col');
+  for(const m of (msList||[])){
+    const slot=brkEl('div','match-slot');
+    if(m.status==='void') slot.appendChild(brkEl('div','void-card'));
+    else if(m.status==='bye'){const b=brkEl('div','bye-card');b.textContent=(m.player1_name||m.player2_name||'BYE')+' — avtomatik o\'tdi';slot.appendChild(b);}
+    else slot.appendChild(brkCard(m));
+    mc.appendChild(slot);
+  }
+  col.appendChild(mc);return col;
+}
+function brkCard(m){
+  const done=m.status==='done', live=m.status==='in_progress'||m.status==='ready';
+  const card=brkEl('div','brk-card'+(live?' live':done?' done':''));
+  const p1w=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player1_tg_id;
+  const p2w=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player2_tg_id;
+  function mkP(name,isWin,score){
+    const p=brkEl('div','bplayer'+(isWin?' win':done&&!isWin?' lose':''));
+    const ico=brkEl('span','bp-ico');ico.textContent=isWin?'🏆':live?'🎱':'';
+    const nm=brkEl('span','bp-name');nm.textContent=name||'—';
+    p.appendChild(ico);p.appendChild(nm);
+    if(done&&score!=null){const sc=brkEl('span','bp-score');sc.textContent=score;p.appendChild(sc);}
+    return p;
+  }
+  card.appendChild(mkP(m.player1_name,p1w,m.player1_score));
+  card.appendChild(mkP(m.player2_name,p2w,m.player2_score));
+  return card;
+}
+function brkWinner(name){
+  const col=brkEl('div','winner-col');
+  const tr=brkEl('div','w-trophy');tr.textContent='🏆';
+  const nm=brkEl('div','w-name');nm.textContent=name||'—';
+  const sb=brkEl('div','w-sub');sb.textContent="G'OLIB";
+  col.appendChild(tr);col.appendChild(nm);col.appendChild(sb);return col;
+}
 </script>
 </body>
 </html>
