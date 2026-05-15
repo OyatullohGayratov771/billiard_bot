@@ -54,6 +54,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /tournaments/{id}/bracket", h.generateBracket)
 	mux.HandleFunc("POST /tournaments/{id}/bracket/shuffle", h.shuffleBracket)
 	mux.HandleFunc("GET /tournaments/{id}/bracket", h.getBracket)
+	mux.HandleFunc("GET /tournaments/{id}/tv-token", h.tvTokenPublic)
 	mux.HandleFunc("GET /tournaments/sse", h.tournamentsSSE)
 	mux.HandleFunc("GET /tournaments/{id}/sse", h.tournamentSSE)
 

@@ -9,6 +9,30 @@ import (
 	"time"
 )
 
+// GET /tournaments/{id}/tv-token  — public: bracket viewer uchun token (in_progress/finished)
+func (h *Handler) tvTokenPublic(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, 400, "invalid id")
+		return
+	}
+	trn, err := h.svc.GetTournament(id)
+	if err != nil {
+		writeError(w, 404, "tournament not found")
+		return
+	}
+	if trn.Status != "in_progress" && trn.Status != "finished" {
+		writeError(w, 404, "bracket not available")
+		return
+	}
+	token, err := h.svc.GenerateTVToken(id)
+	if err != nil {
+		writeError(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]string{"token": token})
+}
+
 // POST /tv/token  {"tournament_id": N}
 func (h *Handler) tvGenerateToken(w http.ResponseWriter, r *http.Request) {
 	if !h.checkInternal(w, r) {

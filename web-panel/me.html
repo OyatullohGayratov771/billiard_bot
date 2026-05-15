@@ -97,6 +97,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .reg-btn{background:var(--gold);color:#000;border:none;padding:7px 14px;border-radius:4px;font-size:.64rem;font-weight:800;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:.2s;white-space:nowrap}
 .reg-btn:hover{background:var(--gold-l)}
 .reg-btn:disabled{background:var(--card2);color:var(--text3);cursor:default}
+.bracket-btn{background:none;border:1px solid rgba(52,152,219,.35);color:var(--blue);padding:7px 13px;border-radius:4px;font-size:.64rem;font-weight:800;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:.2s;white-space:nowrap;font-family:inherit}
+.bracket-btn:hover{background:rgba(52,152,219,.1)}
 .reg-pill{display:inline-flex;align-items:center;gap:3px;padding:5px 9px;border-radius:4px;font-size:.6rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
 .rp-pending{background:rgba(136,136,136,.12);color:#888}
 .rp-approved{background:rgba(46,204,113,.1);color:var(--green)}
@@ -641,13 +643,17 @@ function mregCard(t, showBranch) {
   const sub = showBranch
     ? `${esc(t.branch_name||'—')} · ${fmtDT(t.scheduled_at)} · ${TRN_ST[t.tournament_status]||t.tournament_status}`
     : `${fmtDT(t.scheduled_at)} · ${TRN_ST[t.tournament_status]||t.tournament_status}`;
+  const hasBracket = t.tournament_status === 'in_progress' || t.tournament_status === 'finished';
   return `<div class="mreg-card">
     <div class="mreg-dot" style="background:${dot}"></div>
     <div class="mreg-info">
       <div class="mreg-name">${esc(t.name)}</div>
       <div class="mreg-sub">${sub}</div>
     </div>
-    <span class="reg-pill ${REG_ST[t.reg_status]||'rp-pending'}">${REG_LBL[t.reg_status]||t.reg_status}</span>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+      <span class="reg-pill ${REG_ST[t.reg_status]||'rp-pending'}">${REG_LBL[t.reg_status]||t.reg_status}</span>
+      ${hasBracket ? `<button class="bracket-btn" onclick="openBracket(${t.tournament_id},this)">⚡ Setka</button>` : ''}
+    </div>
   </div>`;
 }
 
@@ -663,7 +669,9 @@ function renderOpenTrns() {
     const fill = Math.min(100, Math.round(((t.registered||0) / t.max_players) * 100));
     const isFull = (t.registered||0) >= t.max_players;
     let action = '';
-    if (reg) {
+    if (t.status === 'in_progress' || t.status === 'finished') {
+      action = `<button class="bracket-btn" onclick="openBracket(${t.id},this)">⚡ Setka ko'rish</button>`;
+    } else if (reg) {
       action = `<span class="reg-pill ${REG_ST[reg.reg_status]||'rp-pending'}">${REG_LBL[reg.reg_status]||'Ro\'yxatda'}</span>`;
     } else if (pendingRegs.has(t.id)) {
       action = `<span class="reg-pill rp-pending">⏳ Yuborildi</span>`;
@@ -692,6 +700,24 @@ function renderOpenTrns() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ─── BRACKET ───
+async function openBracket(trnId, btn) {
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const r = await fetch(`/api/tournaments/${trnId}/tv-token`);
+    if (!r.ok) { showToast('Setka hali tayyor emas', 'err'); return; }
+    const d = await r.json();
+    window.open(`/tv/${d.token}`, '_blank');
+  } catch(e) {
+    showToast('Xatolik yuz berdi', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
 }
 
 // ─── REGISTER ───
