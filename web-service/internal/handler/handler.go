@@ -578,13 +578,16 @@ func (h *Handler) meTournamentRegister(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 400, "invalid id")
 		return
 	}
-	var firstName, lastName string
-	_ = h.db.QueryRow(`SELECT first_name, COALESCE(last_name,'') FROM users WHERE telegram_id=$1`,
-		claims.TgID).Scan(&firstName, &lastName)
+
+	var firstName, lastName, username, phone string
+	_ = h.db.QueryRow(
+		`SELECT first_name, COALESCE(last_name,''), COALESCE(username,''), COALESCE(phone,'') FROM users WHERE telegram_id=$1`,
+		claims.TgID).Scan(&firstName, &lastName, &username, &phone)
 	name := strings.TrimSpace(firstName + " " + lastName)
 	if name == "" {
 		name = "Player"
 	}
+
 	body, _ := json.Marshal(map[string]any{"user_tg_id": claims.TgID, "user_name": name})
 	resp, err := http.Post(
 		h.trnSvcURL+"/tournaments/"+strconv.FormatInt(trnID, 10)+"/register",
@@ -595,9 +598,88 @@ func (h *Handler) meTournamentRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body) //nolint
+	w.Write(respBody) //nolint
+
+	if resp.StatusCode == 200 && h.botToken != "" {
+		var regResp struct {
+			ID int64 `json:"id"`
+		}
+		_ = json.Unmarshal(respBody, &regResp)
+
+		var trnName string
+		_ = h.db.QueryRow(`SELECT name FROM tournaments WHERE id=$1`, trnID).Scan(&trnName)
+		if trnName == "" {
+			trnName = strconv.FormatInt(trnID, 10)
+		}
+
+		fullName := strings.TrimSpace(firstName + " " + lastName)
+		if fullName == "" {
+			fullName = "Player"
+		}
+		usernameInfo := ""
+		if username != "" {
+			usernameInfo = "  @" + username
+		}
+		phoneInfo := ""
+		if phone != "" {
+			phoneInfo = "\n📱 " + phone
+		}
+		text := "🔔 <b>Yangi turnir so'rovi</b>\n\n" +
+			"🏆 <b>" + trnName + "</b>\n" +
+			"👤 <b>" + fullName + "</b>" + usernameInfo +
+			phoneInfo + "\n" +
+			"🆔 <code>" + strconv.FormatInt(claims.TgID, 10) + "</code>\n\n" +
+			"Tasdiqlash yoki rad etishingiz mumkin:"
+
+		approveData := strconv.FormatInt(trnID, 10) + ":" + strconv.FormatInt(regResp.ID, 10)
+		kb, _ := json.Marshal(map[string]any{
+			"inline_keyboard": [][]map[string]any{
+				{
+					{"text": "✅ Tasdiqlash", "callback_data": "admin_trn_approve:" + approveData},
+					{"text": "❌ Rad etish", "callback_data": "admin_trn_reject:" + approveData},
+				},
+				{
+					{"text": "✉️ Xabar yozish", "url": "tg://user?id=" + strconv.FormatInt(claims.TgID, 10)},
+					{"text": "👥 Barcha so'rovlar", "callback_data": "admin_trn_regs:" + strconv.FormatInt(trnID, 10)},
+				},
+			},
+		})
+
+		rows, _ := h.db.Query(`SELECT telegram_id FROM users WHERE role IN ('admin','superadmin') AND is_active=true`)
+		if rows != nil {
+			defer rows.Close()
+			for rows.Next() {
+				var adminTgID int64
+				if rows.Scan(&adminTgID) != nil {
+					continue
+				}
+				go h.sendTelegramMessage(adminTgID, text, kb)
+			}
+		}
+	}
+}
+
+func (h *Handler) sendTelegramMessage(chatID int64, text string, replyMarkup []byte) {
+	payload, _ := json.Marshal(map[string]any{
+		"chat_id":      chatID,
+		"text":         text,
+		"parse_mode":   "HTML",
+		"reply_markup": json.RawMessage(replyMarkup),
+	})
+	apiURL := "https://api.telegram.org/bot" + h.botToken + "/sendMessage"
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return
+	}
+	resp.Body.Close()
 }
 
 func (h *Handler) meUpdateProfile(w http.ResponseWriter, r *http.Request) {
