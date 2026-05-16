@@ -89,6 +89,17 @@ func (s *Service) CancelTournament(id int64) error {
 	return s.repo.SetTournamentStatus(id, models.TournamentStatusCancelled)
 }
 
+func (s *Service) DeleteTournament(id int64) error {
+	t, err := s.repo.GetTournament(id)
+	if err != nil {
+		return err
+	}
+	if t.Status == models.TournamentStatusInProgress {
+		return errors.New("davom etayotgan turnirni o'chirib bo'lmaydi")
+	}
+	return s.repo.DeleteTournament(id)
+}
+
 // ===================== TV =====================
 
 func (s *Service) GenerateTVToken(tournamentID int64) (string, error) {

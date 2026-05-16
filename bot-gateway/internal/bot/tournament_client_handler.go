@@ -163,7 +163,7 @@ func (h *Handler) handleTrnJoinCodeInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Mes
 }
 
 func (h *Handler) finishTrnRegister(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, trnID int64, joinCode string) {
-	_, err := h.tournamentSvc.Register(trnID, user.TelegramID, user.DisplayName(), joinCode)
+	reg, err := h.tournamentSvc.Register(trnID, user.TelegramID, user.DisplayName(), joinCode)
 	if err != nil {
 		if msgID > 0 {
 			send(bot, chatID, fmt.Sprintf("❌ %v", err))
@@ -184,12 +184,24 @@ func (h *Handler) finishTrnRegister(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		"🔔 <b>Yangi turnir so'rovi</b>\n\n"+
 			"🏆 %s\n"+
 			"👤 %s  (<code>%d</code>)\n\n"+
-			"Admin tasdiqlashi kerak.",
+			"Tasdiqlash yoki rad etishingiz mumkin:",
 		trnName, user.DisplayName(), user.TelegramID,
+	)
+	adminKb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ Tasdiqlash",
+				fmt.Sprintf("admin_trn_approve:%d:%d", trnID, reg.ID)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ Rad etish",
+				fmt.Sprintf("admin_trn_reject:%d:%d", trnID, reg.ID)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("👥 Barcha so'rovlar",
+				fmt.Sprintf("admin_trn_regs:%d", trnID)),
+		),
 	)
 	for _, a := range admins {
 		if a.Role == models.RoleSuperadmin || a.Role == models.RoleAdmin {
-			send(bot, a.TelegramID, adminText)
+			sendWithKeyboard(bot, a.TelegramID, adminText, adminKb)
 		}
 	}
 

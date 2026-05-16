@@ -43,6 +43,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /tournaments", h.listTournaments)
 	mux.HandleFunc("GET /tournaments/{id}", h.getTournament)
 	mux.HandleFunc("PUT /tournaments/{id}", h.updateTournament)
+	mux.HandleFunc("DELETE /tournaments/{id}", h.deleteTournament)
 	mux.HandleFunc("PUT /tournaments/{id}/cancel", h.cancelTournament)
 
 	mux.HandleFunc("POST /tournaments/{id}/register", h.register)
@@ -166,6 +167,23 @@ func (h *Handler) cancelTournament(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.svc.CancelTournament(id); err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	h.hub.Broadcast("tournaments")
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) deleteTournament(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, 400, "invalid id")
+		return
+	}
+	if err := h.svc.DeleteTournament(id); err != nil {
 		writeError(w, 400, err.Error())
 		return
 	}

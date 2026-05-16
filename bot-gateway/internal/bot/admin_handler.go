@@ -834,7 +834,10 @@ func (h *Handler) cmdHelp(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *mod
 			"⚙️ <b>Sozlamalar</b> — NVR va stol RTSP sozlamalari\n\n" +
 			"📌 <b>Buyruqlar:</b>\n" +
 			"/start — Bosh menyu\n" +
-			"/cancel — Amaliyotni bekor qilish\n\n" +
+			"/cancel — Amaliyotni bekor qilish\n" +
+			"/trns — Turnirlar ro'yxati (tezkor)\n" +
+			"/tv_bracket &lt;id&gt; — TV uchun bracket URL\n" +
+			"/tv_update &lt;id&gt; — TV ekranlarni yangilash\n\n" +
 			"❓ Texnik muammo: " + support
 	} else {
 		text = "ℹ️ <b>Yordam</b>\n\n" +

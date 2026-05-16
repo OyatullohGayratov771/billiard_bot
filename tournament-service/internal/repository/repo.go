@@ -95,6 +95,25 @@ func (r *Repo) UpdateTournament(id int64, name string, scheduledAt time.Time, ma
 	return err
 }
 
+func (r *Repo) DeleteTournament(id int64) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, q := range []string{
+		`DELETE FROM tournament_matches WHERE tournament_id=$1`,
+		`DELETE FROM tournament_registrations WHERE tournament_id=$1`,
+		`DELETE FROM tv_tokens WHERE tournament_id=$1`,
+		`DELETE FROM tournaments WHERE id=$1`,
+	} {
+		if _, err := tx.Exec(q, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 func (r *Repo) fillTournamentJoins(t *models.Tournament) {
 	_ = r.db.QueryRow(`SELECT name FROM branches WHERE id=$1`, t.BranchID).Scan(&t.BranchName)
 	if t.TableID != nil {

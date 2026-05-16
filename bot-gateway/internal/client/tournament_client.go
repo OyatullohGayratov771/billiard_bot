@@ -54,6 +54,24 @@ func (c *TournamentClient) CancelTournament(id int64) error {
 	return c.putNoResponse(fmt.Sprintf("/tournaments/%d/cancel", id), []byte("{}"))
 }
 
+func (c *TournamentClient) DeleteTournament(id int64) error {
+	req, _ := http.NewRequest(http.MethodDelete, c.baseURL+fmt.Sprintf("/tournaments/%d", id), nil)
+	if c.internalToken != "" {
+		req.Header.Set("X-Internal-Token", c.internalToken)
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		var e map[string]string
+		_ = json.NewDecoder(resp.Body).Decode(&e)
+		return fmt.Errorf("tournament-service: %s", e["error"])
+	}
+	return nil
+}
+
 func (c *TournamentClient) UpdateTournament(id int64, name string, scheduledAt time.Time, maxPlayers int) error {
 	body, _ := json.Marshal(map[string]any{
 		"name":         name,

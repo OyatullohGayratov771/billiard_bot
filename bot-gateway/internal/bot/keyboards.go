@@ -309,6 +309,8 @@ func adminTournamentDetailKeyboard(t *models.Tournament) tgbotapi.InlineKeyboard
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("❌ Bekor qilish",
 					fmt.Sprintf("admin_trn_cancel:%d", t.ID)),
+				tgbotapi.NewInlineKeyboardButtonData("🗑 O'chirish",
+					fmt.Sprintf("admin_trn_delete:%d", t.ID)),
 			),
 		)
 	case models.TournamentStatusInProgress:
@@ -320,6 +322,13 @@ func adminTournamentDetailKeyboard(t *models.Tournament) tgbotapi.InlineKeyboard
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("👥 Ishtirokchilar",
 					fmt.Sprintf("admin_trn_regs:%d", t.ID)),
+			),
+		)
+	case models.TournamentStatusCancelled:
+		rows = append(rows,
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🗑 O'chirish",
+					fmt.Sprintf("admin_trn_delete:%d", t.ID)),
 			),
 		)
 	}

@@ -98,6 +98,12 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 			sendWithKeyboard(bot, chatID, "✅ Bekor qilindi.", mainMenuKeyboard(user))
 		case "help":
 			h.cmdHelp(bot, msg, user)
+		case "trns":
+			if user.IsStaff() {
+				h.showAdminTournamentList(bot, chatID, user)
+			} else {
+				h.showClientTournamentList(bot, chatID, tgID)
+			}
 		case "tv_bracket":
 			h.cmdTVBracket(bot, msg, user)
 		case "tv_update":
@@ -260,6 +266,10 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbAdminTrnCancel(bot, chatID, user, arg1)
 	case "admin_trn_cancel_confirm":
 		h.cbAdminTrnCancelConfirm(bot, chatID, user, arg1)
+	case "admin_trn_delete":
+		h.cbAdminTrnDelete(bot, chatID, user, arg1)
+	case "admin_trn_delete_confirm":
+		h.cbAdminTrnDeleteConfirm(bot, chatID, user, arg1)
 	case "admin_trn_regs":
 		h.cbAdminTrnRegs(bot, chatID, msgID, user, arg1)
 	case "admin_trn_approve":

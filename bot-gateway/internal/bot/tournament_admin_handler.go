@@ -169,6 +169,46 @@ func (h *Handler) cbAdminTrnCancelConfirm(bot *tgbotapi.BotAPI, chatID int64, us
 	h.showAdminTournamentList(bot, chatID, user)
 }
 
+func (h *Handler) cbAdminTrnDelete(bot *tgbotapi.BotAPI, chatID int64, user *models.User, trnIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	trnID := mustParseInt64(trnIDStr)
+	t, err := h.tournamentSvc.GetTournament(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Turnir topilmadi.")
+		return
+	}
+	kb := confirmKeyboard(
+		fmt.Sprintf("admin_trn_delete_confirm:%d", trnID),
+		fmt.Sprintf("admin_trn_detail:%d", trnID),
+	)
+	sendWithKeyboard(bot, chatID, fmt.Sprintf(
+		"🗑 <b>%s</b> turnirini butunlay o'chirmoqchimisiz?\n\n"+
+			"⚠️ Bu amal qaytarilmaydi — barcha ma'lumotlar o'chib ketadi.",
+		t.Name,
+	), kb)
+}
+
+func (h *Handler) cbAdminTrnDeleteConfirm(bot *tgbotapi.BotAPI, chatID int64, user *models.User, trnIDStr string) {
+	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
+		return
+	}
+	trnID := mustParseInt64(trnIDStr)
+	t, err := h.tournamentSvc.GetTournament(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Turnir topilmadi.")
+		return
+	}
+	if err := h.tournamentSvc.DeleteTournament(trnID); err != nil {
+		send(bot, chatID, fmt.Sprintf("❌ %v", err))
+		return
+	}
+	h.logAction(user, "delete_tournament", fmt.Sprintf("trn:%d name:%s", trnID, t.Name))
+	send(bot, chatID, fmt.Sprintf("🗑 <b>%s</b> o'chirildi.", t.Name))
+	h.showAdminTournamentList(bot, chatID, user)
+}
+
 func (h *Handler) cbAdminTrnRegs(bot *tgbotapi.BotAPI, chatID int64, msgID int, user *models.User, trnIDStr string) {
 	if !h.requireRole(bot, chatID, user, models.RoleSuperadmin, models.RoleAdmin) {
 		return
