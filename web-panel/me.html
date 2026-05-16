@@ -788,45 +788,52 @@ function renderTrnTab() {
   if (!container) return;
   let html = '';
 
-  // 1. LIVE — approved + in_progress
-  const live = myTrns.filter(t => t.reg_status === 'approved' && t.tournament_status === 'in_progress');
-  live.forEach(t => { html += liveCard(t); });
+  // ── 1. LIVE: barcha in_progress turnirlar (ishtirokchi yoki kuzatuvchi) ──
+  // a) User approved + in_progress (ishtirokchi)
+  const myLive = myTrns.filter(t => t.reg_status === 'approved' && t.tournament_status === 'in_progress');
+  // b) openTrns dan in_progress bo'lib, user ro'yxatida yo'qlar (kuzatuvchi)
+  const watching = openTrns.filter(t => t.status === 'in_progress' && !myTrnsMap[t.id]);
 
-  // 2. UPCOMING — approved + registration
+  if (myLive.length || watching.length) {
+    html += secHdr('⚡', 'Hozir jarayonda', myLive.length + watching.length);
+    myLive.forEach(t => { html += liveCard(t, true); });
+    watching.forEach(t => { html += watchCard(t); });
+  }
+
+  // ── 2. UPCOMING: approved + registration ──
   const upcoming = myTrns.filter(t => t.reg_status === 'approved' && t.tournament_status === 'registration');
   if (upcoming.length) {
     html += secHdr('🎯', "Tasdiqlangan · Yaqinlashmoqda", upcoming.length);
     upcoming.forEach(t => { html += upcomingCard(t); });
   }
 
-  // 3. PENDING / REJECTED requests
-  const reqs = myTrns.filter(t => t.reg_status === 'pending' || t.reg_status === 'rejected');
+  // ── 3. SO'ROVLAR: pending / rejected ──
+  const reqs = myTrns.filter(t =>
+    (t.reg_status === 'pending' || t.reg_status === 'rejected') &&
+    t.tournament_status !== 'finished' && t.tournament_status !== 'cancelled'
+  );
   if (reqs.length) {
     html += secHdr('📋', "So'rovlar", reqs.length);
     reqs.forEach(t => { html += reqCard(t); });
   }
 
-  // 4. OPEN tournaments (not yet joined)
-  const joinable = openTrns.filter(t => {
-    const myReg = myTrnsMap[t.id];
-    return !myReg;
-  });
+  // ── 4. OCHIQ: registration status, user qo'shilmagan ──
+  const joinable = openTrns.filter(t => t.status === 'registration' && !myTrnsMap[t.id]);
   if (joinable.length) {
     html += secHdr('🏆', "Ochiq turnirlar", joinable.length);
     joinable.forEach(t => { html += openCard(t); });
-  } else if (!live.length && !upcoming.length && !reqs.length) {
-    html += secHdr('🏆', "Ochiq turnirlar", 0);
-    html += '<div class="empty" style="padding:24px 0">Hozircha ochiq turnirlar yo\'q</div>';
   }
 
-  // 5. HISTORY — finished with participation
+  // ── 5. TARIX: finished / cancelled ──
   const hist = myTrns.filter(t => t.tournament_status === 'finished' || t.tournament_status === 'cancelled');
   if (hist.length) {
     html += secHdr('🏁', "Tarix", hist.length);
     hist.forEach(t => { html += histCard(t); });
   }
 
-  if (!html) html = '<div class="empty" style="padding:48px 0">Hali turnirlar yo\'q</div>';
+  if (!myLive.length && !watching.length && !upcoming.length && !reqs.length && !joinable.length && !hist.length) {
+    html = '<div class="empty" style="padding:60px 0 40px">🏆<br><br>Hali turnirlar yo\'q</div>';
+  }
   container.innerHTML = html;
 }
 
@@ -850,7 +857,7 @@ function countdown(dt) {
   return `<span class="countdown">${d>0?d+' kun ':''} ${h>0?h+' soat':''} qoldi</span>`;
 }
 
-function liveCard(t) {
+function liveCard(t, _participant) {
   const cnt = t.approved_count||0, max = t.max_players||1;
   return `<div class="tc-live" onclick="openBracket(${t.tournament_id})">
     <div class="tc-live-bar"></div>
@@ -876,7 +883,8 @@ function liveCard(t) {
 
 function upcomingCard(t) {
   const cnt = t.approved_count||0, max = t.max_players||1;
-  return `<div class="tc-upcoming clickable" onclick="openBracket(${t.tournament_id})">
+  const cd = countdown(t.scheduled_at);
+  return `<div class="tc-upcoming clickable" style="cursor:default">
     <div class="tc-up-body">
       <div class="tc-up-hd">
         <div class="tc-up-name">${esc(t.name)}</div>
@@ -886,7 +894,7 @@ function upcomingCard(t) {
         <span>📅 ${fmtDT(t.scheduled_at)}</span>
         ${t.branch_name?`<span>🏢 ${esc(t.branch_name)}</span>`:''}
         ${t.price>0?`<span>💰 ${t.price.toLocaleString()} so'm</span>`:'<span>🆓 Bepul</span>'}
-        ${countdown(t.scheduled_at)}
+        ${cd}
       </div>
     </div>
     <div class="tc-up-foot">
@@ -895,7 +903,30 @@ function upcomingCard(t) {
         <span class="s-mini"><span class="s-mini-f${cnt>=max?' full':''}" style="width:${Math.min(100,Math.round(cnt/max*100))}%"></span></span>
         <span>${cnt}/${max}</span>
       </div>
-      <span style="color:var(--text3);font-size:.8rem">›</span>
+    </div>
+  </div>`;
+}
+
+function watchCard(t) {
+  const cnt = t.approved_count||0, max = t.max_players||1;
+  return `<div class="tc-live" onclick="openBracket(${t.id})" style="background:linear-gradient(135deg,#0d0d18,#080812);border-color:rgba(64,90,200,.4);box-shadow:0 0 16px rgba(64,90,200,.08)">
+    <div class="tc-live-bar" style="background:linear-gradient(90deg,#4060c0,#6080e0,#4060c0);background-size:200%;animation:shimmer 2s linear infinite"></div>
+    <div class="tc-live-body">
+      <div class="tc-live-hd">
+        <span class="live-pill" style="background:rgba(64,90,200,.15);border-color:rgba(64,90,200,.35);color:#8090e0"><span class="live-dot" style="background:#8090e0"></span>LIVE</span>
+        <span class="tc-live-name" style="color:#c0c8f0">${esc(t.name)}</span>
+        <span class="tc-chevron" style="color:rgba(100,120,200,.5)">›</span>
+      </div>
+      <div class="tc-live-meta" style="color:rgba(140,160,220,.6)">
+        <span>📅 ${fmtDT(t.scheduled_at)}</span>
+        ${t.branch_name?`<span>🏢 ${esc(t.branch_name)}</span>`:''}
+        ${t.price>0?`<span>💰 ${t.price.toLocaleString()} so'm</span>`:'<span>🆓 Bepul</span>'}
+        <span>${typeShort(t.type||'')}</span>
+      </div>
+      <div class="tc-live-foot">
+        ${slotsBar(cnt, max)}
+        <span class="tc-slots-txt" style="color:rgba(140,160,220,.6)">${cnt} / ${max} ishtirokchi</span>
+      </div>
     </div>
   </div>`;
 }
@@ -914,7 +945,7 @@ function reqCard(t) {
 
 function openCard(t) {
   const reg = myTrnsMap[t.id];
-  const cnt = t.registered||0, max = t.max_players||1;
+  const cnt = t.approved_count||0, max = t.max_players||1;
   const fill = Math.min(100, Math.round(cnt/max*100)), isFull = cnt>=max;
   let action = '';
   if (reg) {
@@ -950,14 +981,17 @@ function openCard(t) {
 
 function histCard(t) {
   const isFinished = t.tournament_status === 'finished';
-  return `<div class="tc-hist" onclick="openBracket(${t.tournament_id})">
+  const clickAttr = isFinished && t.reg_status === 'approved'
+    ? `onclick="openBracket(${t.tournament_id})" style="cursor:pointer"`
+    : `style="cursor:default;opacity:.5"`;
+  return `<div class="tc-hist" ${clickAttr}>
     <div class="tc-hist-body">
       <div class="tc-hist-ico">${isFinished ? '🏁' : '✕'}</div>
       <div class="tc-hist-info">
         <div class="tc-hist-name">${esc(t.name)}</div>
         <div class="tc-hist-sub">${fmtDT(t.scheduled_at)} · ${esc(t.branch_name||'—')} · ${REG_LBL[t.reg_status]||''}</div>
       </div>
-      ${isFinished ? '<span class="tc-hist-ch">›</span>' : ''}
+      ${isFinished && t.reg_status === 'approved' ? '<span class="tc-hist-ch">›</span>' : ''}
     </div>
   </div>`;
 }
