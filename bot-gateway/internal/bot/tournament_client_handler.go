@@ -185,9 +185,12 @@ func (h *Handler) finishTrnRegister(bot *tgbotapi.BotAPI, chatID int64, msgID in
 	if user.LastName != "" {
 		fullName += " " + user.LastName
 	}
-	userLine := fmt.Sprintf(`<a href="tg://user?id=%d">%s</a>`, user.TelegramID, fullName)
+	if fullName == "" {
+		fullName = user.DisplayName()
+	}
+	usernameInfo := ""
 	if user.Username != "" {
-		userLine += "  @" + user.Username
+		usernameInfo = "  @" + user.Username
 	}
 	phoneInfo := ""
 	if user.Phone != "" {
@@ -196,12 +199,12 @@ func (h *Handler) finishTrnRegister(bot *tgbotapi.BotAPI, chatID int64, msgID in
 
 	adminText := fmt.Sprintf(
 		"🔔 <b>Yangi turnir so'rovi</b>\n\n"+
-			"🏆 %s\n"+
-			"👤 %s"+
+			"🏆 <b>%s</b>\n"+
+			"👤 <b>%s</b>%s"+
 			"%s\n"+
 			"🆔 <code>%d</code>\n\n"+
 			"Tasdiqlash yoki rad etishingiz mumkin:",
-		trnName, userLine, phoneInfo, user.TelegramID,
+		trnName, fullName, usernameInfo, phoneInfo, user.TelegramID,
 	)
 	adminKb := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -211,6 +214,8 @@ func (h *Handler) finishTrnRegister(bot *tgbotapi.BotAPI, chatID int64, msgID in
 				fmt.Sprintf("admin_trn_reject:%d:%d", trnID, reg.ID)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL("✉️ Xabar yozish",
+				fmt.Sprintf("tg://user?id=%d", user.TelegramID)),
 			tgbotapi.NewInlineKeyboardButtonData("👥 Barcha so'rovlar",
 				fmt.Sprintf("admin_trn_regs:%d", trnID)),
 		),
