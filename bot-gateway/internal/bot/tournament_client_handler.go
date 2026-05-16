@@ -180,12 +180,28 @@ func (h *Handler) finishTrnRegister(bot *tgbotapi.BotAPI, chatID int64, msgID in
 	}
 
 	admins, _ := h.userSvc.ListStaff()
+
+	fullName := user.FirstName
+	if user.LastName != "" {
+		fullName += " " + user.LastName
+	}
+	userLine := fmt.Sprintf(`<a href="tg://user?id=%d">%s</a>`, user.TelegramID, fullName)
+	if user.Username != "" {
+		userLine += "  @" + user.Username
+	}
+	phoneInfo := ""
+	if user.Phone != "" {
+		phoneInfo = "\n📱 " + user.Phone
+	}
+
 	adminText := fmt.Sprintf(
 		"🔔 <b>Yangi turnir so'rovi</b>\n\n"+
 			"🏆 %s\n"+
-			"👤 %s  (<code>%d</code>)\n\n"+
+			"👤 %s"+
+			"%s\n"+
+			"🆔 <code>%d</code>\n\n"+
 			"Tasdiqlash yoki rad etishingiz mumkin:",
-		trnName, user.DisplayName(), user.TelegramID,
+		trnName, userLine, phoneInfo, user.TelegramID,
 	)
 	adminKb := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
