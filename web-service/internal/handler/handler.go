@@ -326,11 +326,14 @@ func (h *Handler) myTournaments(w http.ResponseWriter, r *http.Request) {
 	tgID := getClaims(r).TgID
 	rows, err := h.db.Query(`
 		SELECT tr.tournament_id, t.name, COALESCE(b.name,'?'),
-		       t.scheduled_at, t.status, tr.status, tr.registered_at
+		       t.scheduled_at, t.status, tr.status, tr.registered_at,
+		       t.max_players, t.price, COALESCE(t.type,'single_elimination'),
+		       (SELECT COUNT(*) FROM tournament_registrations r2
+		        WHERE r2.tournament_id=t.id AND r2.status='approved') AS approved_count
 		FROM tournament_registrations tr
 		JOIN tournaments t ON t.id=tr.tournament_id
 		LEFT JOIN branches b ON b.id=t.branch_id
-		WHERE tr.user_tg_id=$1 ORDER BY tr.registered_at DESC LIMIT 20`, tgID)
+		WHERE tr.user_tg_id=$1 ORDER BY tr.registered_at DESC LIMIT 50`, tgID)
 	if err != nil {
 		writeErr(w, 500, err.Error())
 		return
@@ -344,12 +347,17 @@ func (h *Handler) myTournaments(w http.ResponseWriter, r *http.Request) {
 		TournamentStatus string `json:"tournament_status"`
 		RegStatus        string `json:"reg_status"`
 		RegisteredAt     string `json:"registered_at"`
+		MaxPlayers       int    `json:"max_players"`
+		Price            int64  `json:"price"`
+		Type             string `json:"type"`
+		ApprovedCount    int    `json:"approved_count"`
 	}
 	list := []item{}
 	for rows.Next() {
 		var i item
 		if err := rows.Scan(&i.TournamentID, &i.Name, &i.BranchName,
-			&i.ScheduledAt, &i.TournamentStatus, &i.RegStatus, &i.RegisteredAt); err == nil {
+			&i.ScheduledAt, &i.TournamentStatus, &i.RegStatus, &i.RegisteredAt,
+			&i.MaxPlayers, &i.Price, &i.Type, &i.ApprovedCount); err == nil {
 			list = append(list, i)
 		}
 	}
