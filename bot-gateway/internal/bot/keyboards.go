@@ -324,7 +324,7 @@ func adminTournamentDetailKeyboard(t *models.Tournament) tgbotapi.InlineKeyboard
 					fmt.Sprintf("admin_trn_regs:%d", t.ID)),
 			),
 		)
-	case models.TournamentStatusCancelled:
+	case models.TournamentStatusCancelled, models.TournamentStatusFinished:
 		rows = append(rows,
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("🗑 O'chirish",
