@@ -301,6 +301,8 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 	case "trn_my", "trn_menu_my":
 		deleteMessage(bot, chatID, msgID)
 		h.showMyTournaments(bot, chatID, tgID)
+	case "trn_players":
+		h.cbClientTrnPlayers(bot, chatID, msgID, arg1)
 	case "trn_bracket":
 		h.cbClientBracket(bot, chatID, msgID, tgID, arg1)
 

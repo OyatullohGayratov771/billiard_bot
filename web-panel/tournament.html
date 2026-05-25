@@ -185,7 +185,7 @@ if (!TRN_ID) {
   document.getElementById('root').innerHTML = '<div class="empty-msg">❌ Noto\'g\'ri URL</div>';
 }
 
-let trn = null, matches = [], myRegStatus = null;
+let trn = null, matches = [], registrations = [], myRegStatus = null;
 
 async function loadMyReg() {
   const jwt = localStorage.getItem('bk_jwt');
@@ -203,14 +203,25 @@ async function loadMyReg() {
 
 async function load() {
   try {
-    const [r1, r2] = await Promise.all([
-      fetch(`/api/tournaments/${TRN_ID}`),
-      fetch(`/api/tournaments/${TRN_ID}/bracket`)
-    ]);
+    matches = []; registrations = [];
+    const r1 = await fetch(`/api/tournaments/${TRN_ID}`);
     if (!r1.ok) throw new Error('Turnir topilmadi');
     trn = await r1.json();
-    matches = r2.ok ? (await r2.json() || []) : [];
-    await loadMyReg();
+
+    if (trn.status === 'registration') {
+      const [r2] = await Promise.all([
+        fetch(`/api/tournaments/${TRN_ID}/registrations`),
+        loadMyReg()
+      ]);
+      registrations = r2.ok ? (await r2.json() || []) : [];
+    } else {
+      const [r2] = await Promise.all([
+        fetch(`/api/tournaments/${TRN_ID}/bracket`),
+        loadMyReg()
+      ]);
+      matches = r2.ok ? (await r2.json() || []) : [];
+    }
+
     render();
   } catch(e) {
     document.getElementById('root').innerHTML = `<div class="empty-msg">❌<br>${esc(e.message)}</div>`;
@@ -224,6 +235,13 @@ function render() {
   const cnt  = trn.approved_count || 0;
   const fill = Math.min(100, Math.round((cnt / trn.max_players) * 100));
   const full = cnt >= trn.max_players;
+
+  const isLive = trn.status === 'in_progress';
+
+  if (isLive) {
+    document.getElementById('live-badge').className = 'live-badge';
+    document.getElementById('live-txt').textContent = 'JONLI';
+  }
 
   let html = `
     <div class="hdr">
@@ -247,14 +265,49 @@ function render() {
 
   document.getElementById('root').innerHTML = html + '<div id="bracket-area"></div>';
 
-  if (matches.length) {
-    const area = document.getElementById('bracket-area');
-    renderBracket(area, trn, matches);
+  const area = document.getElementById('bracket-area');
+
+  if (trn.status === 'registration') {
+    renderParticipants(area);
   } else if (trn.status === 'in_progress' || trn.status === 'finished') {
-    document.getElementById('bracket-area').innerHTML =
-      '<div class="empty-msg">⏳<br>Bracket hali yaratilmagan</div>';
-  } else if (trn.status === 'registration') {
-    // show participants (registrations list from approved_count)
+    if (matches.length) {
+      renderBracket(area, trn, matches);
+    } else {
+      area.innerHTML = '<div class="empty-msg">⏳<br>Bracket hali yaratilmagan</div>';
+    }
+  }
+}
+
+function renderParticipants(container) {
+  const approved = (registrations || []).filter(r => r.status === 'approved');
+  const pending  = (registrations || []).filter(r => r.status === 'pending');
+
+  addSecHdr(container, `👥 Ishtirokchilar (${approved.length} / ${trn.max_players})`, 'wb');
+
+  if (approved.length === 0) {
+    const d = el('div'); d.className = 'empty-msg';
+    d.innerHTML = '⏳<br>Hali tasdiqlangan ishtirokchilar yo\'q';
+    container.appendChild(d);
+  } else {
+    const list = el('div', 'participants');
+    approved.forEach((r, i) => {
+      const item = el('div', 'p-item');
+      item.innerHTML = `<span class="p-num">${i+1}</span><span>${esc(r.user_name)}</span>`;
+      list.appendChild(item);
+    });
+    container.appendChild(list);
+  }
+
+  if (pending.length > 0) {
+    addSecHdr(container, `⏳ Kutilmoqda (${pending.length})`, '');
+    const list = el('div', 'participants');
+    pending.forEach(r => {
+      const item = el('div', 'p-item');
+      item.style.opacity = '0.45';
+      item.innerHTML = `<span class="p-num">•</span><span>${esc(r.user_name)}</span>`;
+      list.appendChild(item);
+    });
+    container.appendChild(list);
   }
 }
 

@@ -98,6 +98,10 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 				text += "\n\n✅ <i>Siz turnirga qabul qilindingiz! Omad tilaymiz 🍀</i>"
 			}
 		}
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("👥 Ishtirokchilar ro'yxati",
+				fmt.Sprintf("trn_players:%d", trnID)),
+		))
 
 	case models.TournamentStatusInProgress:
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
@@ -324,6 +328,57 @@ func (h *Handler) cbClientBracket(bot *tgbotapi.BotAPI, chatID int64, msgID int,
 
 	text := fmt.Sprintf("🏆 <b>Turnir #%d — Bracket</b>\n", trnID)
 	text += formatBracket(matches)
+
+	kb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔙 Turnirga qaytish",
+				fmt.Sprintf("trn_detail:%d", trnID)),
+		),
+	)
+	if msgID > 0 {
+		editMessage(bot, chatID, msgID, text, &kb)
+	} else {
+		sendWithKeyboard(bot, chatID, text, kb)
+	}
+}
+
+func (h *Handler) cbClientTrnPlayers(bot *tgbotapi.BotAPI, chatID int64, msgID int, trnIDStr string) {
+	trnID := mustParseInt64(trnIDStr)
+	t, err := h.tournamentSvc.GetTournament(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Turnir topilmadi.")
+		return
+	}
+
+	regs, err := h.tournamentSvc.ListRegistrations(trnID)
+	if err != nil {
+		send(bot, chatID, "❌ Xatolik.")
+		return
+	}
+
+	text := fmt.Sprintf("👥 <b>%s — Ishtirokchilar</b>\n\n", t.Name)
+
+	approved := make([]string, 0)
+	pending := make([]string, 0)
+	for _, r := range regs {
+		switch r.Status {
+		case models.RegStatusApproved:
+			approved = append(approved, fmt.Sprintf("%d. %s", len(approved)+1, r.UserName))
+		case models.RegStatusPending:
+			pending = append(pending, "• "+r.UserName)
+		}
+	}
+
+	if len(approved) == 0 {
+		text += "Hali tasdiqlangan ishtirokchilar yo'q.\n"
+	} else {
+		text += fmt.Sprintf("✅ <b>Tasdiqlangan (%d/%d):</b>\n", len(approved), t.MaxPlayers)
+		text += strings.Join(approved, "\n") + "\n"
+	}
+	if len(pending) > 0 {
+		text += fmt.Sprintf("\n⏳ <b>Kutilmoqda (%d):</b>\n", len(pending))
+		text += strings.Join(pending, "\n")
+	}
 
 	kb := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
