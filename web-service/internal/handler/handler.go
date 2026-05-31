@@ -20,15 +20,16 @@ import (
 )
 
 type Handler struct {
-	db        *sql.DB
-	secret    string
-	baseURL   string
-	botToken  string
-	trnSvcURL string
+	db            *sql.DB
+	secret        string
+	baseURL       string
+	botToken      string
+	trnSvcURL     string
+	internalToken string
 }
 
-func New(db *sql.DB, secret, baseURL, botToken, trnSvcURL string) *Handler {
-	return &Handler{db: db, secret: secret, baseURL: baseURL, botToken: botToken, trnSvcURL: trnSvcURL}
+func New(db *sql.DB, secret, baseURL, botToken, trnSvcURL, internalToken string) *Handler {
+	return &Handler{db: db, secret: secret, baseURL: baseURL, botToken: botToken, trnSvcURL: trnSvcURL, internalToken: internalToken}
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
@@ -47,6 +48,18 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/admin/clips", h.withRole(h.adminClips, "operator", "admin", "superadmin"))
 	mux.HandleFunc("GET /api/admin/tournaments", h.withRole(h.adminTournaments, "operator", "admin", "superadmin"))
 	mux.HandleFunc("GET /api/admin/users", h.withRole(h.adminUsers, "admin", "superadmin"))
+
+	// Tournament management (CRUD + bracket)
+	mux.HandleFunc("GET /api/admin/branches", h.withRole(h.adminBranches, "operator", "admin", "superadmin"))
+	mux.HandleFunc("POST /api/admin/tournaments", h.withRole(h.adminCreateTrn, "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/tournaments/{id}", h.withRole(h.adminUpdateTrn, "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/tournaments/{id}/cancel", h.withRole(h.adminCancelTrn, "admin", "superadmin"))
+	mux.HandleFunc("DELETE /api/admin/tournaments/{id}", h.withRole(h.adminDeleteTrn, "admin", "superadmin"))
+	mux.HandleFunc("POST /api/admin/tournaments/{id}/bracket", h.withRole(h.adminGenBracket, "admin", "superadmin"))
+	mux.HandleFunc("POST /api/admin/tournaments/{id}/bracket/shuffle", h.withRole(h.adminShuffleBracket, "admin", "superadmin"))
+	mux.HandleFunc("GET /api/admin/tournaments/{id}/bracket", h.withRole(h.adminGetBracket, "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/matches/{id}/result", h.withRole(h.adminMatchResult, "admin", "superadmin"))
+	mux.HandleFunc("POST /api/admin/tournaments/{id}/register-manual", h.withRole(h.adminRegisterManual, "admin", "superadmin"))
 
 	// Tournament registration management
 	mux.HandleFunc("GET /api/admin/tournaments/{id}/registrations", h.withRole(h.adminTrnRegistrations, "admin", "superadmin"))
@@ -469,6 +482,110 @@ func (h *Handler) adminTournaments(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, 200, list)
 }
+
+// ─── Tournament proxy helpers ───
+
+func (h *Handler) trnProxy(w http.ResponseWriter, r *http.Request, method, path string, body io.Reader) {
+	req, err := http.NewRequestWithContext(r.Context(), method, h.trnSvcURL+path, body)
+	if err != nil {
+		writeErr(w, 500, "proxy error")
+		return
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	if h.internalToken != "" {
+		req.Header.Set("X-Internal-Token", h.internalToken)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		writeErr(w, 502, "tournament service unavailable")
+		return
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(resp.Body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	_, _ = w.Write(respBody)
+}
+
+func (h *Handler) adminBranches(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.db.Query(`SELECT id, name FROM branches WHERE is_active=true ORDER BY id`)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	defer rows.Close()
+	type item struct {
+		ID   int64  `json:"id"`
+		Name string `json:"name"`
+	}
+	list := []item{}
+	for rows.Next() {
+		var i item
+		if rows.Scan(&i.ID, &i.Name) == nil {
+			list = append(list, i)
+		}
+	}
+	writeJSON(w, 200, list)
+}
+
+func (h *Handler) adminCreateTrn(w http.ResponseWriter, r *http.Request) {
+	claims := getClaims(r)
+	var req map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErr(w, 400, "invalid request")
+		return
+	}
+	req["admin_tg_id"] = claims.TgID
+	if req["type"] == nil || req["type"] == "" {
+		req["type"] = "single_elimination"
+	}
+	body, _ := json.Marshal(req)
+	h.trnProxy(w, r, http.MethodPost, "/tournaments", bytes.NewReader(body))
+}
+
+func (h *Handler) adminUpdateTrn(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.trnProxy(w, r, http.MethodPut, "/tournaments/"+id, r.Body)
+}
+
+func (h *Handler) adminCancelTrn(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.trnProxy(w, r, http.MethodPut, "/tournaments/"+id+"/cancel", bytes.NewReader([]byte("{}")))
+}
+
+func (h *Handler) adminDeleteTrn(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.trnProxy(w, r, http.MethodDelete, "/tournaments/"+id, nil)
+}
+
+func (h *Handler) adminGenBracket(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.trnProxy(w, r, http.MethodPost, "/tournaments/"+id+"/bracket", bytes.NewReader([]byte("{}")))
+}
+
+func (h *Handler) adminShuffleBracket(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.trnProxy(w, r, http.MethodPost, "/tournaments/"+id+"/bracket/shuffle", bytes.NewReader([]byte("{}")))
+}
+
+func (h *Handler) adminGetBracket(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.trnProxy(w, r, http.MethodGet, "/tournaments/"+id+"/bracket", nil)
+}
+
+func (h *Handler) adminMatchResult(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.trnProxy(w, r, http.MethodPut, "/matches/"+id+"/result", r.Body)
+}
+
+func (h *Handler) adminRegisterManual(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.trnProxy(w, r, http.MethodPost, "/tournaments/"+id+"/register-manual", r.Body)
+}
+
+// ─── Tournament registration management ───
 
 func (h *Handler) adminTrnRegistrations(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

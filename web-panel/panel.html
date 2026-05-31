@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="X-Content-Type-Options" content="nosniff">
 <title>Billiard King — Admin Panel</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -18,58 +17,69 @@
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
 a{text-decoration:none;color:inherit}
 
-nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:64px;background:rgba(5,5,5,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2)}
-.nav-logo img{height:44px;filter:drop-shadow(0 0 10px var(--gold-glow))}
-.nav-badge{background:rgba(212,175,55,.1);border:1px solid var(--border);padding:4px 12px;border-radius:2px;font-size:.62rem;font-weight:700;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
-.nav-right{display:flex;align-items:center;gap:16px}
-.nav-user{font-size:.72rem;color:var(--text2)}
-.nav-logout{font-size:.66rem;color:var(--text3);cursor:pointer;letter-spacing:1px}
+/* NAV */
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;background:rgba(5,5,5,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2)}
+.nav-logo img{height:40px;filter:drop-shadow(0 0 8px var(--gold-glow))}
+.nav-badge{background:rgba(212,175,55,.1);border:1px solid var(--border);padding:3px 10px;border-radius:2px;font-size:.6rem;font-weight:700;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+.nav-right{display:flex;align-items:center;gap:14px}
+.nav-user{font-size:.7rem;color:var(--text2)}
+.nav-logout{font-size:.64rem;color:var(--text3);cursor:pointer;letter-spacing:1px;transition:.2s}
 .nav-logout:hover{color:var(--red)}
 
+/* STATES */
 #state-loading,#state-error,#state-main{display:none}
 #state-loading.show,#state-error.show,#state-main.show{display:block}
 .center-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center;color:var(--text2)}
-.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+.spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.hero{padding:40px 40px 28px;max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
-.hero-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;letter-spacing:-.5px}
-.hero-sub{color:var(--text2);font-size:.78rem;margin-top:4px}
-.refresh-btn{background:var(--card2);border:1px solid var(--border);padding:8px 18px;border-radius:2px;font-size:.66rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--text2);transition:.2s}
+/* HERO */
+.hero{padding:32px 32px 24px;max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.hero-title{font-size:clamp(1.3rem,2.5vw,1.9rem);font-weight:900;letter-spacing:-.5px}
+.hero-sub{color:var(--text2);font-size:.75rem;margin-top:4px}
+.refresh-btn{background:var(--card2);border:1px solid var(--border2);padding:7px 16px;border-radius:3px;font-size:.64rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--text2);transition:.2s}
 .refresh-btn:hover{color:var(--gold);border-color:var(--gold)}
-@media(max-width:600px){.hero{padding:24px 20px 16px}}
+@media(max-width:560px){.hero{padding:20px 16px 14px}}
 
-.stats{max-width:1200px;margin:0 auto;padding:0 40px 32px;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border2)}
-.stat-card{background:var(--card);padding:20px 16px}
-.sc-n{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,var(--gold-l),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.sc-l{font-size:.5rem;text-transform:uppercase;letter-spacing:3px;color:var(--text3);margin-top:6px}
-@media(max-width:960px){.stats{grid-template-columns:repeat(3,1fr);padding:0 20px 20px}}
-@media(max-width:500px){.stats{grid-template-columns:repeat(2,1fr)}}
+/* STATS */
+.stats{max-width:1240px;margin:0 auto;padding:0 32px 28px;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border2)}
+.stat-card{background:var(--card);padding:18px 14px}
+.sc-n{font-size:1.55rem;font-weight:900;background:linear-gradient(135deg,var(--gold-l),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sc-l{font-size:.48rem;text-transform:uppercase;letter-spacing:3px;color:var(--text3);margin-top:5px}
+@media(max-width:960px){.stats{grid-template-columns:repeat(3,1fr);padding:0 16px 20px}}
+@media(max-width:480px){.stats{grid-template-columns:repeat(2,1fr)}}
 
-.tabs-wrap{max-width:1200px;margin:0 auto;padding:0 40px;border-bottom:1px solid var(--border2)}
+/* TABS */
+.tabs-wrap{max-width:1240px;margin:0 auto;padding:0 32px;border-bottom:1px solid var(--border2)}
 .tabs{display:flex}
-.tab{padding:13px 22px;font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
+.tab{padding:12px 20px;font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
 .tab.active{color:var(--gold);border-bottom-color:var(--gold)}
-@media(max-width:600px){.tabs-wrap{padding:0 12px;overflow-x:auto}.tab{padding:11px 14px;font-size:.62rem}}
+@media(max-width:560px){.tabs-wrap{padding:0 10px;overflow-x:auto}.tab{padding:10px 13px;font-size:.6rem}}
 
-.tab-pane{display:none;max-width:1200px;margin:0 auto;padding:24px 40px 80px}
+/* PANES */
+.tab-pane{display:none;max-width:1240px;margin:0 auto;padding:20px 32px 80px}
 .tab-pane.active{display:block}
-@media(max-width:600px){.tab-pane{padding:16px 16px 60px}}
+@media(max-width:560px){.tab-pane{padding:14px 14px 60px}}
 
-.sec-label{font-size:.52rem;letter-spacing:5px;text-transform:uppercase;color:var(--text3);margin-bottom:14px}
-
-.filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.filter-btn{padding:5px 14px;border-radius:2px;font-size:.62rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--text3);transition:.2s}
+/* FILTER ROW */
+.filter-row{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.filter-btn{padding:5px 13px;border-radius:2px;font-size:.61rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--text3);transition:.2s}
 .filter-btn:hover,.filter-btn.active{color:var(--gold);border-color:var(--gold)}
 
-.data-table{width:100%;border-collapse:collapse;font-size:.76rem}
-.data-table th{padding:9px 12px;text-align:left;font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2)}
-.data-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:top}
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:.75rem}
+.data-table th{padding:8px 11px;text-align:left;font-size:.5rem;letter-spacing:2px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2)}
+.data-table td{padding:10px 11px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:top}
 .data-table tr.clickable{cursor:pointer}
 .data-table tr.clickable:hover td{background:var(--card2)}
-.data-table .name-cell{font-weight:700}
-.data-table .sub-cell{font-size:.66rem;color:var(--text2);margin-top:2px}
-.status-pill{display:inline-block;padding:2px 8px;border-radius:2px;font-size:.58rem;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.name-cell{font-weight:700}
+.sub-cell{font-size:.64rem;color:var(--text2);margin-top:2px}
+.table-wrap{overflow-x:auto}
+.empty-note{color:var(--text3);font-size:.78rem;padding:40px;text-align:center}
+.loading-note{color:var(--text3);font-size:.76rem;padding:22px;text-align:center}
+
+/* STATUS PILLS */
+.sp{display:inline-block;padding:2px 8px;border-radius:2px;font-size:.57rem;font-weight:700;letter-spacing:1px;text-transform:uppercase}
 .sp-pending{background:rgba(136,136,136,.12);color:#888}
 .sp-paid{background:rgba(52,152,219,.12);color:var(--blue)}
 .sp-processing{background:rgba(230,126,34,.12);color:var(--orange)}
@@ -85,108 +95,177 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .sp-operator{background:rgba(230,126,34,.08);color:var(--orange)}
 .sp-admin{background:rgba(52,152,219,.08);color:var(--blue)}
 .sp-superadmin{background:rgba(46,204,113,.08);color:var(--green)}
-.empty-note{color:var(--text3);font-size:.8rem;padding:40px;text-align:center}
-.loading-note{color:var(--text3);font-size:.78rem;padding:24px;text-align:center}
 
-.table-wrap{overflow-x:auto}
-
-.pending-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:rgba(230,126,34,.2);color:var(--orange);font-size:.56rem;font-weight:800;padding:0 5px;margin-left:4px;vertical-align:middle}
+/* BADGE */
+.pending-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:8px;background:rgba(230,126,34,.2);color:var(--orange);font-size:.54rem;font-weight:800;padding:0 4px;margin-left:4px;vertical-align:middle}
 
 /* ─── DETAIL PANEL ─── */
-.panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:299;display:none;backdrop-filter:blur(3px)}
+.panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:299;display:none;backdrop-filter:blur(3px)}
 .panel-overlay.show{display:block}
-.detail-panel{position:fixed;top:0;right:0;bottom:0;width:min(520px,100vw);background:var(--bg);border-left:1px solid var(--border);z-index:300;transform:translateX(102%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-20px 0 60px rgba(0,0,0,.6)}
+.detail-panel{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:var(--bg);border-left:1px solid var(--border);z-index:300;transform:translateX(102%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-24px 0 60px rgba(0,0,0,.7)}
 .detail-panel.open{transform:translateX(0)}
-.dp-head{padding:18px 20px 14px;border-bottom:1px solid var(--border2);display:flex;align-items:flex-start;gap:12px;flex-shrink:0;background:var(--card)}
-.dp-title{flex:1;font-size:.92rem;font-weight:800;line-height:1.3}
-.dp-sub{font-size:.63rem;color:var(--text2);margin-top:3px}
-.dp-close{background:none;border:1px solid var(--border2);color:var(--text3);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;flex-shrink:0;transition:.2s;margin-top:2px}
-.dp-close:hover{color:var(--text);border-color:var(--gold);color:var(--gold)}
-.dp-meta{display:flex;gap:8px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card);align-items:center}
-.dp-prog-wrap{padding:0 20px 12px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card)}
-.dp-prog-label{display:flex;justify-content:space-between;font-size:.58rem;color:var(--text2);margin-bottom:6px}
-.dp-prog-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden}
-.dp-prog-fill{height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:2px;transition:width .4s ease}
-.dp-inner-tabs{display:flex;padding:0 20px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card);overflow-x:auto;gap:0}
-.dp-tab{padding:10px 12px;font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:.2s}
-.dp-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
-.dp-body{flex:1;overflow-y:auto;padding:12px 16px 24px}
 
-/* REG ITEMS */
-.reg-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:5px;border:1px solid var(--border2);margin-bottom:6px;transition:border-color .2s;background:var(--card)}
-.reg-item:hover{border-color:rgba(212,175,55,.2)}
-.ri-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:900;flex-shrink:0;color:#fff;text-transform:uppercase}
+.dp-head{padding:16px 18px 12px;border-bottom:1px solid var(--border2);display:flex;align-items:flex-start;gap:10px;flex-shrink:0;background:var(--card)}
+.dp-title{font-size:.9rem;font-weight:800;line-height:1.3;flex:1;min-width:0}
+.dp-sub{font-size:.62rem;color:var(--text2);margin-top:2px}
+.dp-close{background:none;border:1px solid var(--border2);color:var(--text3);width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;font-size:.95rem;flex-shrink:0;transition:.2s;margin-top:2px}
+.dp-close:hover{color:var(--gold);border-color:var(--gold)}
+
+.dp-meta{display:flex;gap:8px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card);align-items:center}
+.dp-type-tag{font-size:.58rem;color:var(--text3);background:var(--card2);border:1px solid var(--border2);padding:2px 8px;border-radius:10px}
+
+.dp-prog-wrap{padding:0 18px 10px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card)}
+.dp-prog-label{display:flex;justify-content:space-between;font-size:.57rem;color:var(--text2);margin-bottom:5px}
+.dp-prog-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden}
+.dp-prog-fill{height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:2px;transition:width .4s}
+
+/* Action buttons row */
+.dp-actions{display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card)}
+.dpa{padding:5px 12px;border-radius:3px;font-size:.61rem;font-weight:700;cursor:pointer;border:1px solid;transition:.2s;letter-spacing:.3px;background:transparent}
+.dpa:disabled{opacity:.4;cursor:default}
+.dpa-edit{color:var(--blue);border-color:rgba(52,152,219,.35)}
+.dpa-edit:hover{background:rgba(52,152,219,.1)}
+.dpa-gold{color:var(--gold);border-color:rgba(212,175,55,.35)}
+.dpa-gold:hover:not(:disabled){background:rgba(212,175,55,.08)}
+.dpa-warn{color:var(--orange);border-color:rgba(230,126,34,.35)}
+.dpa-warn:hover{background:rgba(230,126,34,.08)}
+.dpa-red{color:var(--red);border-color:rgba(231,76,60,.3)}
+.dpa-red:hover{background:rgba(231,76,60,.07)}
+
+/* Inner tabs */
+.dp-inner-tabs{display:flex;padding:0 18px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card);overflow-x:auto}
+.dp-tab{padding:9px 12px;font-size:.59rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:.2s;user-select:none}
+.dp-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.dp-cnt{font-size:.54rem;opacity:.7;margin-left:3px}
+
+/* Body */
+.dp-body{flex:1;overflow-y:auto;padding:12px 14px 24px}
+
+/* Registration items */
+.reg-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:5px;border:1px solid var(--border2);margin-bottom:5px;background:var(--card);transition:border-color .2s}
+.reg-item:hover{border-color:rgba(212,175,55,.18)}
+.ri-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:900;flex-shrink:0;color:#fff;text-transform:uppercase}
 .ri-info{flex:1;min-width:0}
-.ri-name{font-weight:700;font-size:.79rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ri-date{font-size:.59rem;color:var(--text2);margin-top:2px}
+.ri-name{font-weight:700;font-size:.77rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ri-date{font-size:.58rem;color:var(--text2);margin-top:1px}
 .ri-acts{display:flex;gap:4px;flex-shrink:0;align-items:center}
-.ri-btn{padding:4px 9px;border-radius:3px;font-size:.6rem;font-weight:700;cursor:pointer;border:1px solid;transition:.2s;letter-spacing:.3px;line-height:1.4}
-.ri-btn.ok{color:var(--green);border-color:rgba(46,204,113,.35);background:transparent}
+.ri-btn{padding:4px 9px;border-radius:3px;font-size:.59rem;font-weight:700;cursor:pointer;border:1px solid;transition:.2s;line-height:1.4;background:transparent}
+.ri-btn.ok{color:var(--green);border-color:rgba(46,204,113,.35)}
 .ri-btn.ok:hover{background:rgba(46,204,113,.1)}
-.ri-btn.no{color:var(--red);border-color:rgba(231,76,60,.35);background:transparent}
+.ri-btn.no{color:var(--red);border-color:rgba(231,76,60,.35)}
 .ri-btn.no:hover{background:rgba(231,76,60,.1)}
 .ri-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
 
+/* Add player inline form */
+.add-player-row{display:flex;gap:7px;margin-bottom:10px;padding:10px;background:var(--card);border:1px solid var(--border2);border-radius:5px}
+.add-player-row input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:.76rem;font-family:inherit}
+.add-player-row input::placeholder{color:var(--text3)}
+.add-player-row button{background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.3);color:var(--gold);padding:4px 12px;border-radius:3px;font-size:.62rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s}
+.add-player-row button:hover{background:rgba(212,175,55,.18)}
+
+/* Bracket match cards */
+.bracket-section{margin-bottom:22px}
+.br-section-label{font-size:.5rem;letter-spacing:4px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border2)}
+.match-card{border:1px solid var(--border2);border-radius:5px;padding:10px 12px;margin-bottom:5px;background:var(--card);transition:border-color .2s}
+.match-card.mc-ready{border-color:rgba(212,175,55,.2)}
+.match-card.mc-done{border-color:rgba(46,204,113,.18)}
+.match-card.mc-bye{opacity:.6;background:rgba(46,204,113,.03)}
+.match-card.mc-pending{opacity:.45}
+.mc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.mc-num{font-size:.54rem;color:var(--text3);letter-spacing:.5px}
+.mc-status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.mc-status-dot.ready{background:var(--gold)}
+.mc-status-dot.done{background:var(--green)}
+.mc-status-dot.pending{background:var(--text3)}
+.mc-status-dot.bye{background:var(--green)}
+.mc-player-row{display:flex;align-items:center;gap:8px;padding:4px 0}
+.mc-player-row+.mc-player-row{border-top:1px solid var(--border2)}
+.mc-pname{font-size:.78rem;font-weight:600;flex:1;line-height:1.3}
+.mc-player-row.winner .mc-pname{color:var(--gold);font-weight:800}
+.mc-player-row.loser .mc-pname{color:var(--text3);text-decoration:line-through}
+.mc-trophy{font-size:.7rem;color:var(--text3)}
+.mc-player-row.winner .mc-trophy{color:var(--gold)}
+.mc-win-btn{background:transparent;border:1px solid rgba(212,175,55,.3);border-radius:3px;padding:3px 8px;cursor:pointer;font-size:.62rem;color:var(--gold);transition:.2s;white-space:nowrap}
+.mc-win-btn:hover{background:rgba(212,175,55,.12)}
+.mc-win-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
+.mc-bye-text{font-size:.64rem;color:var(--green);font-style:italic}
+
+/* ─── MODAL ─── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:16px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:8px;width:min(460px,100%);max-height:90vh;overflow-y:auto;display:flex;flex-direction:column}
+.modal-head{padding:16px 18px 12px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-weight:800;font-size:.88rem}
+.modal-close-btn{background:none;border:1px solid var(--border2);color:var(--text3);width:26px;height:26px;border-radius:3px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:.2s}
+.modal-close-btn:hover{color:var(--gold);border-color:var(--gold)}
+.modal-body{padding:18px;display:flex;flex-direction:column;gap:13px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:.56rem;text-transform:uppercase;letter-spacing:2px;color:var(--text3)}
+.form-input{background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:8px 11px;border-radius:4px;font-size:.8rem;font-family:inherit;outline:none;transition:border-color .2s;width:100%}
+.form-input:focus{border-color:rgba(212,175,55,.4)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-foot{padding:12px 18px;border-top:1px solid var(--border2);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+.btn-cancel{background:var(--card2);border:1px solid var(--border2);color:var(--text2);padding:7px 16px;border-radius:3px;cursor:pointer;font-size:.68rem;font-weight:700;transition:.2s}
+.btn-cancel:hover{border-color:var(--text2)}
+.btn-submit{background:var(--gold);color:#000;border:none;padding:7px 18px;border-radius:3px;cursor:pointer;font-size:.68rem;font-weight:800;letter-spacing:.5px;transition:.2s}
+.btn-submit:hover{background:var(--gold-l)}
+.btn-submit:disabled{opacity:.5;cursor:default}
+
 /* ─── USERS TAB ─── */
-.role-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.role-chip{padding:5px 14px;border-radius:20px;font-size:.62rem;font-weight:700;letter-spacing:.8px;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--text3);transition:.2s;white-space:nowrap}
-.role-chip:hover{border-color:var(--gold);color:var(--gold)}
-.role-chip.active{background:rgba(212,175,55,.12);border-color:var(--gold);color:var(--gold)}
-.chip-cnt{font-size:.55rem;opacity:.65;margin-left:5px;font-variant-numeric:tabular-nums}
-
-.user-search-bar{display:flex;gap:8px;margin-bottom:18px;align-items:center}
-.search-wrap{flex:1;display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--border2);border-radius:3px;padding:8px 13px;transition:.2s}
-.search-wrap:focus-within{border-color:rgba(212,175,55,.4)}
-.search-wrap input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:.76rem;font-family:inherit}
+.role-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px}
+.role-chip{padding:5px 13px;border-radius:20px;font-size:.61rem;font-weight:700;letter-spacing:.8px;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--text3);transition:.2s;white-space:nowrap}
+.role-chip:hover,.role-chip.active{background:rgba(212,175,55,.1);border-color:var(--gold);color:var(--gold)}
+.chip-cnt{font-size:.54rem;opacity:.65;margin-left:4px}
+.user-search-bar{display:flex;gap:8px;margin-bottom:16px}
+.search-wrap{flex:1;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border2);border-radius:3px;padding:7px 11px;transition:.2s}
+.search-wrap:focus-within{border-color:rgba(212,175,55,.35)}
+.search-wrap input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:.75rem;font-family:inherit}
 .search-wrap input::placeholder{color:var(--text3)}
-.u-refresh{background:var(--card);border:1px solid var(--border2);color:var(--text3);width:37px;height:37px;border-radius:3px;cursor:pointer;font-size:1rem;transition:.2s;flex-shrink:0}
+.u-refresh{background:var(--card);border:1px solid var(--border2);color:var(--text3);width:36px;height:36px;border-radius:3px;cursor:pointer;font-size:1rem;transition:.2s;flex-shrink:0}
 .u-refresh:hover{color:var(--gold);border-color:var(--gold)}
-
-.user-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-@media(max-width:960px){.user-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:540px){.user-grid{grid-template-columns:1fr}}
-
+.user-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+@media(max-width:940px){.user-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.user-grid{grid-template-columns:1fr}}
 .user-card{background:var(--card);border:1px solid var(--border2);border-radius:5px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s,transform .2s}
-.user-card:hover{border-color:rgba(212,175,55,.3);transform:translateY(-1px)}
-.uc-top{padding:14px 14px 10px;display:flex;gap:10px;align-items:flex-start}
-.uc-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:900;color:#fff;flex-shrink:0;text-transform:uppercase}
+.user-card:hover{border-color:rgba(212,175,55,.25);transform:translateY(-1px)}
+.uc-top{padding:13px 13px 9px;display:flex;gap:9px;align-items:flex-start}
+.uc-av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;flex-shrink:0;text-transform:uppercase}
 .uc-info{flex:1;min-width:0}
-.uc-name{font-weight:700;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
-.uc-un{font-size:.68rem;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.uc-tid{font-size:.58rem;color:var(--text3);margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:.3px}
-.uc-pills{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0}
-.uc-foot{padding:9px 14px;border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
-.uc-date{font-size:.58rem;color:var(--text3)}
-.uc-acts{display:flex;gap:5px;align-items:center}
-.role-sel-u{background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:4px 6px;border-radius:3px;font-size:.64rem;cursor:pointer;outline:none;transition:border-color .2s;font-family:inherit}
-.role-sel-u:hover,.role-sel-u:focus{border-color:rgba(212,175,55,.4)}
-.act-tog{width:30px;height:28px;border-radius:3px;border:1px solid;background:transparent;cursor:pointer;font-size:.82rem;line-height:1;transition:.2s;flex-shrink:0}
+.uc-name{font-weight:700;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.uc-un{font-size:.66rem;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uc-tid{font-size:.57rem;color:var(--text3);margin-top:2px}
+.uc-pills{display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex-shrink:0}
+.uc-foot{padding:8px 13px;border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
+.uc-date{font-size:.56rem;color:var(--text3)}
+.uc-acts{display:flex;gap:4px;align-items:center}
+.role-sel-u{background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:4px 6px;border-radius:3px;font-size:.63rem;cursor:pointer;outline:none;transition:.2s;font-family:inherit}
+.role-sel-u:hover{border-color:rgba(212,175,55,.35)}
+.act-tog{width:30px;height:27px;border-radius:3px;border:1px solid;background:transparent;cursor:pointer;font-size:.8rem;line-height:1;transition:.2s;flex-shrink:0}
 .act-tog.is-active{color:var(--red);border-color:rgba(231,76,60,.35)}
 .act-tog.is-active:hover{background:rgba(231,76,60,.1)}
 .act-tog.is-blocked{color:var(--green);border-color:rgba(46,204,113,.35)}
 .act-tog.is-blocked:hover{background:rgba(46,204,113,.1)}
-.act-tog.is-confirm{color:#f0c030;border-color:rgba(240,192,48,.5);width:auto;padding:0 7px;font-size:.58rem;font-weight:700}
-
+.act-tog.is-confirm{color:#f0c030;border-color:rgba(240,192,48,.5);width:auto;padding:0 7px;font-size:.57rem;font-weight:700}
 .skel{background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);background-size:200% 100%;animation:skel 1.4s ease infinite;border-radius:4px}
 @keyframes skel{from{background-position:200% 0}to{background-position:-200% 0}}
-.skel-uc{height:120px}
-
-.pagination{display:flex;align-items:center;justify-content:center;gap:5px;padding:22px 0 0;flex-wrap:wrap}
-.pg-btn{padding:5px 11px;border-radius:3px;font-size:.64rem;font-weight:700;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--text3);transition:.2s;min-width:32px;text-align:center}
+.skel-uc{height:118px}
+.pagination{display:flex;align-items:center;justify-content:center;gap:4px;padding:20px 0 0;flex-wrap:wrap}
+.pg-btn{padding:5px 10px;border-radius:3px;font-size:.63rem;font-weight:700;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--text3);transition:.2s;min-width:30px;text-align:center}
 .pg-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
 .pg-btn.cur{background:rgba(212,175,55,.12);border-color:var(--gold);color:var(--gold)}
 .pg-btn:disabled{opacity:.3;cursor:default}
-.pg-info{font-size:.6rem;color:var(--text3);padding:0 6px}
+.pg-info{font-size:.59rem;color:var(--text3);padding:0 5px}
 
-.toast{position:fixed;bottom:28px;right:24px;padding:10px 18px;border-radius:4px;font-size:.75rem;font-weight:600;z-index:9999;transform:translateY(16px);opacity:0;transition:.25s;pointer-events:none;max-width:300px;line-height:1.4}
+/* TOAST */
+.toast{position:fixed;bottom:26px;right:22px;padding:9px 16px;border-radius:4px;font-size:.73rem;font-weight:600;z-index:9999;transform:translateY(14px);opacity:0;transition:.25s;pointer-events:none;max-width:290px;line-height:1.4}
 .toast.show{transform:translateY(0);opacity:1}
 .toast.ok{background:#0f2d1e;border:1px solid var(--green);color:var(--green)}
 .toast.err{background:#2d0f0f;border:1px solid var(--red);color:var(--red)}
 .toast.warn{background:#2d1f0f;border:1px solid var(--orange);color:var(--orange)}
 
-footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.foot-logo img{height:24px;opacity:.3}
-.foot-r{font-size:.6rem;color:var(--text3)}
+footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.foot-logo img{height:22px;opacity:.28}
+.foot-r{font-size:.58rem;color:var(--text3)}
 </style>
 </head>
 <body>
@@ -205,10 +284,10 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
 </div>
 <div id="state-error">
   <div class="center-msg">
-    <div style="font-size:3rem">🔒</div>
+    <div style="font-size:2.8rem">🔒</div>
     <div style="font-size:1.1rem;font-weight:700;color:var(--text)" id="err-title">Kirish ruxsati yo'q</div>
-    <div style="font-size:.8rem;max-width:300px" id="err-sub">Faqat admin va superadminlar kirishi mumkin.</div>
-    <a href="https://t.me/BilliardKingBot" target="_blank" style="margin-top:12px;background:var(--gold);color:#000;padding:10px 24px;border-radius:2px;font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase">Botga o'tish</a>
+    <div style="font-size:.78rem;max-width:300px" id="err-sub">Faqat admin va superadminlar kirishi mumkin.</div>
+    <a href="https://t.me/BilliardKingBot" target="_blank" style="margin-top:12px;background:var(--gold);color:#000;padding:9px 22px;border-radius:2px;font-size:.68rem;font-weight:800;letter-spacing:2px;text-transform:uppercase">Botga o'tish</a>
   </div>
 </div>
 
@@ -216,7 +295,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
   <div class="hero">
     <div>
       <div class="hero-title">Boshqaruv Paneli</div>
-      <div class="hero-sub" id="hero-sub">Billiard King — Admin</div>
+      <div class="hero-sub" id="hero-sub">Billiard King</div>
     </div>
     <button class="refresh-btn" onclick="refresh()">↺ Yangilash</button>
   </div>
@@ -238,7 +317,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
     </div>
   </div>
 
-  <!-- CLIPS TAB -->
+  <!-- ═══ CLIPS TAB ═══ -->
   <div class="tab-pane active" id="tab-clips">
     <div class="filter-row">
       <button class="filter-btn active" data-status="">Hammasi</button>
@@ -256,14 +335,15 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
     </div>
   </div>
 
-  <!-- TOURNAMENTS TAB -->
+  <!-- ═══ TOURNAMENTS TAB ═══ -->
   <div class="tab-pane" id="tab-tournaments">
-    <div class="filter-row" id="trn-filter-row">
+    <div class="filter-row">
       <button class="filter-btn active" data-trnstatus="">Hammasi</button>
       <button class="filter-btn" data-trnstatus="registration">Ro'yxat</button>
       <button class="filter-btn" data-trnstatus="in_progress">Jarayonda</button>
       <button class="filter-btn" data-trnstatus="finished">Yakunlandi</button>
       <button class="filter-btn" data-trnstatus="cancelled">Bekor</button>
+      <button class="filter-btn" onclick="openCreateModal()" style="margin-left:auto;color:var(--gold);border-color:rgba(212,175,55,.35)">➕ Yangi turnir</button>
     </div>
     <div class="table-wrap">
       <table class="data-table">
@@ -273,7 +353,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
     </div>
   </div>
 
-  <!-- USERS TAB -->
+  <!-- ═══ USERS TAB ═══ -->
   <div class="tab-pane" id="tab-users">
     <div class="role-chips">
       <button class="role-chip active" data-role="">Barcha <span class="chip-cnt" id="chip-all">—</span></button>
@@ -284,17 +364,17 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
     </div>
     <div class="user-search-bar">
       <div class="search-wrap">
-        <svg width="14" height="14" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" id="user-search" placeholder="Ism yoki username bo'yicha qidirish…" oninput="searchUsers(this.value)" autocomplete="off">
+        <svg width="13" height="13" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="user-search" placeholder="Ism yoki username bo'yicha…" oninput="searchUsers(this.value)" autocomplete="off">
       </div>
-      <button class="u-refresh" onclick="refreshUsers()" title="Yangilash">↺</button>
+      <button class="u-refresh" onclick="refreshUsers()">↺</button>
     </div>
     <div class="user-grid" id="user-grid"></div>
     <div class="pagination" id="user-pg"></div>
   </div>
 </div>
 
-<!-- DETAIL PANEL -->
+<!-- ═══ DETAIL PANEL ═══ -->
 <div class="panel-overlay" id="panel-overlay" onclick="closeDetail()"></div>
 <div class="detail-panel" id="detail-panel">
   <div class="dp-head">
@@ -306,17 +386,53 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
   </div>
   <div class="dp-meta" id="dp-meta"></div>
   <div class="dp-prog-wrap" id="dp-prog-wrap" style="display:none">
-    <div class="dp-prog-label"><span id="dp-prog-left">—</span><span id="dp-prog-right">—</span></div>
-    <div class="dp-prog-bar"><div class="dp-prog-fill" id="dp-prog-fill" style="width:0%"></div></div>
+    <div class="dp-prog-label"><span id="dp-pl">—</span><span id="dp-pr">—</span></div>
+    <div class="dp-prog-bar"><div class="dp-prog-fill" id="dp-pf" style="width:0%"></div></div>
   </div>
-  <div class="dp-inner-tabs" id="dp-tabs">
-    <div class="dp-tab active" data-regtab="all">Barcha <span id="rc-all"></span></div>
-    <div class="dp-tab" data-regtab="pending">Kutilmoqda <span id="rc-pending"></span></div>
-    <div class="dp-tab" data-regtab="approved">Tasdiqlangan <span id="rc-approved"></span></div>
-    <div class="dp-tab" data-regtab="rejected">Rad etilgan <span id="rc-rejected"></span></div>
-  </div>
-  <div class="dp-body" id="dp-body">
-    <div class="loading-note">Yuklanmoqda…</div>
+  <div class="dp-actions" id="dp-actions"></div>
+  <div class="dp-inner-tabs" id="dp-inner-tabs"></div>
+  <div class="dp-body" id="dp-body"><div class="loading-note">Yuklanmoqda…</div></div>
+</div>
+
+<!-- ═══ CREATE / EDIT MODAL ═══ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-title">Yangi Turnir</div>
+      <button class="modal-close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Turnir nomi</label>
+        <input type="text" id="f-name" class="form-input" placeholder="Masalan: Yozgi chempionat">
+      </div>
+      <div class="form-group" id="f-branch-wrap">
+        <label class="form-label">Filial</label>
+        <select id="f-branch" class="form-input"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Sana va vaqt</label>
+          <input type="datetime-local" id="f-date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Max o'yinchilar</label>
+          <input type="number" id="f-max" class="form-input" min="2" max="128" value="8">
+        </div>
+      </div>
+      <div class="form-group" id="f-type-group">
+        <label class="form-label">Format</label>
+        <select id="f-type" class="form-input">
+          <option value="single_elimination">Single Elimination</option>
+          <option value="double_elimination">Double Elimination</option>
+          <option value="round_robin">Round Robin</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal()">Bekor</button>
+      <button class="btn-submit" id="modal-submit" onclick="submitTrnForm()">Saqlash</button>
+    </div>
   </div>
 </div>
 
@@ -327,15 +443,19 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
 
 <script>
 const $ = id => document.getElementById(id);
-const show = id => { $('state-loading').className=''; $('state-error').className=''; $('state-main').className=''; $(id).className='show'; };
+const show = id => { ['state-loading','state-error','state-main'].forEach(s=>$(s).className=''); $(id).className='show'; };
 
-const STATUS_UZ = {pending:'Kutilmoqda', paid:'To\'langan', processing:'Jarayonda', done:'Tayyor', failed:'Rad etildi', refunded:'Qaytarildi'};
-const TRN_STATUS = {registration:'Ro\'yxat', in_progress:'Jarayonda', finished:'Yakunlandi', cancelled:'Bekor'};
-const REG_STATUS = {pending:'Kutilmoqda', approved:'Tasdiqlangan', rejected:'Rad etilgan'};
+// Constants
+const STATUS_UZ = {pending:'Kutilmoqda',paid:'To\'langan',processing:'Jarayonda',done:'Tayyor',failed:'Rad etildi',refunded:'Qaytarildi'};
+const TRN_STATUS = {registration:'Ro\'yxat',in_progress:'Jarayonda',finished:'Yakunlandi',cancelled:'Bekor'};
+const TRN_TYPE = {single_elimination:'Single Elim',double_elimination:'Double Elim',round_robin:'Round Robin'};
+const REG_STATUS = {pending:'Kutilmoqda',approved:'Tasdiqlangan',rejected:'Rad etilgan'};
+const ROLES = ['client','operator','admin','superadmin'];
+const ROLE_UZ = {client:'Mijoz',operator:'Operator',admin:'Admin',superadmin:'Superadmin'};
 
-function fmtDate(s) {
-  if (!s) return '—';
-  const d = new Date(s);
+function fmtDate(s){
+  if(!s) return '—';
+  const d=new Date(s);
   return d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'});
 }
 function fmtShort(s){
@@ -343,419 +463,697 @@ function fmtShort(s){
   const d=new Date(s);
   return d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'2-digit'});
 }
-function clipDuration(start, end){
-  if(!start||!end) return '—';
-  const ms = new Date(end)-new Date(start);
-  if(ms<=0) return '—';
-  const m = Math.round(ms/60000);
-  return m+'daq';
+function clipDur(s,e){
+  if(!s||!e) return '—';
+  const m=Math.round((new Date(e)-new Date(s))/60000);
+  return m>0?m+'daq':'—';
 }
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-let jwt = null;
-let currentClipStatus = '';
-let isSuperadmin = false;
-let isAdmin = false;
-let searchTimer = null;
-const ROLES = ['client', 'operator', 'admin', 'superadmin'];
-const ROLE_UZ = {client:'Mijoz', operator:'Operator', admin:'Admin', superadmin:'Superadmin'};
-
-// users state
-let allUsers = [];
-let currentRoleFilter = '';
-let currentSearchQ = '';
-let currentPage = 1;
-const PAGE_SIZE = 18;
-
-// tournaments state
-let trnList = [];
-let currentTrnStatus = '';
-
-// detail panel state
-let currentTrnId = null;
-let allRegs = [];
-let currentRegTab = 'all';
-
-function logout() {
-  localStorage.removeItem('bk_jwt');
-  location.href = '/';
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function avatarBg(n){
+  const p=['#b8442e','#2a7fbf','#27975a','#7a3dbf','#c46020','#1a8a7a','#9e3060','#4a6741'];
+  let h=0;for(let i=0;i<(n||'').length;i++)h=(h*31+n.charCodeAt(i))&0xffffff;
+  return p[Math.abs(h)%p.length];
 }
+function fl(s){return ((s||'?')[0]).toUpperCase();}
 
-async function init() {
-  const tg = window.Telegram?.WebApp;
-  if (tg) { tg.ready(); tg.expand(); }
+// State
+let jwt=null, isSuperadmin=false, isAdmin=false;
+let currentClipStatus='', currentTrnStatus='';
+let trnList=[], allRegs=[], bracketMatches=[];
+let currentTrn=null, currentRegTab='all', currentDetailTab='regs';
+let branches=[], modalMode='', searchTimer=null;
+let allUsers=[], currentRoleFilter='', currentSearchQ='', currentPage=1;
+const PAGE_SIZE=18;
 
-  const hashParams = new URLSearchParams(window.location.hash.slice(1));
-  const rawHashData = hashParams.get('tgWebAppData');
-  const initData = (tg?.initData) || (rawHashData ? decodeURIComponent(rawHashData) : '');
+function auth(){return{Authorization:'Bearer '+jwt};}
 
-  if (!initData) {
+function logout(){localStorage.removeItem('bk_jwt');location.href='/';}
+
+// ─── INIT ───
+async function init(){
+  const tg=window.Telegram?.WebApp;
+  if(tg){tg.ready();tg.expand();}
+  const hp=new URLSearchParams(window.location.hash.slice(1));
+  const raw=hp.get('tgWebAppData');
+  const initData=(tg?.initData)||(raw?decodeURIComponent(raw):'');
+  if(!initData){
     show('state-error');
-    $('err-title').textContent = '🔒 Telegram orqali kirish kerak';
-    $('err-sub').textContent = 'Bu panel faqat Telegram ilovasidan ochiladi. Botga o\'ting va menyudan foydalaning.';
+    $('err-title').textContent='🔒 Telegram orqali kirish kerak';
+    $('err-sub').textContent='Bu panel faqat Telegram Mini App orqali ochiladi.';
     return;
   }
+  try{
+    const r=await fetch('/api/auth/tg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({init_data:initData})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Auth xato');
+    jwt=d.jwt;
+  }catch(e){show('state-error');$('err-title').textContent='Kirish xatosi';$('err-sub').textContent=e.message;return;}
 
-  try {
-    const r = await fetch('/api/auth/tg', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({init_data: initData})
-    });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'Auth xato: ' + r.status);
-    jwt = data.jwt;
-    localStorage.setItem('bk_jwt', jwt);
-  } catch(e) {
-    show('state-error');
-    $('err-title').textContent = 'Kirish xatosi';
-    $('err-sub').textContent = e.message;
-    return;
-  }
+  try{
+    const pay=JSON.parse(atob(jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    if(pay.role==='client'){window.location.replace('/me');return;}
+    isSuperadmin=pay.role==='superadmin';
+    isAdmin=pay.role==='admin'||isSuperadmin;
+    $('nav-user').textContent=(ROLE_UZ[pay.role]||pay.role)+' · '+pay.tg_id;
+    $('hero-sub').textContent='Billiard King — '+(ROLE_UZ[pay.role]||pay.role);
+  }catch(_){}
 
-  try {
-    const payload = JSON.parse(atob(jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-    if (payload.role === 'client') {
-      window.location.replace('/me');
-      return;
-    }
-    isSuperadmin = payload.role === 'superadmin';
-    isAdmin = payload.role === 'admin' || isSuperadmin;
-    $('nav-user').textContent = (ROLE_UZ[payload.role] || payload.role) + ' · ' + payload.tg_id;
-    $('hero-sub').textContent = 'Billiard King — ' + (ROLE_UZ[payload.role] || payload.role);
-  } catch(_){}
-
-  try {
-    const r = await fetch('/api/admin/stats', { headers: auth() });
-    if (r.status === 401) {
-      localStorage.removeItem('bk_jwt');
-      show('state-error');
-      $('err-title').textContent = 'Sessiya tugagan';
-      $('err-sub').textContent = 'Qayta kirish uchun botdagi tugmani bosing.';
-      return;
-    }
-    if (r.status === 403) {
-      localStorage.removeItem('bk_jwt');
-      show('state-error');
-      $('err-title').textContent = 'Ruxsat yo\'q';
-      $('err-sub').textContent = 'Bu panel faqat admin va operatorlar uchun.';
-      return;
-    }
-    const s = await r.json();
-    updateStats(s);
-  } catch(e) {
-    show('state-error');
-    $('err-title').textContent = 'Server bilan bog\'lanib bo\'lmadi';
-    $('err-sub').textContent = e.message;
-    return;
-  }
+  try{
+    const r=await fetch('/api/admin/stats',{headers:auth()});
+    if(r.status===401){show('state-error');$('err-title').textContent='Sessiya tugagan';$('err-sub').textContent='Qayta kirish uchun botni bosing.';return;}
+    if(r.status===403){show('state-error');$('err-title').textContent='Ruxsat yo\'q';$('err-sub').textContent='Faqat admin va operatorlar kirishi mumkin.';return;}
+    updateStats(await r.json());
+  }catch(e){show('state-error');$('err-title').textContent='Server bilan bog\'lanib bo\'lmadi';$('err-sub').textContent=e.message;return;}
 
   show('state-main');
   loadClips('');
 }
 
-function auth() { return { Authorization: 'Bearer ' + jwt }; }
-
-function updateStats(s) {
-  $('s-users').textContent = s.users ?? '—';
-  $('s-pending').textContent = s.pending_clips ?? '—';
-  $('s-paid').textContent = s.paid_clips ?? '—';
-  $('s-processing').textContent = s.processing_clips ?? '—';
-  $('s-trns').textContent = s.active_tournaments ?? '—';
-  $('s-trn-regs').textContent = s.pending_trn_regs ?? '—';
+function updateStats(s){
+  $('s-users').textContent=s.users??'—';
+  $('s-pending').textContent=s.pending_clips??'—';
+  $('s-paid').textContent=s.paid_clips??'—';
+  $('s-processing').textContent=s.processing_clips??'—';
+  $('s-trns').textContent=s.active_tournaments??'—';
+  $('s-trn-regs').textContent=s.pending_trn_regs??'—';
 }
 
-async function loadClips(status) {
-  currentClipStatus = status;
-  const url = '/api/admin/clips' + (status ? '?status=' + status : '');
-  const body = $('clips-body');
-  body.innerHTML = '<tr><td colspan="7" class="loading-note">Yuklanmoqda…</td></tr>';
-  try {
-    const r = await fetch(url, { headers: auth() });
-    const list = r.ok ? await r.json() : [];
-    if (!list.length) { body.innerHTML = '<tr><td colspan="7" class="empty-note">Kliplar topilmadi</td></tr>'; return; }
-    body.innerHTML = list.map(c => `<tr>
-      <td>${c.id}</td>
+// ─── CLIPS ───
+async function loadClips(status){
+  currentClipStatus=status;
+  const body=$('clips-body');
+  body.innerHTML='<tr><td colspan="7" class="loading-note">Yuklanmoqda…</td></tr>';
+  try{
+    const r=await fetch('/api/admin/clips'+(status?'?status='+status:''),{headers:auth()});
+    const list=r.ok?await r.json():[];
+    if(!list.length){body.innerHTML='<tr><td colspan="7" class="empty-note">Kliplar topilmadi</td></tr>';return;}
+    body.innerHTML=list.map(c=>`<tr>
+      <td style="color:var(--text3)">${c.id}</td>
       <td><div class="name-cell">${esc(c.client_name)}</div></td>
       <td>${esc(c.branch_name)} · Stol ${c.table_num}</td>
-      <td><div>${fmtDate(c.start_time)}</div></td>
-      <td>${clipDuration(c.start_time, c.end_time)}</td>
-      <td><span class="status-pill sp-${c.status}">${STATUS_UZ[c.status]||c.status}</span>${c.notes?'<div class="sub-cell">'+esc(c.notes)+'</div>':''}</td>
+      <td>${fmtDate(c.start_time)}</td>
+      <td>${clipDur(c.start_time,c.end_time)}</td>
+      <td><span class="sp sp-${c.status}">${STATUS_UZ[c.status]||c.status}</span>${c.notes?'<div class="sub-cell">'+esc(c.notes)+'</div>':''}</td>
       <td class="sub-cell">${fmtShort(c.created_at)}</td>
     </tr>`).join('');
-  } catch(e) { body.innerHTML = '<tr><td colspan="7" class="empty-note">Xatolik: '+esc(e.message)+'</td></tr>'; }
+  }catch(e){body.innerHTML='<tr><td colspan="7" class="empty-note">Xatolik: '+esc(e.message)+'</td></tr>';}
 }
 
-async function loadTournaments(status) {
-  if (status === undefined) status = currentTrnStatus;
-  currentTrnStatus = status;
-  const url = '/api/admin/tournaments' + (status ? '?status=' + status : '');
-  const body = $('trns-body');
-  body.innerHTML = '<tr><td colspan="5" class="loading-note">Yuklanmoqda…</td></tr>';
-  try {
-    const r = await fetch(url, { headers: auth() });
-    trnList = r.ok ? await r.json() : [];
-    if (!trnList.length) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Turnirlar topilmadi</td></tr>'; return; }
-    body.innerHTML = trnList.map(t => {
-      const pendingHtml = (t.pending > 0) ? `<span class="pending-badge">${t.pending}</span>` : '';
-      return `<tr class="clickable" onclick="openTrnDetail(${t.id})">
+// ─── TOURNAMENTS LIST ───
+async function loadTournaments(status){
+  if(status===undefined) status=currentTrnStatus;
+  currentTrnStatus=status;
+  const body=$('trns-body');
+  body.innerHTML='<tr><td colspan="5" class="loading-note">Yuklanmoqda…</td></tr>';
+  try{
+    const r=await fetch('/api/admin/tournaments'+(status?'?status='+status:''),{headers:auth()});
+    trnList=r.ok?await r.json():[];
+    if(!trnList.length){body.innerHTML='<tr><td colspan="5" class="empty-note">Turnirlar topilmadi</td></tr>';return;}
+    body.innerHTML=trnList.map(t=>{
+      const pb=t.pending>0?`<span class="pending-badge">${t.pending}</span>`:'';
+      return`<tr class="clickable" onclick="openTrnDetail(${t.id})">
         <td style="color:var(--text3)">${t.id}</td>
         <td><div class="name-cell">${esc(t.name)}</div><div class="sub-cell">${esc(t.branch_name)}</div></td>
         <td>${fmtDate(t.scheduled_at)}</td>
-        <td><span class="status-pill sp-${t.status}">${TRN_STATUS[t.status]||t.status}</span></td>
-        <td>${t.registered}${pendingHtml} / ${t.max_players}</td>
+        <td><span class="sp sp-${t.status}">${TRN_STATUS[t.status]||t.status}</span></td>
+        <td>${t.registered}${pb} / ${t.max_players}</td>
       </tr>`;
     }).join('');
-  } catch(e) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Xatolik</td></tr>'; }
+  }catch(e){body.innerHTML='<tr><td colspan="5" class="empty-note">Xatolik</td></tr>';}
 }
 
-// ─── Tournament detail panel ───
+// ─── DETAIL PANEL ───
+async function openTrnDetail(trnId){
+  const trn=trnList.find(t=>t.id===trnId);
+  if(!trn) return;
+  currentTrn={...trn};
+  currentRegTab='all';
+  allRegs=[];
+  bracketMatches=[];
 
-function avatarBg(name) {
-  const pal = ['#b8442e','#2a7fbf','#27975a','#7a3dbf','#c46020','#1a8a7a','#9e3060','#4a6741'];
-  let h = 0; for (let i=0; i<(name||'').length; i++) h = (h*31+name.charCodeAt(i))&0xffffff;
-  return pal[Math.abs(h)%pal.length];
-}
-function fl(s){ return ((s||'?')[0]).toUpperCase(); }
+  // Header
+  $('dp-title').textContent=trn.name;
+  $('dp-sub').textContent=trn.branch_name+(trn.scheduled_at?' · '+fmtDate(trn.scheduled_at):'');
 
-async function openTrnDetail(trnId) {
-  const trn = trnList.find(t => t.id === trnId);
-  if (!trn) return;
-
-  currentTrnId = trnId;
-  currentRegTab = 'all';
-  allRegs = [];
-
-  $('dp-title').textContent = trn.name;
-  $('dp-sub').textContent = trn.branch_name;
-
-  $('dp-meta').innerHTML = `
-    <span class="status-pill sp-${trn.status}">${TRN_STATUS[trn.status]||trn.status}</span>
-    <span style="font-size:.6rem;color:var(--text2)">${fmtDate(trn.scheduled_at)}</span>
+  // Meta
+  $('dp-meta').innerHTML=`
+    <span class="sp sp-${trn.status}">${TRN_STATUS[trn.status]||trn.status}</span>
+    ${trn.type?`<span class="dp-type-tag">${TRN_TYPE[trn.type]||trn.type}</span>`:''}
   `;
 
-  const pct = trn.max_players > 0 ? Math.round(trn.registered / trn.max_players * 100) : 0;
-  const pw = $('dp-prog-wrap');
-  pw.style.display = '';
-  $('dp-prog-left').textContent = trn.registered + ' tasdiqlangan';
-  $('dp-prog-right').textContent = trn.max_players + ' max';
-  $('dp-prog-fill').style.width = Math.min(100, pct) + '%';
+  // Progress bar
+  const hasProg=trn.status==='registration'||trn.status==='in_progress';
+  $('dp-prog-wrap').style.display=hasProg?'':'none';
+  if(hasProg){
+    $('dp-pl').textContent=trn.registered+' tasdiqlangan';
+    $('dp-pr').textContent=trn.max_players+' max';
+    const pct=trn.max_players>0?Math.round(trn.registered/trn.max_players*100):0;
+    $('dp-pf').style.width=Math.min(100,pct)+'%';
+  }
 
-  document.querySelectorAll('.dp-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector('.dp-tab[data-regtab="all"]').classList.add('active');
-  ['rc-all','rc-pending','rc-approved','rc-rejected'].forEach(id => $(id).textContent = '');
-
+  // Show panel
   $('panel-overlay').classList.add('show');
   $('detail-panel').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow='hidden';
 
-  $('dp-body').innerHTML = '<div class="loading-note">Yuklanmoqda…</div>';
-  await loadTrnRegs(trnId);
+  // Setup tabs and actions (after panel opens)
+  setupDetailTabs(trn.status);
+  updateDetailActions();
+
+  // Load data
+  const hasBracket=trn.status==='in_progress'||trn.status==='finished';
+  $('dp-body').innerHTML='<div class="loading-note">Yuklanmoqda…</div>';
+  if(hasBracket){
+    // Default to bracket tab — load both in parallel
+    await Promise.all([loadBracket(trnId), loadTrnRegs(trnId)]);
+    switchDetailTab('bracket');
+  } else {
+    await loadTrnRegs(trnId);
+    renderRegs();
+  }
 }
 
-async function loadTrnRegs(trnId) {
-  try {
-    const r = await fetch(`/api/admin/tournaments/${trnId}/registrations`, { headers: auth() });
-    allRegs = r.ok ? (await r.json() || []) : [];
-  } catch(e) { allRegs = []; }
+function setupDetailTabs(status){
+  const hasBracket=status==='in_progress'||status==='finished';
+  const tabs=$('dp-inner-tabs');
+  let html='';
+  if(hasBracket){
+    html+=`<div class="dp-tab" data-dtab="bracket">Setka</div>`;
+  }
+  html+=`<div class="dp-tab" data-dtab="regs">Ro'yxat <span class="dp-cnt" id="rc-all"></span></div>`;
+  tabs.innerHTML=html;
+  document.querySelectorAll('.dp-tab').forEach(t=>{
+    t.addEventListener('click',()=>{
+      document.querySelectorAll('.dp-tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      switchDetailTab(t.dataset.dtab);
+    });
+  });
+  currentDetailTab=hasBracket?'bracket':'regs';
+  document.querySelectorAll('.dp-tab').forEach(t=>{
+    if(t.dataset.dtab===currentDetailTab) t.classList.add('active');
+  });
+}
+
+function switchDetailTab(tab){
+  currentDetailTab=tab;
+  if(tab==='bracket') renderBracket();
+  else renderRegs();
+}
+
+function updateDetailActions(){
+  const st=currentTrn?.status;
+  let html='';
+  if(st==='registration'){
+    if(isAdmin){
+      html+=`<button class="dpa dpa-edit" onclick="openEditModal()">✏️ Tahrirlash</button>`;
+      const approved=allRegs.filter(r=>r.status==='approved').length;
+      if(approved>=2){
+        html+=`<button class="dpa dpa-gold" id="btn-gen" onclick="genBracket(${currentTrn.id})">⚡ Setka yaratish</button>`;
+      }
+      html+=`<button class="dpa dpa-warn" onclick="shuffleSeed(${currentTrn.id})">🔀 Tartib</button>`;
+      html+=`<button class="dpa dpa-red" onclick="cancelTrn(${currentTrn.id})">❌ Bekor</button>`;
+    }
+  } else if(st==='in_progress'){
+    if(isAdmin){
+      html+=`<button class="dpa dpa-red" onclick="cancelTrn(${currentTrn.id})">❌ Bekor</button>`;
+    }
+  }
+  if(isAdmin){
+    html+=`<button class="dpa dpa-red" onclick="deleteTrn(${currentTrn.id})">🗑 O'chirish</button>`;
+  }
+  $('dp-actions').innerHTML=html;
+}
+
+function closeDetail(){
+  $('panel-overlay').classList.remove('show');
+  $('detail-panel').classList.remove('open');
+  document.body.style.overflow='';
+  currentTrn=null;
+}
+
+// ─── REGISTRATIONS ───
+async function loadTrnRegs(trnId){
+  try{
+    const r=await fetch(`/api/admin/tournaments/${trnId}/registrations`,{headers:auth()});
+    allRegs=r.ok?await r.json()||[]:[];
+  }catch(e){allRegs=[];}
   updateRegCounts();
+}
+
+function updateRegCounts(){
+  const c={all:allRegs.length,pending:0,approved:0,rejected:0};
+  allRegs.forEach(r=>{if(c[r.status]!==undefined) c[r.status]++;});
+  const el=$('rc-all');
+  if(el) el.textContent=c.all||'';
+  // Refresh gen-bracket button visibility
+  if(currentTrn?.status==='registration') updateDetailActions();
+}
+
+function renderRegs(){
+  const canAct=isAdmin&&currentTrn?.status==='registration';
+  const list=currentRegTab==='all'?allRegs:allRegs.filter(r=>r.status===currentRegTab);
+  let html='';
+
+  // Reg filter buttons
+  const cnt={all:allRegs.length,pending:0,approved:0,rejected:0};
+  allRegs.forEach(r=>{if(cnt[r.status]!==undefined) cnt[r.status]++;});
+  html+=`<div class="filter-row" style="margin-bottom:10px">
+    ${['all','pending','approved','rejected'].map(s=>`<button class="filter-btn${currentRegTab===s?' active':''}" onclick="setRegTab('${s}')">${
+      s==='all'?'Barcha':REG_STATUS[s]||s
+    } ${cnt[s]||0}</button>`).join('')}
+  </div>`;
+
+  // Add player form (registration status only)
+  if(canAct){
+    html+=`<div class="add-player-row">
+      <input type="text" id="ap-name" placeholder="Qo'lda qo'shish — o'yinchi ismi…">
+      <button onclick="addManualPlayer()">➕ Qo'shish</button>
+    </div>`;
+  }
+
+  if(!list.length){
+    html+='<div class="empty-note">Ishtirokchilar yo\'q</div>';
+  } else {
+    html+=list.map(reg=>{
+      const isPending=reg.status==='pending';
+      const acts=(isPending&&canAct)?`
+        <button class="ri-btn ok" onclick="approveReg(${currentTrn.id},${reg.id},this)">✅</button>
+        <button class="ri-btn no" onclick="rejectReg(${currentTrn.id},${reg.id},this)">❌</button>`:'';
+      return`<div class="reg-item" id="reg-${reg.id}">
+        <div class="ri-av" style="background:${avatarBg(reg.user_name)}">${fl(reg.user_name)}</div>
+        <div class="ri-info">
+          <div class="ri-name">${esc(reg.user_name)}</div>
+          <div class="ri-date">${fmtDate(reg.registered_at)}</div>
+        </div>
+        <span class="sp sp-${reg.status}">${REG_STATUS[reg.status]||reg.status}</span>
+        <div class="ri-acts">${acts}</div>
+      </div>`;
+    }).join('');
+  }
+
+  $('dp-body').innerHTML=html;
+  const rc=$('rc-all');
+  if(rc) rc.textContent=cnt.all||'';
+}
+
+function setRegTab(tab){
+  currentRegTab=tab;
   renderRegs();
 }
 
-function updateRegCounts() {
-  const c = {all: allRegs.length, pending: 0, approved: 0, rejected: 0};
-  allRegs.forEach(r => { if (c[r.status] !== undefined) c[r.status]++; });
-  $('rc-all').textContent = c.all;
-  $('rc-pending').textContent = c.pending || '';
-  $('rc-approved').textContent = c.approved || '';
-  $('rc-rejected').textContent = c.rejected || '';
-}
-
-function renderRegs() {
-  const canAct = isAdmin;
-  const filtered = currentRegTab === 'all' ? allRegs : allRegs.filter(r => r.status === currentRegTab);
-  if (!filtered.length) {
-    $('dp-body').innerHTML = '<div class="empty-note">Ishtirokchilar yo\'q</div>';
-    return;
-  }
-  $('dp-body').innerHTML = filtered.map(reg => {
-    const isPending = reg.status === 'pending';
-    const acts = (isPending && canAct) ? `
-      <button class="ri-btn ok" onclick="approveReg(${currentTrnId},${reg.id},this)">✅ Tasdiqlash</button>
-      <button class="ri-btn no" onclick="rejectReg(${currentTrnId},${reg.id},this)">❌</button>
-    ` : '';
-    return `<div class="reg-item" id="reg-${reg.id}">
-      <div class="ri-av" style="background:${avatarBg(reg.user_name)}">${fl(reg.user_name)}</div>
-      <div class="ri-info">
-        <div class="ri-name">${esc(reg.user_name)}</div>
-        <div class="ri-date">${fmtDate(reg.registered_at)}</div>
-      </div>
-      <span class="status-pill sp-${reg.status}">${REG_STATUS[reg.status]||reg.status}</span>
-      <div class="ri-acts">${acts}</div>
-    </div>`;
-  }).join('');
-}
-
-async function approveReg(trnId, regId, btn) {
-  btn.disabled = true;
-  btn.nextElementSibling && (btn.nextElementSibling.disabled = true);
-  try {
-    const r = await fetch(`/api/admin/tournaments/${trnId}/registrations/${regId}/approve`, {
-      method: 'PUT', headers: auth()
-    });
-    if (r.ok) {
-      const reg = allRegs.find(x => x.id === regId);
-      if (reg) reg.status = 'approved';
+async function approveReg(trnId,regId,btn){
+  btn.disabled=true;
+  btn.nextElementSibling&&(btn.nextElementSibling.disabled=true);
+  try{
+    const r=await fetch(`/api/admin/tournaments/${trnId}/registrations/${regId}/approve`,{method:'PUT',headers:auth()});
+    if(r.ok){
+      const reg=allRegs.find(x=>x.id===regId);
+      if(reg) reg.status='approved';
       updateRegCounts();
       renderRegs();
-      refreshTrnRow(trnId);
+      refreshProgBar();
       showToast('✅ Tasdiqlandi');
     } else {
-      const d = await r.json();
-      showToast(d.error || 'Xatolik', 'err');
-      btn.disabled = false;
-      btn.nextElementSibling && (btn.nextElementSibling.disabled = false);
+      const d=await r.json();showToast(d.error||'Xatolik','err');
+      btn.disabled=false;btn.nextElementSibling&&(btn.nextElementSibling.disabled=false);
     }
-  } catch(e) {
-    showToast('Tarmoq xatosi', 'err');
-    btn.disabled = false;
-  }
+  }catch(e){showToast('Tarmoq xatosi','err');btn.disabled=false;}
 }
 
-async function rejectReg(trnId, regId, btn) {
-  btn.disabled = true;
-  btn.previousElementSibling && (btn.previousElementSibling.disabled = true);
-  try {
-    const r = await fetch(`/api/admin/tournaments/${trnId}/registrations/${regId}/reject`, {
-      method: 'PUT', headers: auth()
-    });
-    if (r.ok) {
-      const reg = allRegs.find(x => x.id === regId);
-      if (reg) reg.status = 'rejected';
+async function rejectReg(trnId,regId,btn){
+  btn.disabled=true;
+  btn.previousElementSibling&&(btn.previousElementSibling.disabled=true);
+  try{
+    const r=await fetch(`/api/admin/tournaments/${trnId}/registrations/${regId}/reject`,{method:'PUT',headers:auth()});
+    if(r.ok){
+      const reg=allRegs.find(x=>x.id===regId);
+      if(reg) reg.status='rejected';
       updateRegCounts();
       renderRegs();
-      refreshTrnRow(trnId);
-      showToast('Rad etildi', 'warn');
-    } else {
-      btn.disabled = false;
-      btn.previousElementSibling && (btn.previousElementSibling.disabled = false);
-    }
-  } catch(e) {
-    btn.disabled = false;
+      showToast('Rad etildi','warn');
+    } else {btn.disabled=false;btn.previousElementSibling&&(btn.previousElementSibling.disabled=false);}
+  }catch(e){btn.disabled=false;}
+}
+
+async function addManualPlayer(){
+  const inp=$('ap-name');
+  const name=(inp?.value||'').trim();
+  if(!name){showToast('Ism kiriting','err');return;}
+  try{
+    const r=await fetch(`/api/admin/tournaments/${currentTrn.id}/register-manual`,{
+      method:'POST',headers:{...auth(),'Content-Type':'application/json'},
+      body:JSON.stringify({player_name:name})
+    });
+    if(r.ok){
+      inp.value='';
+      showToast('✅ O\'yinchi qo\'shildi');
+      await loadTrnRegs(currentTrn.id);
+      renderRegs();
+      currentTrn.registered=allRegs.filter(r=>r.status==='approved').length;
+      refreshProgBar();
+      // Update tournament row
+      const trn=trnList.find(t=>t.id===currentTrn.id);
+      if(trn) trn.registered=currentTrn.registered;
+    } else {const d=await r.json();showToast(d.error||'Xatolik','err');}
+  }catch(e){showToast('Tarmoq xatosi','err');}
+}
+
+function refreshProgBar(){
+  const approved=allRegs.filter(r=>r.status==='approved').length;
+  if(currentTrn) currentTrn.registered=approved;
+  const pct=currentTrn?.max_players>0?Math.round(approved/currentTrn.max_players*100):0;
+  $('dp-pl').textContent=approved+' tasdiqlangan';
+  $('dp-pf').style.width=Math.min(100,pct)+'%';
+  // Update table row
+  const pending=allRegs.filter(r=>r.status==='pending').length;
+  const trn=trnList.find(t=>t.id===currentTrn?.id);
+  if(trn){trn.registered=approved;trn.pending=pending;}
+}
+
+// ─── BRACKET ───
+async function loadBracket(trnId){
+  try{
+    const r=await fetch(`/api/admin/tournaments/${trnId}/bracket`,{headers:auth()});
+    bracketMatches=r.ok?await r.json()||[]:[];
+  }catch(e){bracketMatches=[];}
+}
+
+function renderBracket(){
+  const body=$('dp-body');
+  if(!bracketMatches||!bracketMatches.length){
+    body.innerHTML='<div class="empty-note">Setka yo\'q</div>';
+    return;
   }
+  const isReadonly=currentTrn?.status==='finished';
+  const GF=2000,LBO=1000;
+
+  // Group by round
+  const rounds={};
+  bracketMatches.forEach(m=>{
+    if(!rounds[m.round]) rounds[m.round]=[];
+    rounds[m.round].push(m);
+  });
+
+  const rnums=Object.keys(rounds).map(Number).sort((a,b)=>a-b);
+  const allDone=bracketMatches.every(m=>m.status==='done'||m.status==='bye'||m.status==='void');
+
+  body.innerHTML=rnums.map(rn=>{
+    let label;
+    if(rn===GF) label='🏆 Grand Final';
+    else if(rn>=LBO+1) label='Yutqazuvchilar · Raund '+(rn-LBO);
+    else label='Raund '+rn;
+    return`<div class="bracket-section">
+      <div class="br-section-label">${label}</div>
+      ${rounds[rn].map(m=>matchCard(m,isReadonly)).join('')}
+    </div>`;
+  }).join('')+(allDone&&isReadonly?'<div style="text-align:center;padding:20px 0;color:var(--gold);font-weight:800;font-size:.85rem">🏆 Turnir yakunlandi</div>':'');
 }
 
-function refreshTrnRow(trnId) {
-  const trn = trnList.find(t => t.id === trnId);
-  if (!trn) return;
-  const approved = allRegs.filter(r => r.status === 'approved').length;
-  const pending = allRegs.filter(r => r.status === 'pending').length;
-  trn.registered = approved;
-  trn.pending = pending;
-  const pendingHtml = pending > 0 ? `<span class="pending-badge">${pending}</span>` : '';
-  $('dp-prog-left').textContent = approved + ' tasdiqlangan';
-  $('dp-prog-fill').style.width = Math.min(100, Math.round(approved/trn.max_players*100)) + '%';
-  const rows = $('trns-body').querySelectorAll('tr');
-  rows.forEach(row => {
-    if (row.querySelector('td')?.textContent == trnId) {
-      const cells = row.querySelectorAll('td');
-      if (cells[4]) cells[4].innerHTML = `${approved}${pendingHtml} / ${trn.max_players}`;
+function matchCard(m,readonly){
+  const st=m.status;
+  const p1=m.player1_name||'TBD';
+  const p2=m.player2_name||'TBD';
+  const w1=m.winner_tg_id&&m.player1_tg_id&&m.winner_tg_id==m.player1_tg_id;
+  const w2=m.winner_tg_id&&m.player2_tg_id&&m.winner_tg_id==m.player2_tg_id;
+
+  if(st==='void') return`<div class="match-card mc-pending"><div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot pending"></div></div><div style="color:var(--text3);font-size:.7rem">Kutilmoqda</div></div>`;
+  if(st==='bye'){
+    const bn=p1!=='TBD'?p1:p2;
+    return`<div class="match-card mc-bye"><div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot bye"></div></div><div class="mc-player-row winner"><span class="mc-pname">${esc(bn)}</span><span class="mc-trophy">🏆</span></div><div class="mc-bye-text">Avtomatik o'tadi (BYE)</div></div>`;
+  }
+
+  const canPick=!readonly&&(st==='ready'||st==='in_progress');
+  const dotClass=st==='done'?'done':st==='ready'||st==='in_progress'?'ready':'pending';
+
+  return`<div class="match-card${st==='done'?' mc-done':st==='ready'||st==='in_progress'?' mc-ready':' mc-pending'}">
+    <div class="mc-header">
+      <span class="mc-num">M${m.match_num}</span>
+      <div class="mc-status-dot ${dotClass}"></div>
+    </div>
+    <div class="mc-player-row ${w1?'winner':w2?'loser':''}">
+      <span class="mc-trophy">${w1?'🏆':'　'}</span>
+      <span class="mc-pname">${esc(p1)}</span>
+      ${canPick&&m.player1_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},${m.player1_tg_id})">G'olib</button>`:''}
+    </div>
+    <div class="mc-player-row ${w2?'winner':w1?'loser':''}">
+      <span class="mc-trophy">${w2?'🏆':'　'}</span>
+      <span class="mc-pname">${esc(p2)}</span>
+      ${canPick&&m.player2_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},${m.player2_tg_id})">G'olib</button>`:''}
+    </div>
+  </div>`;
+}
+
+async function setWinner(matchId,tgId){
+  // Disable all win buttons
+  document.querySelectorAll('.mc-win-btn').forEach(b=>b.disabled=true);
+  try{
+    const r=await fetch(`/api/admin/matches/${matchId}/result`,{
+      method:'PUT',headers:{...auth(),'Content-Type':'application/json'},
+      body:JSON.stringify({winner_tg_id:tgId})
+    });
+    const d=await r.json();
+    if(r.ok){
+      showToast('✅ G\'olib belgilandi');
+      if(d.finished){
+        showToast('🏆 Turnir yakunlandi!');
+        currentTrn.status='finished';
+        $('dp-meta').innerHTML=`<span class="sp sp-finished">Yakunlandi</span>`;
+        $('dp-prog-wrap').style.display='none';
+        const trn=trnList.find(t=>t.id===currentTrn.id);
+        if(trn) trn.status='finished';
+        setupDetailTabs('finished');
+        updateDetailActions();
+      }
+      await loadBracket(currentTrn.id);
+      renderBracket();
+    } else {
+      showToast(d.error||'Xatolik','err');
+      document.querySelectorAll('.mc-win-btn').forEach(b=>b.disabled=false);
     }
-  });
+  }catch(e){showToast('Tarmoq xatosi','err');document.querySelectorAll('.mc-win-btn').forEach(b=>b.disabled=false);}
 }
 
-function closeDetail() {
-  $('panel-overlay').classList.remove('show');
-  $('detail-panel').classList.remove('open');
-  document.body.style.overflow = '';
-  currentTrnId = null;
+// ─── TOURNAMENT ACTIONS ───
+async function genBracket(id){
+  const btn=$('btn-gen');
+  if(btn) btn.disabled=true;
+  try{
+    const r=await fetch(`/api/admin/tournaments/${id}/bracket`,{method:'POST',headers:auth()});
+    const d=await r.json();
+    if(r.ok){
+      showToast('⚡ Setka yaratildi!');
+      currentTrn.status='in_progress';
+      bracketMatches=Array.isArray(d)?d:[];
+      $('dp-meta').innerHTML=`<span class="sp sp-in_progress">Jarayonda</span>`;
+      $('dp-prog-wrap').style.display='none';
+      const trn=trnList.find(t=>t.id===id);
+      if(trn) trn.status='in_progress';
+      setupDetailTabs('in_progress');
+      updateDetailActions();
+      renderBracket();
+      // Update list
+      loadTournaments(currentTrnStatus);
+    } else {showToast(d.error||'Xatolik','err');if(btn) btn.disabled=false;}
+  }catch(e){showToast('Tarmoq xatosi','err');if(btn) btn.disabled=false;}
 }
 
-document.querySelectorAll('.dp-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.dp-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    currentRegTab = tab.dataset.regtab;
-    renderRegs();
-  });
-});
+async function shuffleSeed(id){
+  // Only applicable before bracket is generated — here it regenerates with new seed
+  if(!confirm('Ishtirokchilar tartibini tasodifiy aralashtirasizmi?')) return;
+  try{
+    const r=await fetch(`/api/admin/tournaments/${id}/bracket/shuffle`,{method:'POST',headers:auth()});
+    const d=await r.json();
+    if(r.ok){
+      showToast('🔀 Tartib yangilandi');
+      bracketMatches=Array.isArray(d)?d:[];
+      if(currentDetailTab==='bracket') renderBracket();
+    } else {showToast(d.error||'Xatolik','err');}
+  }catch(e){showToast('Tarmoq xatosi','err');}
+}
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+async function cancelTrn(id){
+  if(!confirm('Turnirni bekor qilmoqchimisiz?')) return;
+  try{
+    const r=await fetch(`/api/admin/tournaments/${id}/cancel`,{method:'PUT',headers:auth()});
+    if(r.ok){
+      showToast('Turnir bekor qilindi','warn');
+      loadTournaments(currentTrnStatus);
+      closeDetail();
+    } else {const d=await r.json();showToast(d.error||'Xatolik','err');}
+  }catch(e){showToast('Tarmoq xatosi','err');}
+}
 
-// ─── Toast ───
-function showToast(msg, type='ok') {
-  const t = document.createElement('div');
-  t.className = 'toast ' + type;
-  t.textContent = msg;
+async function deleteTrn(id){
+  if(!confirm('Turnirni o\'chirishni tasdiqlaysizmi? Bu amalni qaytarib bo\'lmaydi.')) return;
+  try{
+    const r=await fetch(`/api/admin/tournaments/${id}`,{method:'DELETE',headers:auth()});
+    if(r.ok){
+      showToast('Turnir o\'chirildi');
+      loadTournaments(currentTrnStatus);
+      closeDetail();
+    } else {const d=await r.json();showToast(d.error||'Xatolik','err');}
+  }catch(e){showToast('Tarmoq xatosi','err');}
+}
+
+// ─── CREATE / EDIT MODAL ───
+async function loadBranches(){
+  if(branches.length) return;
+  try{
+    const r=await fetch('/api/admin/branches',{headers:auth()});
+    branches=r.ok?await r.json()||[]:[];
+  }catch(e){}
+}
+
+function populateBranchSelect(selectedId){
+  $('f-branch').innerHTML=branches.map(b=>`<option value="${b.id}"${b.id==selectedId?' selected':''}>${esc(b.name)}</option>`).join('');
+}
+
+async function openCreateModal(){
+  await loadBranches();
+  modalMode='create';
+  $('modal-title').textContent='Yangi Turnir';
+  $('f-name').value='';
+  $('f-date').value='';
+  $('f-max').value='8';
+  $('f-type').value='single_elimination';
+  $('f-branch-wrap').style.display='';
+  $('f-type-group').style.display='';
+  populateBranchSelect(null);
+  $('modal-submit').disabled=false;
+  $('modal-overlay').classList.add('show');
+  setTimeout(()=>$('f-name').focus(),100);
+}
+
+async function openEditModal(){
+  if(!currentTrn) return;
+  await loadBranches();
+  modalMode='edit';
+  $('modal-title').textContent='Turnirni Tahrirlash';
+  $('f-name').value=currentTrn.name;
+  // datetime-local format: YYYY-MM-DDTHH:mm
+  if(currentTrn.scheduled_at){
+    const d=new Date(currentTrn.scheduled_at);
+    const pad=n=>String(n).padStart(2,'0');
+    $('f-date').value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  $('f-max').value=currentTrn.max_players;
+  $('f-branch-wrap').style.display='none'; // can't change branch
+  $('f-type-group').style.display='none';   // can't change type
+  $('modal-submit').disabled=false;
+  $('modal-overlay').classList.add('show');
+  setTimeout(()=>$('f-name').focus(),100);
+}
+
+function closeModal(){
+  $('modal-overlay').classList.remove('show');
+}
+
+async function submitTrnForm(){
+  const name=$('f-name').value.trim();
+  const dateStr=$('f-date').value;
+  const maxPlayers=parseInt($('f-max').value)||8;
+  if(!name){showToast('Nom kiriting','err');return;}
+  if(!dateStr){showToast('Sana va vaqt kiriting','err');return;}
+  const scheduledAt=new Date(dateStr).toISOString();
+  const btn=$('modal-submit');
+  btn.disabled=true;
+  try{
+    let r;
+    if(modalMode==='create'){
+      const branchId=parseInt($('f-branch').value)||0;
+      const type=$('f-type').value||'single_elimination';
+      r=await fetch('/api/admin/tournaments',{
+        method:'POST',headers:{...auth(),'Content-Type':'application/json'},
+        body:JSON.stringify({name,branch_id:branchId,scheduled_at:scheduledAt,max_players:maxPlayers,type})
+      });
+    } else {
+      r=await fetch(`/api/admin/tournaments/${currentTrn.id}`,{
+        method:'PUT',headers:{...auth(),'Content-Type':'application/json'},
+        body:JSON.stringify({name,scheduled_at:scheduledAt,max_players:maxPlayers})
+      });
+    }
+    const d=await r.json();
+    if(r.ok){
+      closeModal();
+      showToast(modalMode==='create'?'✅ Turnir yaratildi':'✅ Turnir yangilandi');
+      await loadTournaments(currentTrnStatus);
+      if(modalMode==='edit'&&currentTrn){
+        currentTrn.name=name;
+        currentTrn.scheduled_at=scheduledAt;
+        currentTrn.max_players=maxPlayers;
+        $('dp-title').textContent=name;
+        $('dp-sub').textContent=currentTrn.branch_name+' · '+fmtDate(scheduledAt);
+        $('dp-pr').textContent=maxPlayers+' max';
+      }
+    } else {showToast(d.error||'Xatolik','err');}
+  }catch(e){showToast('Tarmoq xatosi','err');}
+  btn.disabled=false;
+}
+
+// ─── GLOBAL REFRESH ───
+async function refresh(){
+  const r=await fetch('/api/admin/stats',{headers:auth()});
+  if(r.ok) updateStats(await r.json());
+  const active=document.querySelector('.tab.active')?.dataset?.tab;
+  if(active==='clips') loadClips(currentClipStatus);
+  else if(active==='tournaments') loadTournaments(currentTrnStatus);
+  else if(active==='users') refreshUsers();
+}
+
+// ─── TOAST ───
+function showToast(msg,type='ok'){
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.textContent=msg;
   document.body.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 280); }, 2600);
+  requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),280);},2600);
 }
 
-// ─── Users helpers ───
+// ─── USERS ───
 function showSkelUsers(){
   $('user-grid').innerHTML=Array(9).fill('<div class="skel skel-uc"></div>').join('');
   $('user-pg').innerHTML='';
 }
-
-async function loadUsers(search='', role='') {
+async function loadUsers(search='',role=''){
   showSkelUsers();
-  try {
+  try{
     const p=[];
     if(search) p.push('q='+encodeURIComponent(search));
     if(role) p.push('role='+encodeURIComponent(role));
-    const url='/api/admin/users'+(p.length?'?'+p.join('&'):'');
-    const r=await fetch(url,{headers:auth()});
+    const r=await fetch('/api/admin/users'+(p.length?'?'+p.join('&'):''),{headers:auth()});
     if(!r.ok) throw new Error('HTTP '+r.status);
     allUsers=await r.json()||[];
-  } catch(e){
-    $('user-grid').innerHTML=`<div class="empty-note" style="grid-column:1/-1">Xatolik: ${esc(e.message)}</div>`;
-    return;
-  }
-  updateChipCounts();
-  currentPage=1;
-  renderUserPage();
+  }catch(e){$('user-grid').innerHTML=`<div class="empty-note" style="grid-column:1/-1">Xatolik: ${esc(e.message)}</div>`;return;}
+  updateChipCounts();currentPage=1;renderUserPage();
 }
-
 function updateChipCounts(){
   const c={client:0,operator:0,admin:0,superadmin:0};
-  allUsers.forEach(u=>{ if(c[u.role]!==undefined) c[u.role]++; });
+  allUsers.forEach(u=>{if(c[u.role]!==undefined) c[u.role]++;});
   $('chip-all').textContent=allUsers.length;
   $('chip-cl').textContent=c.client;
   $('chip-op').textContent=c.operator;
   $('chip-ad').textContent=c.admin;
   $('chip-sa').textContent=c.superadmin;
 }
-
-function filteredUsers(){
-  return currentRoleFilter ? allUsers.filter(u=>u.role===currentRoleFilter) : allUsers;
-}
-
+function filteredUsers(){return currentRoleFilter?allUsers.filter(u=>u.role===currentRoleFilter):allUsers;}
 function renderUserPage(){
   const list=filteredUsers();
   const total=list.length;
   const pages=Math.ceil(total/PAGE_SIZE)||1;
   if(currentPage>pages) currentPage=pages;
-  const slice=list.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+  const slice=list.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   const g=$('user-grid');
-
-  if(!slice.length){
-    g.innerHTML='<div class="empty-note" style="grid-column:1/-1">Foydalanuvchilar topilmadi</div>';
-    $('user-pg').innerHTML='';
-    return;
-  }
-
+  if(!slice.length){g.innerHTML='<div class="empty-note" style="grid-column:1/-1">Topilmadi</div>';$('user-pg').innerHTML='';return;}
   g.innerHTML=slice.map(u=>{
     const name=[u.first_name,u.last_name].filter(Boolean).join(' ')||'—';
     const roleOpts=ROLES.map(ro=>`<option value="${ro}"${u.role===ro?' selected':''}>${ROLE_UZ[ro]}</option>`).join('');
-    const acts=isSuperadmin?`
-      <div class="uc-acts">
-        <select class="role-sel-u" data-tgid="${u.tg_id}" onchange="setRole(this)">${roleOpts}</select>
-        <button class="act-tog ${u.is_active?'is-active':'is-blocked'}"
-                onclick="confirmToggle(${u.tg_id},${u.is_active},this)"
-                title="${u.is_active?'Bloklash':'Faollashtirish'}">${u.is_active?'🚫':'✅'}</button>
-      </div>`:'';
-    return `<div class="user-card" id="uc-${u.tg_id}">
+    const acts=isSuperadmin?`<div class="uc-acts">
+      <select class="role-sel-u" data-tgid="${u.tg_id}" onchange="setRole(this)">${roleOpts}</select>
+      <button class="act-tog ${u.is_active?'is-active':'is-blocked'}" onclick="confirmToggle(${u.tg_id},${u.is_active},this)">${u.is_active?'🚫':'✅'}</button>
+    </div>`:'';
+    return`<div class="user-card">
       <div class="uc-top">
         <div class="uc-av" style="background:${avatarBg(u.first_name)}">${fl(u.first_name)}</div>
         <div class="uc-info">
@@ -764,29 +1162,21 @@ function renderUserPage(){
           <div class="uc-tid">${u.tg_id}</div>
         </div>
         <div class="uc-pills">
-          <span class="status-pill sp-${u.role}">${ROLE_UZ[u.role]||u.role}</span>
-          <span class="status-pill ${u.is_active?'sp-done':'sp-failed'}">${u.is_active?'Faol':'Blok'}</span>
+          <span class="sp sp-${u.role}">${ROLE_UZ[u.role]||u.role}</span>
+          <span class="sp ${u.is_active?'sp-done':'sp-failed'}">${u.is_active?'Faol':'Blok'}</span>
         </div>
       </div>
-      <div class="uc-foot">
-        <div class="uc-date">${fmtShort(u.created_at)}</div>
-        ${acts}
-      </div>
+      <div class="uc-foot"><div class="uc-date">${fmtShort(u.created_at)}</div>${acts}</div>
     </div>`;
   }).join('');
-
-  renderPg(pages, total);
+  renderPg(pages,total);
 }
-
-function renderPg(pages, total){
+function renderPg(pages,total){
   const el=$('user-pg');
-  if(pages<=1){
-    el.innerHTML=`<span class="pg-info">${total} ta foydalanuvchi</span>`;
-    return;
-  }
+  if(pages<=1){el.innerHTML=`<span class="pg-info">${total} ta</span>`;return;}
   let h=`<button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>←</button>`;
   for(let i=1;i<=pages;i++){
-    if(pages>7 && Math.abs(i-currentPage)>2 && i!==1 && i!==pages){
+    if(pages>7&&Math.abs(i-currentPage)>2&&i!==1&&i!==pages){
       if(i===currentPage-3||i===currentPage+3) h+=`<span class="pg-info">…</span>`;
       continue;
     }
@@ -796,119 +1186,82 @@ function renderPg(pages, total){
   h+=`<span class="pg-info">${total} ta</span>`;
   el.innerHTML=h;
 }
-
 function goPage(n){
   const pages=Math.ceil(filteredUsers().length/PAGE_SIZE)||1;
   if(n<1||n>pages) return;
-  currentPage=n;
-  renderUserPage();
+  currentPage=n;renderUserPage();
   $('tab-users').scrollIntoView({behavior:'smooth',block:'start'});
 }
-
-function searchUsers(q){
-  clearTimeout(searchTimer);
-  currentSearchQ=q;
-  searchTimer=setTimeout(()=>{ currentPage=1; loadUsers(q,currentRoleFilter); },350);
-}
-
-function refreshUsers(){ loadUsers(currentSearchQ,currentRoleFilter); }
-
+function searchUsers(q){clearTimeout(searchTimer);currentSearchQ=q;searchTimer=setTimeout(()=>{currentPage=1;loadUsers(q,currentRoleFilter);},350);}
+function refreshUsers(){loadUsers(currentSearchQ,currentRoleFilter);}
 async function setRole(sel){
-  const tgid=sel.dataset.tgid, role=sel.value;
-  try {
-    const r=await fetch(`/api/admin/users/${tgid}/role`,{
-      method:'PUT', headers:{...auth(),'Content-Type':'application/json'},
-      body:JSON.stringify({role})
-    });
-    if(r.ok){
-      const u=allUsers.find(x=>String(x.tg_id)===String(tgid));
-      if(u){ u.role=role; updateChipCounts(); renderUserPage(); }
-      showToast('Rol o\'zgartirildi: '+ROLE_UZ[role]);
-    } else {
-      const d=await r.json(); showToast(d.error||'Xatolik','err');
-      loadUsers(currentSearchQ,currentRoleFilter);
-    }
-  } catch(e){ showToast('Tarmoq xatosi','err'); }
+  const tgid=sel.dataset.tgid,role=sel.value;
+  try{
+    const r=await fetch(`/api/admin/users/${tgid}/role`,{method:'PUT',headers:{...auth(),'Content-Type':'application/json'},body:JSON.stringify({role})});
+    if(r.ok){const u=allUsers.find(x=>String(x.tg_id)===String(tgid));if(u){u.role=role;updateChipCounts();renderUserPage();}showToast('Rol o\'zgartirildi: '+ROLE_UZ[role]);}
+    else{const d=await r.json();showToast(d.error||'Xatolik','err');loadUsers(currentSearchQ,currentRoleFilter);}
+  }catch(e){showToast('Tarmoq xatosi','err');}
 }
-
-function confirmToggle(tgid, isActive, btn){
+function confirmToggle(tgid,isActive,btn){
   if(!btn.dataset.confirm){
-    btn.dataset.confirm='1';
-    const orig=btn.textContent;
-    btn.className='act-tog is-confirm';
-    btn.textContent=isActive?'Bloklash?':'Faollashtirish?';
-    btn._t=setTimeout(()=>{
-      if(btn.dataset.confirm){ delete btn.dataset.confirm; btn.className='act-tog '+(isActive?'is-active':'is-blocked'); btn.textContent=orig; }
-    },3000);
+    btn.dataset.confirm='1';const orig=btn.textContent;
+    btn.className='act-tog is-confirm';btn.textContent=isActive?'Bloklash?':'Faollashtirish?';
+    btn._t=setTimeout(()=>{if(btn.dataset.confirm){delete btn.dataset.confirm;btn.className='act-tog '+(isActive?'is-active':'is-blocked');btn.textContent=orig;}},3000);
     return;
   }
-  clearTimeout(btn._t); delete btn.dataset.confirm;
-  toggleActive(tgid,!isActive);
+  clearTimeout(btn._t);delete btn.dataset.confirm;toggleActive(tgid,!isActive);
+}
+async function toggleActive(tgid,active){
+  try{
+    const r=await fetch(`/api/admin/users/${tgid}/active`,{method:'PUT',headers:{...auth(),'Content-Type':'application/json'},body:JSON.stringify({active})});
+    if(r.ok){const u=allUsers.find(x=>String(x.tg_id)===String(tgid));if(u){u.is_active=active;renderUserPage();}showToast(active?'Faollashtirildi':'Bloklandi',active?'ok':'warn');}
+    else{const d=await r.json();showToast(d.error||'Xatolik','err');}
+  }catch(e){showToast('Tarmoq xatosi','err');}
 }
 
-async function toggleActive(tgid, active){
-  try {
-    const r=await fetch(`/api/admin/users/${tgid}/active`,{
-      method:'PUT', headers:{...auth(),'Content-Type':'application/json'},
-      body:JSON.stringify({active})
-    });
-    if(r.ok){
-      const u=allUsers.find(x=>String(x.tg_id)===String(tgid));
-      if(u){ u.is_active=active; renderUserPage(); }
-      showToast(active?'Foydalanuvchi faollashtirildi':'Foydalanuvchi bloklandi', active?'ok':'warn');
-    } else { const d=await r.json(); showToast(d.error||'Xatolik','err'); }
-  } catch(e){ showToast('Tarmoq xatosi','err'); }
-}
-
-async function refresh() {
-  const r = await fetch('/api/admin/stats', { headers: auth() });
-  if (r.ok) updateStats(await r.json());
-  const active = document.querySelector('.tab.active')?.dataset?.tab;
-  if (active === 'clips') loadClips(currentClipStatus);
-  else if (active === 'tournaments') loadTournaments(currentTrnStatus);
-  else if (active === 'users') refreshUsers();
-}
-
-// ─── Tab switching ───
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+// ─── EVENT LISTENERS ───
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
     tab.classList.add('active');
-    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-    if (tab.dataset.tab === 'tournaments') loadTournaments(currentTrnStatus);
-    else if (tab.dataset.tab === 'users') loadUsers(currentSearchQ, currentRoleFilter);
+    $('tab-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab==='tournaments') loadTournaments(currentTrnStatus);
+    else if(tab.dataset.tab==='users') loadUsers(currentSearchQ,currentRoleFilter);
     else loadClips(currentClipStatus);
   });
 });
 
-// ─── Clip filters ───
-document.querySelectorAll('.filter-btn[data-status]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    loadClips(btn.dataset.status);
+document.querySelectorAll('.filter-btn[data-status]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-btn[data-status]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');loadClips(btn.dataset.status);
   });
 });
 
-// ─── Tournament filters ───
-document.querySelectorAll('.filter-btn[data-trnstatus]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn[data-trnstatus]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    loadTournaments(btn.dataset.trnstatus);
+document.querySelectorAll('.filter-btn[data-trnstatus]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-btn[data-trnstatus]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');loadTournaments(btn.dataset.trnstatus);
   });
 });
 
-// ─── Role chip filters ───
-document.querySelectorAll('.role-chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    currentRoleFilter = chip.dataset.role;
-    currentPage = 1;
-    renderUserPage();
+document.querySelectorAll('.role-chip').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    document.querySelectorAll('.role-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');currentRoleFilter=chip.dataset.role;currentPage=1;renderUserPage();
   });
+});
+
+// Close modal on overlay click
+$('modal-overlay').addEventListener('click',e=>{if(e.target===$('modal-overlay')) closeModal();});
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if($('modal-overlay').classList.contains('show')) closeModal();
+    else closeDetail();
+  }
 });
 
 init().catch(console.error);
