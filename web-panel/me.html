@@ -766,7 +766,7 @@ function renderHomeMyTrns() {
   el.innerHTML = active.slice(0, 3).map(t => {
     const isLive = t.tournament_status === 'in_progress';
     const dot = TRN_DOT[t.tournament_status] || '#888';
-    const clickable = t.tournament_status === 'in_progress' || t.tournament_status === 'finished';
+    const clickable = t.tournament_status !== 'cancelled';
     return `<div class="mreg-card" ${clickable?`onclick="openBracket(${t.tournament_id})" style="cursor:pointer"`:''}>
       <div class="mreg-dot" style="background:${dot}${isLive?';animation:pulse 1.2s infinite':''}"></div>
       <div class="mreg-info">
@@ -884,7 +884,7 @@ function liveCard(t, _participant) {
 function upcomingCard(t) {
   const cnt = t.approved_count||0, max = t.max_players||1;
   const cd = countdown(t.scheduled_at);
-  return `<div class="tc-upcoming clickable" style="cursor:default">
+  return `<div class="tc-upcoming clickable" onclick="openBracket(${t.tournament_id})" style="cursor:pointer">
     <div class="tc-up-body">
       <div class="tc-up-hd">
         <div class="tc-up-name">${esc(t.name)}</div>
@@ -903,6 +903,7 @@ function upcomingCard(t) {
         <span class="s-mini"><span class="s-mini-f${cnt>=max?' full':''}" style="width:${Math.min(100,Math.round(cnt/max*100))}%"></span></span>
         <span>${cnt}/${max}</span>
       </div>
+      <span class="tc-hist-ch">›</span>
     </div>
   </div>`;
 }
@@ -933,13 +934,14 @@ function watchCard(t) {
 
 function reqCard(t) {
   const isPending = t.reg_status === 'pending';
-  return `<div class="tc-req">
+  return `<div class="tc-req" onclick="openBracket(${t.tournament_id})" style="cursor:pointer">
     <div class="tc-req-ico">${isPending ? '⏳' : '❌'}</div>
     <div class="tc-req-info">
       <div class="tc-req-name">${esc(t.name)}</div>
       <div class="tc-req-sub">${esc(t.branch_name||'—')} · ${fmtDT(t.scheduled_at)}</div>
     </div>
     <span class="tc-req-badge ${isPending?'rqb-pending':'rqb-rejected'}">${isPending?"Kutilmoqda":"Rad etildi"}</span>
+    <span class="tc-hist-ch" style="margin-left:4px">›</span>
   </div>`;
 }
 
@@ -956,7 +958,7 @@ function openCard(t) {
   } else {
     action = `<button class="reg-btn" ${isFull?'disabled':''} onclick="event.stopPropagation();registerTrn(${t.id},this)">${isFull?"To'ldi":"📝 Ro'yxat"}</button>`;
   }
-  return `<div class="tc-open">
+  return `<div class="tc-open" onclick="openBracket(${t.id})" style="cursor:pointer">
     <div class="tc-open-body">
       <div class="tc-open-hd">
         <div class="tc-open-name">${esc(t.name)}</div>
@@ -1027,11 +1029,11 @@ async function registerTrn(trnId, btn) {
       loadMyTrns();
     } else {
       showToast(d.error || 'Xatolik yuz berdi', 'err');
-      renderOpenTrns();
+      renderTrnTab();
     }
   } catch(e) {
     showToast('Tarmoq xatosi', 'err');
-    renderOpenTrns();
+    renderTrnTab();
   }
 }
 
@@ -1128,25 +1130,75 @@ function setBrkLive(on) {
 
 async function brkLoad(trnId) {
   try {
-    const [r1, r2] = await Promise.all([
-      fetch(`/api/tournaments/${trnId}`),
-      fetch(`/api/tournaments/${trnId}/bracket`)
-    ]);
+    const r1 = await fetch(`/api/tournaments/${trnId}`);
     if (!r1.ok) throw new Error('Turnir topilmadi');
     const trn = await r1.json();
-    const ms = r2.ok ? (await r2.json() || []) : [];
     $('brk-ttl').textContent = trn.name || 'Turnir';
     const body = $('brk-body');
     body.innerHTML = '';
     body.appendChild(brkHdrEl(trn));
-    if (ms.length) {
-      brkRender(body, trn, ms);
-    } else if (trn.status === 'in_progress' || trn.status === 'finished') {
-      body.innerHTML += '<div style="padding:40px 16px;text-align:center;color:#30304a;font-size:.82rem;line-height:2">⏳<br>Bracket hali yaratilmagan</div>';
+
+    if (trn.status === 'registration') {
+      setBrkLive(false);
+      const r2 = await fetch(`/api/tournaments/${trnId}/registrations`);
+      const regs = r2.ok ? (await r2.json() || []) : [];
+      brkShowPlayers(body, regs, trn.max_players);
+    } else {
+      const r2 = await fetch(`/api/tournaments/${trnId}/bracket`);
+      const ms = r2.ok ? (await r2.json() || []) : [];
+      if (ms.length) {
+        brkRender(body, trn, ms);
+      } else {
+        body.innerHTML += '<div style="padding:40px 16px;text-align:center;color:#30304a;font-size:.82rem;line-height:2">⏳<br>Bracket hali yaratilmagan</div>';
+      }
     }
   } catch(e) {
     $('brk-body').innerHTML = `<div style="padding:40px;text-align:center;color:#e03040;font-size:.82rem">❌<br>${esc(e.message)}</div>`;
   }
+}
+
+function brkShowPlayers(body, regs, maxPlayers) {
+  const approved = regs.filter(r => r.status === 'approved');
+  const pending  = regs.filter(r => r.status === 'pending');
+
+  const sec = brkEl('div');
+  const hdr = brkEl('div', 'sec-hdr wb');
+  hdr.textContent = `👥 Ishtirokchilar (${approved.length} / ${maxPlayers})`;
+  sec.appendChild(hdr);
+
+  if (approved.length === 0) {
+    const empty = brkEl('div');
+    empty.style.cssText = 'padding:32px 16px;text-align:center;color:#30304a;font-size:.8rem;line-height:2';
+    empty.textContent = 'Hali tasdiqlangan ishtirokchilar yo\'q';
+    sec.appendChild(empty);
+  } else {
+    const list = brkEl('div');
+    list.style.cssText = 'padding:0 16px 8px';
+    approved.forEach((r, i) => {
+      const row = brkEl('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:11px 14px;background:#0d0d1c;border:1px solid rgba(100,100,180,.1);border-radius:8px;margin-bottom:6px;font-size:.82rem;color:#e0e0f0';
+      row.innerHTML = `<span style="font-size:.65rem;color:#30304a;min-width:20px;font-weight:700">${i+1}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.user_name)}</span>`;
+      list.appendChild(row);
+    });
+    sec.appendChild(list);
+  }
+
+  if (pending.length > 0) {
+    const phdr = brkEl('div', 'sec-hdr');
+    phdr.textContent = `⏳ Kutilmoqda (${pending.length})`;
+    sec.appendChild(phdr);
+    const plist = brkEl('div');
+    plist.style.cssText = 'padding:0 16px 8px';
+    pending.forEach(r => {
+      const row = brkEl('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:11px 14px;background:#0d0d1c;border:1px solid rgba(100,100,180,.05);border-radius:8px;margin-bottom:6px;font-size:.82rem;color:#30304a;opacity:.6';
+      row.innerHTML = `<span style="font-size:.65rem;min-width:20px">•</span><span>${esc(r.user_name)}</span>`;
+      plist.appendChild(row);
+    });
+    sec.appendChild(plist);
+  }
+
+  body.appendChild(sec);
 }
 
 function brkHdrEl(t) {
