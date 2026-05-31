@@ -66,6 +66,12 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/admin/tournaments/{id}/registrations/{reg_id}/approve", h.withRole(h.adminApproveTrnReg, "admin", "superadmin"))
 	mux.HandleFunc("PUT /api/admin/tournaments/{id}/registrations/{reg_id}/reject", h.withRole(h.adminRejectTrnReg, "admin", "superadmin"))
 
+	// Clip management
+	mux.HandleFunc("GET /api/admin/clips/{id}", h.withRole(h.adminClipDetail, "operator", "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/clips/{id}/approve", h.withRole(h.adminClipApprove, "operator", "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/clips/{id}/reject", h.withRole(h.adminClipReject, "operator", "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/clips/{id}/refund", h.withRole(h.adminClipRefund, "operator", "admin", "superadmin"))
+
 	// Superadmin-only user management
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/role", h.withRole(h.adminSetRole, "superadmin"))
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/active", h.withRole(h.adminSetActive, "superadmin"))
@@ -668,6 +674,115 @@ func (h *Handler) adminRejectTrnReg(w http.ResponseWriter, r *http.Request) {
 		WHERE id=$1 AND tournament_id=$2 AND status='pending'`, rID, tID)
 	if err != nil {
 		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) adminClipDetail(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	type item struct {
+		ID         int64  `json:"id"`
+		ClientTgID int64  `json:"client_tg_id"`
+		ClientName string `json:"client_name"`
+		BranchName string `json:"branch_name"`
+		TableNum   int    `json:"table_num"`
+		StartTime  string `json:"start_time"`
+		EndTime    string `json:"end_time"`
+		Status     string `json:"status"`
+		Notes      string `json:"notes"`
+		ClipPath   string `json:"clip_path"`
+		CreatedAt  string `json:"created_at"`
+	}
+	var i item
+	err = h.db.QueryRow(`
+		SELECT cr.id, cr.client_tg_id, cr.client_name, COALESCE(b.name,'?'), COALESCE(t.table_num,0),
+		       cr.start_time, cr.end_time, cr.status, COALESCE(cr.notes,''), COALESCE(cr.clip_path,''), cr.created_at
+		FROM clip_requests cr
+		LEFT JOIN branches b ON b.id=cr.branch_id
+		LEFT JOIN tables t ON t.id=cr.table_id
+		WHERE cr.id=$1`, id).Scan(
+		&i.ID, &i.ClientTgID, &i.ClientName, &i.BranchName, &i.TableNum,
+		&i.StartTime, &i.EndTime, &i.Status, &i.Notes, &i.ClipPath, &i.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		writeErr(w, 404, "not found")
+		return
+	}
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, i)
+}
+
+func (h *Handler) adminClipApprove(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	res, err := h.db.Exec(`UPDATE clip_requests SET status='paid' WHERE id=$1 AND status='pending'`, id)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		writeErr(w, 400, "klip topilmadi yoki pending emas")
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) adminClipReject(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	var req struct {
+		Notes string `json:"notes"`
+	}
+	json.NewDecoder(r.Body).Decode(&req)
+	res, err := h.db.Exec(`
+		UPDATE clip_requests SET status='failed', notes=$2
+		WHERE id=$1 AND status IN ('pending','paid','processing')`, id, req.Notes)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		writeErr(w, 400, "klip topilmadi yoki holat o'zgartirish mumkin emas")
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) adminClipRefund(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	var req struct {
+		Notes string `json:"notes"`
+	}
+	json.NewDecoder(r.Body).Decode(&req)
+	res, err := h.db.Exec(`
+		UPDATE clip_requests SET status='refunded', notes=$2
+		WHERE id=$1 AND status IN ('paid','processing')`, id, req.Notes)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		writeErr(w, 400, "klip topilmadi yoki qaytarish mumkin emas")
 		return
 	}
 	writeJSON(w, 200, map[string]string{"status": "ok"})

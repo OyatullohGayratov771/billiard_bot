@@ -37,13 +37,14 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .hero{padding:32px 32px 24px;max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
 .hero-title{font-size:clamp(1.3rem,2.5vw,1.9rem);font-weight:900;letter-spacing:-.5px}
 .hero-sub{color:var(--text2);font-size:.75rem;margin-top:4px}
-.refresh-btn{background:var(--card2);border:1px solid var(--border2);padding:7px 16px;border-radius:3px;font-size:.64rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--text2);transition:.2s}
+.refresh-btn{background:var(--card2);border:1px solid var(--border2);padding:7px 16px;border-radius:3px;font-size:.64rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--text2);transition:.2s;min-width:90px}
 .refresh-btn:hover{color:var(--gold);border-color:var(--gold)}
 @media(max-width:560px){.hero{padding:20px 16px 14px}}
 
 /* STATS */
 .stats{max-width:1240px;margin:0 auto;padding:0 32px 28px;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border2)}
-.stat-card{background:var(--card);padding:18px 14px}
+.stat-card{background:var(--card);padding:18px 14px;cursor:pointer;transition:.1s}
+.stat-card:hover{background:var(--card2)}
 .sc-n{font-size:1.55rem;font-weight:900;background:linear-gradient(135deg,var(--gold-l),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .sc-l{font-size:.48rem;text-transform:uppercase;letter-spacing:3px;color:var(--text3);margin-top:5px}
 @media(max-width:960px){.stats{grid-template-columns:repeat(3,1fr);padding:0 16px 20px}}
@@ -52,8 +53,10 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 /* TABS */
 .tabs-wrap{max-width:1240px;margin:0 auto;padding:0 32px;border-bottom:1px solid var(--border2)}
 .tabs{display:flex}
-.tab{padding:12px 20px;font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
+.tab{padding:12px 20px;font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap;display:flex;align-items:center;gap:3px}
 .tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:8px;background:rgba(231,76,60,.18);color:var(--red);font-size:.52rem;font-weight:800;padding:0 4px;margin-left:1px}
+.tab-badge:empty{display:none}
 @media(max-width:560px){.tabs-wrap{padding:0 10px;overflow-x:auto}.tab{padding:10px 13px;font-size:.6rem}}
 
 /* PANES */
@@ -65,6 +68,14 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .filter-row{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
 .filter-btn{padding:5px 13px;border-radius:2px;font-size:.61rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--text3);transition:.2s}
 .filter-btn:hover,.filter-btn.active{color:var(--gold);border-color:var(--gold)}
+
+/* CLIP TOP BAR */
+.clip-top-bar{display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap}
+.clips-search-wrap{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--border2);border-radius:3px;padding:6px 10px;min-width:190px;max-width:240px;transition:.2s;flex-shrink:0}
+.clips-search-wrap:focus-within{border-color:rgba(212,175,55,.35)}
+.clips-search-wrap input{background:none;border:none;outline:none;color:var(--text);font-size:.73rem;font-family:inherit;width:100%}
+.clips-search-wrap input::placeholder{color:var(--text3)}
+.clip-filters{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
 
 /* TABLE */
 .data-table{width:100%;border-collapse:collapse;font-size:.75rem}
@@ -120,7 +131,7 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .dp-prog-fill{height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:2px;transition:width .4s}
 
 /* Action buttons row */
-.dp-actions{display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card)}
+.dp-actions{display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card);min-height:46px;align-items:center}
 .dpa{padding:5px 12px;border-radius:3px;font-size:.61rem;font-weight:700;cursor:pointer;border:1px solid;transition:.2s;letter-spacing:.3px;background:transparent}
 .dpa:disabled{opacity:.4;cursor:default}
 .dpa-edit{color:var(--blue);border-color:rgba(52,152,219,.35)}
@@ -131,6 +142,15 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .dpa-warn:hover{background:rgba(230,126,34,.08)}
 .dpa-red{color:var(--red);border-color:rgba(231,76,60,.3)}
 .dpa-red:hover{background:rgba(231,76,60,.07)}
+.dpa-muted{color:var(--text3);border-color:var(--border2)}
+.dpa-muted:hover{color:var(--text2);border-color:rgba(255,255,255,.12)}
+
+/* Reason form inside dp-actions */
+.dp-reason-form{display:flex;flex-direction:column;gap:6px;width:100%}
+.dp-reason-label{font-size:.58rem;color:var(--text2);letter-spacing:.3px}
+.dp-reason-row{display:flex;gap:6px;align-items:center}
+.dp-reason-input{flex:1;background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:5px 9px;border-radius:3px;font-size:.75rem;font-family:inherit;outline:none;transition:border-color .2s;min-width:0}
+.dp-reason-input:focus{border-color:rgba(212,175,55,.4)}
 
 /* Inner tabs */
 .dp-inner-tabs{display:flex;padding:0 18px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card);overflow-x:auto}
@@ -140,6 +160,19 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 
 /* Body */
 .dp-body{flex:1;overflow-y:auto;padding:12px 14px 24px}
+
+/* Clip info card */
+.clip-info-card{border:1px solid var(--border2);border-radius:5px;overflow:hidden;margin-bottom:14px}
+.cic-row{display:flex;gap:12px;padding:9px 12px;background:var(--card);border-bottom:1px solid rgba(255,255,255,.03)}
+.cic-row:last-child{border-bottom:none}
+.cic-label{font-size:.57rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);flex-shrink:0;width:85px;padding-top:1px;line-height:1.5}
+.cic-val{font-size:.76rem;color:var(--text);line-height:1.5;word-break:break-all}
+.cic-val a{color:var(--blue)}
+.cic-val a:hover{text-decoration:underline}
+.cic-val.orange{color:var(--orange)}
+.cic-val.green{color:var(--green)}
+.cic-copy{background:none;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:3px;cursor:pointer;font-size:.56rem;margin-left:7px;transition:.2s}
+.cic-copy:hover{color:var(--gold);border-color:var(--gold)}
 
 /* Registration items */
 .reg-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:5px;border:1px solid var(--border2);margin-bottom:5px;background:var(--card);transition:border-color .2s}
@@ -234,7 +267,7 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .uc-name{font-weight:700;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
 .uc-un{font-size:.66rem;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .uc-tid{font-size:.57rem;color:var(--text3);margin-top:2px}
-.uc-pills{display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex-shrink:0}
+.uc-pills{display:flex;flex-direction:column;gap:3px;align-items:flex-end}
 .uc-foot{padding:8px 13px;border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
 .uc-date{font-size:.56rem;color:var(--text3)}
 .uc-acts{display:flex;gap:4px;align-items:center}
@@ -275,6 +308,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
   <span class="nav-badge">Admin Panel</span>
   <div class="nav-right">
     <span class="nav-user" id="nav-user"></span>
+    <button class="refresh-btn" id="refresh-btn" onclick="refresh()">↺ Yangilash</button>
     <span class="nav-logout" onclick="logout()">Chiqish</span>
   </div>
 </nav>
@@ -297,35 +331,40 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
       <div class="hero-title">Boshqaruv Paneli</div>
       <div class="hero-sub" id="hero-sub">Billiard King</div>
     </div>
-    <button class="refresh-btn" onclick="refresh()">↺ Yangilash</button>
   </div>
 
   <div class="stats">
-    <div class="stat-card"><div class="sc-n" id="s-users">—</div><div class="sc-l">Foydalanuvchilar</div></div>
-    <div class="stat-card"><div class="sc-n" id="s-pending">—</div><div class="sc-l">Klip Kutilmoqda</div></div>
-    <div class="stat-card"><div class="sc-n" id="s-paid">—</div><div class="sc-l">Klip To'langan</div></div>
-    <div class="stat-card"><div class="sc-n" id="s-processing">—</div><div class="sc-l">Klip Jarayonda</div></div>
-    <div class="stat-card"><div class="sc-n" id="s-trns">—</div><div class="sc-l">Faol Turnirlar</div></div>
-    <div class="stat-card"><div class="sc-n" id="s-trn-regs">—</div><div class="sc-l">Turnir So'rovlari</div></div>
+    <div class="stat-card" onclick="jumpToClips('')"><div class="sc-n" id="s-users">—</div><div class="sc-l">Foydalanuvchilar</div></div>
+    <div class="stat-card" onclick="jumpToClips('pending')"><div class="sc-n" id="s-pending">—</div><div class="sc-l">Klip Kutilmoqda</div></div>
+    <div class="stat-card" onclick="jumpToClips('paid')"><div class="sc-n" id="s-paid">—</div><div class="sc-l">Klip To'langan</div></div>
+    <div class="stat-card" onclick="jumpToClips('processing')"><div class="sc-n" id="s-processing">—</div><div class="sc-l">Klip Jarayonda</div></div>
+    <div class="stat-card" onclick="jumpToTrns('')"><div class="sc-n" id="s-trns">—</div><div class="sc-l">Faol Turnirlar</div></div>
+    <div class="stat-card" onclick="jumpToTrns('registration')"><div class="sc-n" id="s-trn-regs">—</div><div class="sc-l">Turnir So'rovlari</div></div>
   </div>
 
   <div class="tabs-wrap">
     <div class="tabs">
-      <div class="tab active" data-tab="clips">🎬 Kliplar</div>
-      <div class="tab" data-tab="tournaments">🏆 Turnirlar</div>
+      <div class="tab active" data-tab="clips">🎬 Kliplar<span class="tab-badge" id="tab-badge-clips"></span></div>
+      <div class="tab" data-tab="tournaments">🏆 Turnirlar<span class="tab-badge" id="tab-badge-trns"></span></div>
       <div class="tab" data-tab="users">👥 Foydalanuvchilar</div>
     </div>
   </div>
 
   <!-- ═══ CLIPS TAB ═══ -->
   <div class="tab-pane active" id="tab-clips">
-    <div class="filter-row">
-      <button class="filter-btn active" data-status="">Hammasi</button>
-      <button class="filter-btn" data-status="pending">Kutilmoqda</button>
-      <button class="filter-btn" data-status="paid">To'langan</button>
-      <button class="filter-btn" data-status="processing">Jarayonda</button>
-      <button class="filter-btn" data-status="done">Tayyor</button>
-      <button class="filter-btn" data-status="failed">Rad etildi</button>
+    <div class="clip-top-bar">
+      <div class="clips-search-wrap">
+        <svg width="12" height="12" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="clip-search" placeholder="Mijoz ismi…" oninput="filterClipsByName(this.value)" autocomplete="off">
+      </div>
+      <div class="clip-filters">
+        <button class="filter-btn active" data-status="">Hammasi</button>
+        <button class="filter-btn" data-status="pending">Kutilmoqda</button>
+        <button class="filter-btn" data-status="paid">To'langan</button>
+        <button class="filter-btn" data-status="processing">Jarayonda</button>
+        <button class="filter-btn" data-status="done">Tayyor</button>
+        <button class="filter-btn" data-status="failed">Rad etildi</button>
+      </div>
     </div>
     <div class="table-wrap">
       <table class="data-table">
@@ -374,7 +413,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
   </div>
 </div>
 
-<!-- ═══ DETAIL PANEL ═══ -->
+<!-- ═══ DETAIL PANEL (shared: clips + tournaments) ═══ -->
 <div class="panel-overlay" id="panel-overlay" onclick="closeDetail()"></div>
 <div class="detail-panel" id="detail-panel">
   <div class="dp-head">
@@ -466,7 +505,7 @@ function fmtShort(s){
 function clipDur(s,e){
   if(!s||!e) return '—';
   const m=Math.round((new Date(e)-new Date(s))/60000);
-  return m>0?m+'daq':'—';
+  return m>0?m+' daq':'—';
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function avatarBg(n){
@@ -476,7 +515,7 @@ function avatarBg(n){
 }
 function fl(s){return ((s||'?')[0]).toUpperCase();}
 
-// State
+// ─── STATE ───
 let jwt=null, isSuperadmin=false, isAdmin=false;
 let currentClipStatus='', currentTrnStatus='';
 let trnList=[], allRegs=[], bracketMatches=[];
@@ -485,8 +524,15 @@ let branches=[], modalMode='', searchTimer=null;
 let allUsers=[], currentRoleFilter='', currentSearchQ='', currentPage=1;
 const PAGE_SIZE=18;
 
-function auth(){return{Authorization:'Bearer '+jwt};}
+// Panel mode: 'clip' or 'tournament'
+let panelMode='';
+let currentClip=null;
+let allClips=[], clipSearchQ='';
 
+// Auto-refresh
+let arTimer=null, arSeconds=60;
+
+function auth(){return{Authorization:'Bearer '+jwt};}
 function logout(){localStorage.removeItem('bk_jwt');location.href='/';}
 
 // ─── INIT ───
@@ -527,6 +573,41 @@ async function init(){
 
   show('state-main');
   loadClips('');
+  startAutoRefresh();
+}
+
+// ─── AUTO-REFRESH ───
+function startAutoRefresh(){
+  clearInterval(arTimer);
+  arSeconds=60;
+  updateRefreshBtn();
+  arTimer=setInterval(()=>{
+    arSeconds--;
+    if(arSeconds<=0){arSeconds=60;silentRefreshStats();}
+    updateRefreshBtn();
+  },1000);
+}
+
+function updateRefreshBtn(){
+  const btn=$('refresh-btn');
+  if(btn) btn.textContent='↺ '+arSeconds+'s';
+}
+
+async function silentRefreshStats(){
+  try{
+    const r=await fetch('/api/admin/stats',{headers:auth()});
+    if(r.ok) updateStats(await r.json());
+  }catch(_){}
+}
+
+async function refresh(){
+  arSeconds=60;updateRefreshBtn();
+  const r=await fetch('/api/admin/stats',{headers:auth()});
+  if(r.ok) updateStats(await r.json());
+  const active=document.querySelector('.tab.active')?.dataset?.tab;
+  if(active==='clips') loadClips(currentClipStatus);
+  else if(active==='tournaments') loadTournaments(currentTrnStatus);
+  else if(active==='users') refreshUsers();
 }
 
 function updateStats(s){
@@ -536,27 +617,206 @@ function updateStats(s){
   $('s-processing').textContent=s.processing_clips??'—';
   $('s-trns').textContent=s.active_tournaments??'—';
   $('s-trn-regs').textContent=s.pending_trn_regs??'—';
+  // Tab badges: pending+paid clips (need attention), pending trn registrations
+  const clipBadge=(s.pending_clips||0)+(s.paid_clips||0);
+  $('tab-badge-clips').textContent=clipBadge>0?clipBadge:'';
+  $('tab-badge-trns').textContent=s.pending_trn_regs>0?s.pending_trn_regs:'';
+}
+
+// ─── STAT CARD SHORTCUTS ───
+function jumpToClips(status){
+  activateTab('clips');
+  document.querySelectorAll('.filter-btn[data-status]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.status===status);
+  });
+  loadClips(status);
+}
+function jumpToTrns(status){
+  activateTab('tournaments');
+  document.querySelectorAll('.filter-btn[data-trnstatus]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.trnstatus===status);
+  });
+  loadTournaments(status);
+}
+function activateTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${name}"]`)?.classList.add('active');
+  $('tab-'+name)?.classList.add('active');
 }
 
 // ─── CLIPS ───
 async function loadClips(status){
   currentClipStatus=status;
+  clipSearchQ=$('clip-search')?.value||'';
   const body=$('clips-body');
   body.innerHTML='<tr><td colspan="7" class="loading-note">Yuklanmoqda…</td></tr>';
   try{
     const r=await fetch('/api/admin/clips'+(status?'?status='+status:''),{headers:auth()});
-    const list=r.ok?await r.json():[];
-    if(!list.length){body.innerHTML='<tr><td colspan="7" class="empty-note">Kliplar topilmadi</td></tr>';return;}
-    body.innerHTML=list.map(c=>`<tr>
-      <td style="color:var(--text3)">${c.id}</td>
-      <td><div class="name-cell">${esc(c.client_name)}</div></td>
-      <td>${esc(c.branch_name)} · Stol ${c.table_num}</td>
-      <td>${fmtDate(c.start_time)}</td>
-      <td>${clipDur(c.start_time,c.end_time)}</td>
-      <td><span class="sp sp-${c.status}">${STATUS_UZ[c.status]||c.status}</span>${c.notes?'<div class="sub-cell">'+esc(c.notes)+'</div>':''}</td>
-      <td class="sub-cell">${fmtShort(c.created_at)}</td>
-    </tr>`).join('');
+    allClips=r.ok?await r.json():[];
+    renderClipRows();
   }catch(e){body.innerHTML='<tr><td colspan="7" class="empty-note">Xatolik: '+esc(e.message)+'</td></tr>';}
+}
+
+function filterClipsByName(q){
+  clipSearchQ=q;
+  renderClipRows();
+}
+
+function renderClipRows(){
+  const body=$('clips-body');
+  const q=clipSearchQ.toLowerCase().trim();
+  const list=q?allClips.filter(c=>(c.client_name||'').toLowerCase().includes(q)):allClips;
+  if(!list.length){body.innerHTML='<tr><td colspan="7" class="empty-note">Kliplar topilmadi</td></tr>';return;}
+  body.innerHTML=list.map(c=>`<tr class="clickable" onclick="openClipDetail(${c.id})">
+    <td style="color:var(--text3)">${c.id}</td>
+    <td><div class="name-cell">${esc(c.client_name)}</div></td>
+    <td>${esc(c.branch_name)} · Stol ${c.table_num}</td>
+    <td>${fmtDate(c.start_time)}</td>
+    <td>${clipDur(c.start_time,c.end_time)}</td>
+    <td><span class="sp sp-${c.status}">${STATUS_UZ[c.status]||c.status}</span>${c.notes?'<div class="sub-cell">'+esc(c.notes)+'</div>':''}</td>
+    <td class="sub-cell">${fmtShort(c.created_at)}</td>
+  </tr>`).join('');
+}
+
+// ─── CLIP DETAIL PANEL ───
+async function openClipDetail(clipId){
+  panelMode='clip';
+  currentClip=null;
+  currentTrn=null;
+
+  $('dp-title').textContent='Klip #'+clipId;
+  $('dp-sub').textContent='Yuklanmoqda…';
+  $('dp-meta').innerHTML='';
+  $('dp-prog-wrap').style.display='none';
+  $('dp-actions').innerHTML='<div class="loading-note" style="padding:6px 0">…</div>';
+  $('dp-inner-tabs').innerHTML='';
+  $('dp-body').innerHTML='<div class="loading-note">Yuklanmoqda…</div>';
+
+  $('panel-overlay').classList.add('show');
+  $('detail-panel').classList.add('open');
+  document.body.style.overflow='hidden';
+
+  try{
+    const r=await fetch(`/api/admin/clips/${clipId}`,{headers:auth()});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    currentClip=await r.json();
+    renderClipDetail();
+  }catch(e){
+    $('dp-sub').textContent='Xatolik';
+    $('dp-actions').innerHTML='';
+    $('dp-body').innerHTML=`<div class="empty-note">Yuklab bo'lmadi: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderClipDetail(){
+  const c=currentClip;
+  if(!c) return;
+  $('dp-title').textContent='Klip #'+c.id;
+  $('dp-sub').textContent=esc(c.client_name)+' · '+esc(c.branch_name)+' · Stol '+c.table_num;
+  $('dp-meta').innerHTML=`<span class="sp sp-${c.status}">${STATUS_UZ[c.status]||c.status}</span>`;
+
+  // Actions
+  let actHtml='';
+  if(c.status==='pending'){
+    actHtml+=`<button class="dpa dpa-gold" onclick="clipApprove()">✅ Tasdiqlash</button>`;
+    actHtml+=`<button class="dpa dpa-red" onclick="showClipReason('reject')">❌ Rad etish</button>`;
+    actHtml+=`<button class="dpa dpa-warn" onclick="showClipReason('refund')">↩️ Qaytarish</button>`;
+  } else if(c.status==='paid'){
+    actHtml+=`<button class="dpa dpa-red" onclick="showClipReason('reject')">❌ Rad etish</button>`;
+    actHtml+=`<button class="dpa dpa-warn" onclick="showClipReason('refund')">↩️ Qaytarish</button>`;
+  } else if(c.status==='processing'){
+    actHtml+=`<button class="dpa dpa-muted" onclick="openClipDetail(${c.id})">🔄 Yangilash</button>`;
+    actHtml+=`<button class="dpa dpa-red" onclick="showClipReason('reject')">❌ Rad etish</button>`;
+    actHtml+=`<button class="dpa dpa-warn" onclick="showClipReason('refund')">↩️ Qaytarish</button>`;
+  } else {
+    actHtml=`<span style="font-size:.63rem;color:var(--text3)">${STATUS_UZ[c.status]||c.status} — o'zgartirish mumkin emas</span>`;
+  }
+  $('dp-actions').innerHTML=actHtml;
+  $('dp-inner-tabs').innerHTML='';
+
+  const dur=clipDur(c.start_time,c.end_time);
+  $('dp-body').innerHTML=`
+    <div class="clip-info-card">
+      <div class="cic-row"><div class="cic-label">Boshlandi</div><div class="cic-val">${fmtDate(c.start_time)}</div></div>
+      <div class="cic-row"><div class="cic-label">Tugadi</div><div class="cic-val">${fmtDate(c.end_time)}</div></div>
+      <div class="cic-row"><div class="cic-label">Davomiylik</div><div class="cic-val">${dur}</div></div>
+      <div class="cic-row"><div class="cic-label">So'rov sana</div><div class="cic-val">${fmtDate(c.created_at)}</div></div>
+      <div class="cic-row"><div class="cic-label">Mijoz TG</div><div class="cic-val"><code style="font-size:.8rem">${c.client_tg_id||'—'}</code><button class="cic-copy" onclick="copyText('${c.client_tg_id}')">Nusxa</button></div></div>
+      ${c.notes?`<div class="cic-row"><div class="cic-label">Izoh</div><div class="cic-val orange">${esc(c.notes)}</div></div>`:''}
+      ${c.clip_path?`<div class="cic-row"><div class="cic-label">Fayl</div><div class="cic-val green" style="font-size:.67rem;word-break:break-all">${esc(c.clip_path)}</div></div>`:''}
+    </div>
+  `;
+}
+
+function showClipReason(action){
+  const label=action==='reject'?'❌ Rad etish sababi (ixtiyoriy):':'↩️ Qaytarish sababi (ixtiyoriy):';
+  const confirmLbl=action==='reject'?'Rad etish':'Qaytarish';
+  $('dp-actions').innerHTML=`
+    <div class="dp-reason-form">
+      <div class="dp-reason-label">${label}</div>
+      <div class="dp-reason-row">
+        <input type="text" id="dp-reason-inp" class="dp-reason-input" placeholder="Sabab kiriting…" onkeydown="if(event.key==='Enter')clipAction('${action}')">
+        <button class="dpa dpa-red" onclick="clipAction('${action}')" style="white-space:nowrap">${confirmLbl}</button>
+        <button class="dpa dpa-muted" onclick="renderClipDetail()">Bekor</button>
+      </div>
+    </div>
+  `;
+  setTimeout(()=>$('dp-reason-inp')?.focus(),50);
+}
+
+async function clipApprove(){
+  if(!currentClip) return;
+  $('dp-actions').querySelectorAll('button').forEach(b=>b.disabled=true);
+  try{
+    const r=await fetch(`/api/admin/clips/${currentClip.id}/approve`,{method:'PUT',headers:auth()});
+    const d=await r.json();
+    if(r.ok){
+      showToast('✅ To\'lov tasdiqlandi');
+      currentClip.status='paid';
+      renderClipDetail();
+      updateClipInCache(currentClip.id,'paid','');
+      silentRefreshStats();
+    } else {
+      showToast(d.error||'Xatolik','err');
+      renderClipDetail();
+    }
+  }catch(e){showToast('Tarmoq xatosi','err');renderClipDetail();}
+}
+
+async function clipAction(action){
+  if(!currentClip) return;
+  const notes=$('dp-reason-inp')?.value?.trim()||'';
+  $('dp-actions').querySelectorAll('button').forEach(b=>b.disabled=true);
+  try{
+    const r=await fetch(`/api/admin/clips/${currentClip.id}/${action}`,{
+      method:'PUT',headers:{...auth(),'Content-Type':'application/json'},
+      body:JSON.stringify({notes})
+    });
+    const d=await r.json();
+    if(r.ok){
+      const ns=action==='reject'?'failed':'refunded';
+      showToast(action==='reject'?'Rad etildi':'Qaytarildi','warn');
+      currentClip.status=ns;
+      currentClip.notes=notes;
+      renderClipDetail();
+      updateClipInCache(currentClip.id,ns,notes);
+      silentRefreshStats();
+    } else {
+      showToast(d.error||'Xatolik','err');
+      renderClipDetail();
+    }
+  }catch(e){showToast('Tarmoq xatosi','err');renderClipDetail();}
+}
+
+function updateClipInCache(id,status,notes){
+  const c=allClips.find(x=>x.id===id);
+  if(c){c.status=status;c.notes=notes;}
+  renderClipRows();
+}
+
+function copyText(txt){
+  navigator.clipboard?.writeText(String(txt)).then(()=>showToast('Nusxalandi')).catch(()=>{});
 }
 
 // ─── TOURNAMENTS LIST ───
@@ -582,26 +842,23 @@ async function loadTournaments(status){
   }catch(e){body.innerHTML='<tr><td colspan="5" class="empty-note">Xatolik</td></tr>';}
 }
 
-// ─── DETAIL PANEL ───
+// ─── TOURNAMENT DETAIL PANEL ───
 async function openTrnDetail(trnId){
   const trn=trnList.find(t=>t.id===trnId);
   if(!trn) return;
+  panelMode='tournament';
   currentTrn={...trn};
+  currentClip=null;
   currentRegTab='all';
-  allRegs=[];
-  bracketMatches=[];
+  allRegs=[];bracketMatches=[];
 
-  // Header
   $('dp-title').textContent=trn.name;
   $('dp-sub').textContent=trn.branch_name+(trn.scheduled_at?' · '+fmtDate(trn.scheduled_at):'');
-
-  // Meta
   $('dp-meta').innerHTML=`
     <span class="sp sp-${trn.status}">${TRN_STATUS[trn.status]||trn.status}</span>
     ${trn.type?`<span class="dp-type-tag">${TRN_TYPE[trn.type]||trn.type}</span>`:''}
   `;
 
-  // Progress bar
   const hasProg=trn.status==='registration'||trn.status==='in_progress';
   $('dp-prog-wrap').style.display=hasProg?'':'none';
   if(hasProg){
@@ -611,21 +868,17 @@ async function openTrnDetail(trnId){
     $('dp-pf').style.width=Math.min(100,pct)+'%';
   }
 
-  // Show panel
   $('panel-overlay').classList.add('show');
   $('detail-panel').classList.add('open');
   document.body.style.overflow='hidden';
 
-  // Setup tabs and actions (after panel opens)
   setupDetailTabs(trn.status);
   updateDetailActions();
 
-  // Load data
   const hasBracket=trn.status==='in_progress'||trn.status==='finished';
   $('dp-body').innerHTML='<div class="loading-note">Yuklanmoqda…</div>';
   if(hasBracket){
-    // Default to bracket tab — load both in parallel
-    await Promise.all([loadBracket(trnId), loadTrnRegs(trnId)]);
+    await Promise.all([loadBracket(trnId),loadTrnRegs(trnId)]);
     switchDetailTab('bracket');
   } else {
     await loadTrnRegs(trnId);
@@ -637,9 +890,7 @@ function setupDetailTabs(status){
   const hasBracket=status==='in_progress'||status==='finished';
   const tabs=$('dp-inner-tabs');
   let html='';
-  if(hasBracket){
-    html+=`<div class="dp-tab" data-dtab="bracket">Setka</div>`;
-  }
+  if(hasBracket) html+=`<div class="dp-tab" data-dtab="bracket">Setka</div>`;
   html+=`<div class="dp-tab" data-dtab="regs">Ro'yxat <span class="dp-cnt" id="rc-all"></span></div>`;
   tabs.innerHTML=html;
   document.querySelectorAll('.dp-tab').forEach(t=>{
@@ -662,6 +913,7 @@ function switchDetailTab(tab){
 }
 
 function updateDetailActions(){
+  if(panelMode!=='tournament') return;
   const st=currentTrn?.status;
   let html='';
   if(st==='registration'){
@@ -682,7 +934,7 @@ function updateDetailActions(){
   if(isAdmin){
     html+=`<button class="dpa dpa-red" onclick="deleteTrn(${currentTrn.id})">🗑 O'chirish</button>`;
   }
-  $('dp-actions').innerHTML=html;
+  $('dp-actions').innerHTML=html||'<span style="font-size:.63rem;color:var(--text3)">—</span>';
 }
 
 function closeDetail(){
@@ -690,6 +942,8 @@ function closeDetail(){
   $('detail-panel').classList.remove('open');
   document.body.style.overflow='';
   currentTrn=null;
+  currentClip=null;
+  panelMode='';
 }
 
 // ─── REGISTRATIONS ───
@@ -706,7 +960,6 @@ function updateRegCounts(){
   allRegs.forEach(r=>{if(c[r.status]!==undefined) c[r.status]++;});
   const el=$('rc-all');
   if(el) el.textContent=c.all||'';
-  // Refresh gen-bracket button visibility
   if(currentTrn?.status==='registration') updateDetailActions();
 }
 
@@ -715,7 +968,6 @@ function renderRegs(){
   const list=currentRegTab==='all'?allRegs:allRegs.filter(r=>r.status===currentRegTab);
   let html='';
 
-  // Reg filter buttons
   const cnt={all:allRegs.length,pending:0,approved:0,rejected:0};
   allRegs.forEach(r=>{if(cnt[r.status]!==undefined) cnt[r.status]++;});
   html+=`<div class="filter-row" style="margin-bottom:10px">
@@ -724,7 +976,6 @@ function renderRegs(){
     } ${cnt[s]||0}</button>`).join('')}
   </div>`;
 
-  // Add player form (registration status only)
   if(canAct){
     html+=`<div class="add-player-row">
       <input type="text" id="ap-name" placeholder="Qo'lda qo'shish — o'yinchi ismi…">
@@ -757,23 +1008,16 @@ function renderRegs(){
   if(rc) rc.textContent=cnt.all||'';
 }
 
-function setRegTab(tab){
-  currentRegTab=tab;
-  renderRegs();
-}
+function setRegTab(tab){currentRegTab=tab;renderRegs();}
 
 async function approveReg(trnId,regId,btn){
-  btn.disabled=true;
-  btn.nextElementSibling&&(btn.nextElementSibling.disabled=true);
+  btn.disabled=true;btn.nextElementSibling&&(btn.nextElementSibling.disabled=true);
   try{
     const r=await fetch(`/api/admin/tournaments/${trnId}/registrations/${regId}/approve`,{method:'PUT',headers:auth()});
     if(r.ok){
       const reg=allRegs.find(x=>x.id===regId);
       if(reg) reg.status='approved';
-      updateRegCounts();
-      renderRegs();
-      refreshProgBar();
-      showToast('✅ Tasdiqlandi');
+      updateRegCounts();renderRegs();refreshProgBar();showToast('✅ Tasdiqlandi');
     } else {
       const d=await r.json();showToast(d.error||'Xatolik','err');
       btn.disabled=false;btn.nextElementSibling&&(btn.nextElementSibling.disabled=false);
@@ -782,16 +1026,13 @@ async function approveReg(trnId,regId,btn){
 }
 
 async function rejectReg(trnId,regId,btn){
-  btn.disabled=true;
-  btn.previousElementSibling&&(btn.previousElementSibling.disabled=true);
+  btn.disabled=true;btn.previousElementSibling&&(btn.previousElementSibling.disabled=true);
   try{
     const r=await fetch(`/api/admin/tournaments/${trnId}/registrations/${regId}/reject`,{method:'PUT',headers:auth()});
     if(r.ok){
       const reg=allRegs.find(x=>x.id===regId);
       if(reg) reg.status='rejected';
-      updateRegCounts();
-      renderRegs();
-      showToast('Rad etildi','warn');
+      updateRegCounts();renderRegs();showToast('Rad etildi','warn');
     } else {btn.disabled=false;btn.previousElementSibling&&(btn.previousElementSibling.disabled=false);}
   }catch(e){btn.disabled=false;}
 }
@@ -812,7 +1053,6 @@ async function addManualPlayer(){
       renderRegs();
       currentTrn.registered=allRegs.filter(r=>r.status==='approved').length;
       refreshProgBar();
-      // Update tournament row
       const trn=trnList.find(t=>t.id===currentTrn.id);
       if(trn) trn.registered=currentTrn.registered;
     } else {const d=await r.json();showToast(d.error||'Xatolik','err');}
@@ -825,7 +1065,6 @@ function refreshProgBar(){
   const pct=currentTrn?.max_players>0?Math.round(approved/currentTrn.max_players*100):0;
   $('dp-pl').textContent=approved+' tasdiqlangan';
   $('dp-pf').style.width=Math.min(100,pct)+'%';
-  // Update table row
   const pending=allRegs.filter(r=>r.status==='pending').length;
   const trn=trnList.find(t=>t.id===currentTrn?.id);
   if(trn){trn.registered=approved;trn.pending=pending;}
@@ -842,22 +1081,14 @@ async function loadBracket(trnId){
 function renderBracket(){
   const body=$('dp-body');
   if(!bracketMatches||!bracketMatches.length){
-    body.innerHTML='<div class="empty-note">Setka yo\'q</div>';
-    return;
+    body.innerHTML='<div class="empty-note">Setka yo\'q</div>';return;
   }
   const isReadonly=currentTrn?.status==='finished';
   const GF=2000,LBO=1000;
-
-  // Group by round
   const rounds={};
-  bracketMatches.forEach(m=>{
-    if(!rounds[m.round]) rounds[m.round]=[];
-    rounds[m.round].push(m);
-  });
-
+  bracketMatches.forEach(m=>{if(!rounds[m.round]) rounds[m.round]=[];rounds[m.round].push(m);});
   const rnums=Object.keys(rounds).map(Number).sort((a,b)=>a-b);
   const allDone=bracketMatches.every(m=>m.status==='done'||m.status==='bye'||m.status==='void');
-
   body.innerHTML=rnums.map(rn=>{
     let label;
     if(rn===GF) label='🏆 Grand Final';
@@ -876,21 +1107,15 @@ function matchCard(m,readonly){
   const p2=m.player2_name||'TBD';
   const w1=m.winner_tg_id&&m.player1_tg_id&&m.winner_tg_id==m.player1_tg_id;
   const w2=m.winner_tg_id&&m.player2_tg_id&&m.winner_tg_id==m.player2_tg_id;
-
   if(st==='void') return`<div class="match-card mc-pending"><div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot pending"></div></div><div style="color:var(--text3);font-size:.7rem">Kutilmoqda</div></div>`;
   if(st==='bye'){
     const bn=p1!=='TBD'?p1:p2;
     return`<div class="match-card mc-bye"><div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot bye"></div></div><div class="mc-player-row winner"><span class="mc-pname">${esc(bn)}</span><span class="mc-trophy">🏆</span></div><div class="mc-bye-text">Avtomatik o'tadi (BYE)</div></div>`;
   }
-
   const canPick=!readonly&&(st==='ready'||st==='in_progress');
   const dotClass=st==='done'?'done':st==='ready'||st==='in_progress'?'ready':'pending';
-
   return`<div class="match-card${st==='done'?' mc-done':st==='ready'||st==='in_progress'?' mc-ready':' mc-pending'}">
-    <div class="mc-header">
-      <span class="mc-num">M${m.match_num}</span>
-      <div class="mc-status-dot ${dotClass}"></div>
-    </div>
+    <div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot ${dotClass}"></div></div>
     <div class="mc-player-row ${w1?'winner':w2?'loser':''}">
       <span class="mc-trophy">${w1?'🏆':'　'}</span>
       <span class="mc-pname">${esc(p1)}</span>
@@ -905,7 +1130,6 @@ function matchCard(m,readonly){
 }
 
 async function setWinner(matchId,tgId){
-  // Disable all win buttons
   document.querySelectorAll('.mc-win-btn').forEach(b=>b.disabled=true);
   try{
     const r=await fetch(`/api/admin/matches/${matchId}/result`,{
@@ -922,11 +1146,9 @@ async function setWinner(matchId,tgId){
         $('dp-prog-wrap').style.display='none';
         const trn=trnList.find(t=>t.id===currentTrn.id);
         if(trn) trn.status='finished';
-        setupDetailTabs('finished');
-        updateDetailActions();
+        setupDetailTabs('finished');updateDetailActions();
       }
-      await loadBracket(currentTrn.id);
-      renderBracket();
+      await loadBracket(currentTrn.id);renderBracket();
     } else {
       showToast(d.error||'Xatolik','err');
       document.querySelectorAll('.mc-win-btn').forEach(b=>b.disabled=false);
@@ -936,8 +1158,7 @@ async function setWinner(matchId,tgId){
 
 // ─── TOURNAMENT ACTIONS ───
 async function genBracket(id){
-  const btn=$('btn-gen');
-  if(btn) btn.disabled=true;
+  const btn=$('btn-gen');if(btn) btn.disabled=true;
   try{
     const r=await fetch(`/api/admin/tournaments/${id}/bracket`,{method:'POST',headers:auth()});
     const d=await r.json();
@@ -947,28 +1168,20 @@ async function genBracket(id){
       bracketMatches=Array.isArray(d)?d:[];
       $('dp-meta').innerHTML=`<span class="sp sp-in_progress">Jarayonda</span>`;
       $('dp-prog-wrap').style.display='none';
-      const trn=trnList.find(t=>t.id===id);
-      if(trn) trn.status='in_progress';
-      setupDetailTabs('in_progress');
-      updateDetailActions();
-      renderBracket();
-      // Update list
+      const trn=trnList.find(t=>t.id===id);if(trn) trn.status='in_progress';
+      setupDetailTabs('in_progress');updateDetailActions();renderBracket();
       loadTournaments(currentTrnStatus);
     } else {showToast(d.error||'Xatolik','err');if(btn) btn.disabled=false;}
   }catch(e){showToast('Tarmoq xatosi','err');if(btn) btn.disabled=false;}
 }
 
 async function shuffleSeed(id){
-  // Only applicable before bracket is generated — here it regenerates with new seed
   if(!confirm('Ishtirokchilar tartibini tasodifiy aralashtirasizmi?')) return;
   try{
     const r=await fetch(`/api/admin/tournaments/${id}/bracket/shuffle`,{method:'POST',headers:auth()});
     const d=await r.json();
-    if(r.ok){
-      showToast('🔀 Tartib yangilandi');
-      bracketMatches=Array.isArray(d)?d:[];
-      if(currentDetailTab==='bracket') renderBracket();
-    } else {showToast(d.error||'Xatolik','err');}
+    if(r.ok){showToast('🔀 Tartib yangilandi');bracketMatches=Array.isArray(d)?d:[];if(currentDetailTab==='bracket') renderBracket();}
+    else showToast(d.error||'Xatolik','err');
   }catch(e){showToast('Tarmoq xatosi','err');}
 }
 
@@ -976,11 +1189,8 @@ async function cancelTrn(id){
   if(!confirm('Turnirni bekor qilmoqchimisiz?')) return;
   try{
     const r=await fetch(`/api/admin/tournaments/${id}/cancel`,{method:'PUT',headers:auth()});
-    if(r.ok){
-      showToast('Turnir bekor qilindi','warn');
-      loadTournaments(currentTrnStatus);
-      closeDetail();
-    } else {const d=await r.json();showToast(d.error||'Xatolik','err');}
+    if(r.ok){showToast('Turnir bekor qilindi','warn');loadTournaments(currentTrnStatus);closeDetail();}
+    else {const d=await r.json();showToast(d.error||'Xatolik','err');}
   }catch(e){showToast('Tarmoq xatosi','err');}
 }
 
@@ -988,67 +1198,48 @@ async function deleteTrn(id){
   if(!confirm('Turnirni o\'chirishni tasdiqlaysizmi? Bu amalni qaytarib bo\'lmaydi.')) return;
   try{
     const r=await fetch(`/api/admin/tournaments/${id}`,{method:'DELETE',headers:auth()});
-    if(r.ok){
-      showToast('Turnir o\'chirildi');
-      loadTournaments(currentTrnStatus);
-      closeDetail();
-    } else {const d=await r.json();showToast(d.error||'Xatolik','err');}
+    if(r.ok){showToast('Turnir o\'chirildi');loadTournaments(currentTrnStatus);closeDetail();}
+    else {const d=await r.json();showToast(d.error||'Xatolik','err');}
   }catch(e){showToast('Tarmoq xatosi','err');}
 }
 
 // ─── CREATE / EDIT MODAL ───
 async function loadBranches(){
   if(branches.length) return;
-  try{
-    const r=await fetch('/api/admin/branches',{headers:auth()});
-    branches=r.ok?await r.json()||[]:[];
-  }catch(e){}
+  try{const r=await fetch('/api/admin/branches',{headers:auth()});branches=r.ok?await r.json()||[]:[];}catch(e){}
 }
-
 function populateBranchSelect(selectedId){
   $('f-branch').innerHTML=branches.map(b=>`<option value="${b.id}"${b.id==selectedId?' selected':''}>${esc(b.name)}</option>`).join('');
 }
-
 async function openCreateModal(){
   await loadBranches();
   modalMode='create';
   $('modal-title').textContent='Yangi Turnir';
-  $('f-name').value='';
-  $('f-date').value='';
-  $('f-max').value='8';
-  $('f-type').value='single_elimination';
-  $('f-branch-wrap').style.display='';
-  $('f-type-group').style.display='';
+  $('f-name').value='';$('f-date').value='';$('f-max').value='8';$('f-type').value='single_elimination';
+  $('f-branch-wrap').style.display='';$('f-type-group').style.display='';
   populateBranchSelect(null);
   $('modal-submit').disabled=false;
   $('modal-overlay').classList.add('show');
   setTimeout(()=>$('f-name').focus(),100);
 }
-
 async function openEditModal(){
   if(!currentTrn) return;
   await loadBranches();
   modalMode='edit';
   $('modal-title').textContent='Turnirni Tahrirlash';
   $('f-name').value=currentTrn.name;
-  // datetime-local format: YYYY-MM-DDTHH:mm
   if(currentTrn.scheduled_at){
     const d=new Date(currentTrn.scheduled_at);
     const pad=n=>String(n).padStart(2,'0');
     $('f-date').value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
   $('f-max').value=currentTrn.max_players;
-  $('f-branch-wrap').style.display='none'; // can't change branch
-  $('f-type-group').style.display='none';   // can't change type
+  $('f-branch-wrap').style.display='none';$('f-type-group').style.display='none';
   $('modal-submit').disabled=false;
   $('modal-overlay').classList.add('show');
   setTimeout(()=>$('f-name').focus(),100);
 }
-
-function closeModal(){
-  $('modal-overlay').classList.remove('show');
-}
-
+function closeModal(){$('modal-overlay').classList.remove('show');}
 async function submitTrnForm(){
   const name=$('f-name').value.trim();
   const dateStr=$('f-date').value;
@@ -1056,8 +1247,7 @@ async function submitTrnForm(){
   if(!name){showToast('Nom kiriting','err');return;}
   if(!dateStr){showToast('Sana va vaqt kiriting','err');return;}
   const scheduledAt=new Date(dateStr).toISOString();
-  const btn=$('modal-submit');
-  btn.disabled=true;
+  const btn=$('modal-submit');btn.disabled=true;
   try{
     let r;
     if(modalMode==='create'){
@@ -1079,43 +1269,27 @@ async function submitTrnForm(){
       showToast(modalMode==='create'?'✅ Turnir yaratildi':'✅ Turnir yangilandi');
       await loadTournaments(currentTrnStatus);
       if(modalMode==='edit'&&currentTrn){
-        currentTrn.name=name;
-        currentTrn.scheduled_at=scheduledAt;
-        currentTrn.max_players=maxPlayers;
+        currentTrn.name=name;currentTrn.scheduled_at=scheduledAt;currentTrn.max_players=maxPlayers;
         $('dp-title').textContent=name;
         $('dp-sub').textContent=currentTrn.branch_name+' · '+fmtDate(scheduledAt);
         $('dp-pr').textContent=maxPlayers+' max';
       }
-    } else {showToast(d.error||'Xatolik','err');}
+    } else showToast(d.error||'Xatolik','err');
   }catch(e){showToast('Tarmoq xatosi','err');}
   btn.disabled=false;
-}
-
-// ─── GLOBAL REFRESH ───
-async function refresh(){
-  const r=await fetch('/api/admin/stats',{headers:auth()});
-  if(r.ok) updateStats(await r.json());
-  const active=document.querySelector('.tab.active')?.dataset?.tab;
-  if(active==='clips') loadClips(currentClipStatus);
-  else if(active==='tournaments') loadTournaments(currentTrnStatus);
-  else if(active==='users') refreshUsers();
 }
 
 // ─── TOAST ───
 function showToast(msg,type='ok'){
   const t=document.createElement('div');
-  t.className='toast '+type;
-  t.textContent=msg;
+  t.className='toast '+type;t.textContent=msg;
   document.body.appendChild(t);
   requestAnimationFrame(()=>t.classList.add('show'));
   setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),280);},2600);
 }
 
 // ─── USERS ───
-function showSkelUsers(){
-  $('user-grid').innerHTML=Array(9).fill('<div class="skel skel-uc"></div>').join('');
-  $('user-pg').innerHTML='';
-}
+function showSkelUsers(){$('user-grid').innerHTML=Array(9).fill('<div class="skel skel-uc"></div>').join('');$('user-pg').innerHTML='';}
 async function loadUsers(search='',role=''){
   showSkelUsers();
   try{
@@ -1131,17 +1305,13 @@ async function loadUsers(search='',role=''){
 function updateChipCounts(){
   const c={client:0,operator:0,admin:0,superadmin:0};
   allUsers.forEach(u=>{if(c[u.role]!==undefined) c[u.role]++;});
-  $('chip-all').textContent=allUsers.length;
-  $('chip-cl').textContent=c.client;
-  $('chip-op').textContent=c.operator;
-  $('chip-ad').textContent=c.admin;
-  $('chip-sa').textContent=c.superadmin;
+  $('chip-all').textContent=allUsers.length;$('chip-cl').textContent=c.client;
+  $('chip-op').textContent=c.operator;$('chip-ad').textContent=c.admin;$('chip-sa').textContent=c.superadmin;
 }
 function filteredUsers(){return currentRoleFilter?allUsers.filter(u=>u.role===currentRoleFilter):allUsers;}
 function renderUserPage(){
   const list=filteredUsers();
-  const total=list.length;
-  const pages=Math.ceil(total/PAGE_SIZE)||1;
+  const total=list.length;const pages=Math.ceil(total/PAGE_SIZE)||1;
   if(currentPage>pages) currentPage=pages;
   const slice=list.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   const g=$('user-grid');
@@ -1253,10 +1423,8 @@ document.querySelectorAll('.role-chip').forEach(chip=>{
   });
 });
 
-// Close modal on overlay click
 $('modal-overlay').addEventListener('click',e=>{if(e.target===$('modal-overlay')) closeModal();});
 
-// Keyboard shortcuts
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if($('modal-overlay').classList.contains('show')) closeModal();
