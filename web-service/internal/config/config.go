@@ -14,6 +14,7 @@ type Config struct {
 	BaseURL          string
 	BotToken         string
 	TournamentSvcURL string
+	ClipSvcURL       string
 	InternalToken    string
 }
 
@@ -28,6 +29,7 @@ func LoadConfig() {
 		BaseURL:          getEnv("WEB_BASE_URL", "https://billiardking.uz"),
 		BotToken:         mustEnv("TELEGRAM_TOKEN"),
 		TournamentSvcURL: getEnv("TOURNAMENT_SVC_URL", "http://tournament-service:8084"),
+		ClipSvcURL:       getEnv("CLIP_SVC_URL", "http://clip-service:8083"),
 		InternalToken:    getEnv("INTERNAL_TOKEN", ""),
 	}
 	log.Println("✅ web-service config yuklandi")

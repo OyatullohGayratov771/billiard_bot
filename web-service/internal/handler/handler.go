@@ -25,11 +25,12 @@ type Handler struct {
 	baseURL       string
 	botToken      string
 	trnSvcURL     string
+	clipSvcURL    string
 	internalToken string
 }
 
-func New(db *sql.DB, secret, baseURL, botToken, trnSvcURL, internalToken string) *Handler {
-	return &Handler{db: db, secret: secret, baseURL: baseURL, botToken: botToken, trnSvcURL: trnSvcURL, internalToken: internalToken}
+func New(db *sql.DB, secret, baseURL, botToken, trnSvcURL, clipSvcURL, internalToken string) *Handler {
+	return &Handler{db: db, secret: secret, baseURL: baseURL, botToken: botToken, trnSvcURL: trnSvcURL, clipSvcURL: clipSvcURL, internalToken: internalToken}
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
@@ -71,6 +72,11 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/admin/clips/{id}/approve", h.withRole(h.adminClipApprove, "operator", "admin", "superadmin"))
 	mux.HandleFunc("PUT /api/admin/clips/{id}/reject", h.withRole(h.adminClipReject, "operator", "admin", "superadmin"))
 	mux.HandleFunc("PUT /api/admin/clips/{id}/refund", h.withRole(h.adminClipRefund, "operator", "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/clips/{id}/record", h.withRole(h.adminClipRecord, "operator", "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/clips/{id}/done", h.withRole(h.adminClipDone, "operator", "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/clips/{id}/retry", h.withRole(h.adminClipRetry, "operator", "admin", "superadmin"))
+	// Match management
+	mux.HandleFunc("PUT /api/admin/matches/{id}/start", h.withRole(h.adminMatchStart, "operator", "admin", "superadmin"))
 
 	// Superadmin-only user management
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/role", h.withRole(h.adminSetRole, "superadmin"))
@@ -513,6 +519,75 @@ func (h *Handler) trnProxy(w http.ResponseWriter, r *http.Request, method, path 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	_, _ = w.Write(respBody)
+}
+
+func (h *Handler) clipProxy(w http.ResponseWriter, r *http.Request, method, path string, body io.Reader) {
+	req, err := http.NewRequestWithContext(r.Context(), method, h.clipSvcURL+path, body)
+	if err != nil {
+		writeErr(w, 500, "proxy error")
+		return
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		writeErr(w, 502, "clip service unavailable")
+		return
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(resp.Body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	_, _ = w.Write(respBody)
+}
+
+func (h *Handler) adminClipRecord(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.clipProxy(w, r, http.MethodPost, "/clips/"+id+"/record", bytes.NewReader([]byte("{}")))
+}
+
+func (h *Handler) adminClipDone(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	res, err := h.db.Exec(`UPDATE clip_requests SET status='done' WHERE id=$1 AND status IN ('paid','processing')`, id)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		writeErr(w, 400, "klip topilmadi yoki holat o'zgartirish mumkin emas")
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) adminClipRetry(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	res, err := h.db.Exec(`UPDATE clip_requests SET status='paid', notes='' WHERE id=$1 AND status='failed'`, id)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		writeErr(w, 400, "klip topilmadi yoki rad etilmagan emas")
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) adminMatchStart(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.trnProxy(w, r, http.MethodPut, "/matches/"+id+"/start", r.Body)
 }
 
 func (h *Handler) adminBranches(w http.ResponseWriter, r *http.Request) {

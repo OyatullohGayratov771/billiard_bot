@@ -222,6 +222,11 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .mc-win-btn:hover{background:rgba(212,175,55,.12)}
 .mc-win-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
 .mc-bye-text{font-size:.64rem;color:var(--green);font-style:italic}
+.mc-start-btn{background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.3);border-radius:3px;padding:4px 10px;cursor:pointer;font-size:.62rem;font-weight:700;color:var(--green);transition:.2s;width:100%}
+.mc-start-btn:hover{background:rgba(46,204,113,.15)}
+.mc-start-form{display:flex;gap:5px;align-items:center;margin-top:6px}
+.mc-table-inp{width:68px;background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:4px 7px;border-radius:3px;font-size:.73rem;outline:none;font-family:inherit}
+.mc-table-inp:focus{border-color:rgba(46,204,113,.4)}
 
 /* ─── MODAL ─── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:16px}
@@ -716,18 +721,24 @@ function renderClipDetail(){
   $('dp-sub').textContent=esc(c.client_name)+' · '+esc(c.branch_name)+' · Stol '+c.table_num;
   $('dp-meta').innerHTML=`<span class="sp sp-${c.status}">${STATUS_UZ[c.status]||c.status}</span>`;
 
-  // Actions
+  // Actions by status
   let actHtml='';
   if(c.status==='pending'){
-    actHtml+=`<button class="dpa dpa-gold" onclick="clipApprove()">✅ Tasdiqlash</button>`;
+    actHtml+=`<button class="dpa dpa-gold" onclick="clipApprove()">✅ To'lovni tasdiqlash</button>`;
     actHtml+=`<button class="dpa dpa-red" onclick="showClipReason('reject')">❌ Rad etish</button>`;
     actHtml+=`<button class="dpa dpa-warn" onclick="showClipReason('refund')">↩️ Qaytarish</button>`;
   } else if(c.status==='paid'){
+    actHtml+=`<button class="dpa dpa-gold" onclick="clipRecord()">📹 NVR yozish</button>`;
+    actHtml+=`<button class="dpa dpa-edit" onclick="clipDone()">✅ Tayyor</button>`;
     actHtml+=`<button class="dpa dpa-red" onclick="showClipReason('reject')">❌ Rad etish</button>`;
     actHtml+=`<button class="dpa dpa-warn" onclick="showClipReason('refund')">↩️ Qaytarish</button>`;
   } else if(c.status==='processing'){
     actHtml+=`<button class="dpa dpa-muted" onclick="openClipDetail(${c.id})">🔄 Yangilash</button>`;
+    actHtml+=`<button class="dpa dpa-edit" onclick="clipDone()">✅ Tayyor deb belgilash</button>`;
     actHtml+=`<button class="dpa dpa-red" onclick="showClipReason('reject')">❌ Rad etish</button>`;
+    actHtml+=`<button class="dpa dpa-warn" onclick="showClipReason('refund')">↩️ Qaytarish</button>`;
+  } else if(c.status==='failed'){
+    actHtml+=`<button class="dpa dpa-gold" onclick="clipRetry()">🔄 Qayta urinish</button>`;
     actHtml+=`<button class="dpa dpa-warn" onclick="showClipReason('refund')">↩️ Qaytarish</button>`;
   } else {
     actHtml=`<span style="font-size:.63rem;color:var(--text3)">${STATUS_UZ[c.status]||c.status} — o'zgartirish mumkin emas</span>`;
@@ -801,6 +812,65 @@ async function clipAction(action){
       currentClip.notes=notes;
       renderClipDetail();
       updateClipInCache(currentClip.id,ns,notes);
+      silentRefreshStats();
+    } else {
+      showToast(d.error||'Xatolik','err');
+      renderClipDetail();
+    }
+  }catch(e){showToast('Tarmoq xatosi','err');renderClipDetail();}
+}
+
+async function clipRecord(){
+  if(!currentClip) return;
+  $('dp-actions').querySelectorAll('button').forEach(b=>b.disabled=true);
+  try{
+    const r=await fetch(`/api/admin/clips/${currentClip.id}/record`,{method:'PUT',headers:auth()});
+    const d=await r.json();
+    if(r.ok){
+      showToast('📹 NVR yozish boshlandi');
+      currentClip.status='processing';
+      renderClipDetail();
+      updateClipInCache(currentClip.id,'processing',currentClip.notes||'');
+      silentRefreshStats();
+    } else {
+      showToast(d.error||'NVR xatosi','err');
+      renderClipDetail();
+    }
+  }catch(e){showToast('Tarmoq xatosi','err');renderClipDetail();}
+}
+
+async function clipDone(){
+  if(!currentClip) return;
+  if(!confirm('Klipni tayyor deb belgilaysizmi?')) return;
+  $('dp-actions').querySelectorAll('button').forEach(b=>b.disabled=true);
+  try{
+    const r=await fetch(`/api/admin/clips/${currentClip.id}/done`,{method:'PUT',headers:auth()});
+    const d=await r.json();
+    if(r.ok){
+      showToast('✅ Klip tayyor deb belgilandi');
+      currentClip.status='done';
+      renderClipDetail();
+      updateClipInCache(currentClip.id,'done',currentClip.notes||'');
+      silentRefreshStats();
+    } else {
+      showToast(d.error||'Xatolik','err');
+      renderClipDetail();
+    }
+  }catch(e){showToast('Tarmoq xatosi','err');renderClipDetail();}
+}
+
+async function clipRetry(){
+  if(!currentClip) return;
+  $('dp-actions').querySelectorAll('button').forEach(b=>b.disabled=true);
+  try{
+    const r=await fetch(`/api/admin/clips/${currentClip.id}/retry`,{method:'PUT',headers:auth()});
+    const d=await r.json();
+    if(r.ok){
+      showToast('🔄 Klip qayta urinish uchun tayyor');
+      currentClip.status='paid';
+      currentClip.notes='';
+      renderClipDetail();
+      updateClipInCache(currentClip.id,'paid','');
       silentRefreshStats();
     } else {
       showToast(d.error||'Xatolik','err');
@@ -1107,25 +1177,46 @@ function matchCard(m,readonly){
   const p2=m.player2_name||'TBD';
   const w1=m.winner_tg_id&&m.player1_tg_id&&m.winner_tg_id==m.player1_tg_id;
   const w2=m.winner_tg_id&&m.player2_tg_id&&m.winner_tg_id==m.player2_tg_id;
+
   if(st==='void') return`<div class="match-card mc-pending"><div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot pending"></div></div><div style="color:var(--text3);font-size:.7rem">Kutilmoqda</div></div>`;
   if(st==='bye'){
     const bn=p1!=='TBD'?p1:p2;
     return`<div class="match-card mc-bye"><div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot bye"></div></div><div class="mc-player-row winner"><span class="mc-pname">${esc(bn)}</span><span class="mc-trophy">🏆</span></div><div class="mc-bye-text">Avtomatik o'tadi (BYE)</div></div>`;
   }
-  const canPick=!readonly&&(st==='ready'||st==='in_progress');
-  const dotClass=st==='done'?'done':st==='ready'||st==='in_progress'?'ready':'pending';
-  return`<div class="match-card${st==='done'?' mc-done':st==='ready'||st==='in_progress'?' mc-ready':' mc-pending'}">
-    <div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot ${dotClass}"></div></div>
+
+  const canPick=!readonly&&(st==='in_progress'||st==='ready');
+  const canStart=!readonly&&st==='ready'&&m.player1_tg_id&&m.player2_tg_id;
+  const dotClass=st==='done'?'done':st==='in_progress'?'ready':st==='ready'?'ready':'pending';
+
+  // Header extras
+  let headerExtra='';
+  if(st==='in_progress'&&m.table_num>0) headerExtra=`<span style="font-size:.54rem;color:var(--blue);background:rgba(52,152,219,.12);padding:2px 7px;border-radius:3px">🎱 Stol ${m.table_num}</span>`;
+  if(st==='in_progress'&&!m.table_num) headerExtra=`<span style="font-size:.54rem;color:var(--blue)">Jarayonda</span>`;
+
+  // Footer: start button or winner buttons
+  let footer='';
+  if(canStart){
+    footer=`<div id="sf-${m.id}" style="margin-top:7px">
+      <button class="mc-start-btn" onclick="showStartForm(${m.id},event)">▶ O'yinni boshlash</button>
+    </div>`;
+  }
+
+  return`<div class="match-card${st==='done'?' mc-done':st==='in_progress'||st==='ready'?' mc-ready':' mc-pending'}">
+    <div class="mc-header">
+      <span class="mc-num">M${m.match_num}</span>
+      <div style="display:flex;gap:5px;align-items:center">${headerExtra}<div class="mc-status-dot ${dotClass}"></div></div>
+    </div>
     <div class="mc-player-row ${w1?'winner':w2?'loser':''}">
       <span class="mc-trophy">${w1?'🏆':'　'}</span>
       <span class="mc-pname">${esc(p1)}</span>
-      ${canPick&&m.player1_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},${m.player1_tg_id})">G'olib</button>`:''}
+      ${canPick&&m.player1_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},${m.player1_tg_id})">🏆 G'olib</button>`:''}
     </div>
     <div class="mc-player-row ${w2?'winner':w1?'loser':''}">
       <span class="mc-trophy">${w2?'🏆':'　'}</span>
       <span class="mc-pname">${esc(p2)}</span>
-      ${canPick&&m.player2_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},${m.player2_tg_id})">G'olib</button>`:''}
+      ${canPick&&m.player2_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},${m.player2_tg_id})">🏆 G'olib</button>`:''}
     </div>
+    ${footer}
   </div>`;
 }
 
@@ -1154,6 +1245,40 @@ async function setWinner(matchId,tgId){
       document.querySelectorAll('.mc-win-btn').forEach(b=>b.disabled=false);
     }
   }catch(e){showToast('Tarmoq xatosi','err');document.querySelectorAll('.mc-win-btn').forEach(b=>b.disabled=false);}
+}
+
+function showStartForm(matchId, e){
+  e?.stopPropagation();
+  const el=document.getElementById('sf-'+matchId);
+  if(!el) return;
+  el.innerHTML=`<div class="mc-start-form">
+    <input type="number" id="ti-${matchId}" class="mc-table-inp" min="1" max="50" placeholder="Stol №"
+           onkeydown="if(event.key==='Enter')startMatch(${matchId});if(event.key==='Escape')cancelStartForm(${matchId})">
+    <button onclick="startMatch(${matchId})" style="background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.35);color:var(--green);padding:4px 10px;border-radius:3px;font-size:.62rem;font-weight:700;cursor:pointer">▶</button>
+    <button onclick="cancelStartForm(${matchId})" style="background:none;border:1px solid var(--border2);color:var(--text3);padding:4px 8px;border-radius:3px;font-size:.7rem;cursor:pointer">✕</button>
+  </div>`;
+  setTimeout(()=>document.getElementById('ti-'+matchId)?.focus(),50);
+}
+
+function cancelStartForm(matchId){
+  const el=document.getElementById('sf-'+matchId);
+  if(el) el.innerHTML=`<button class="mc-start-btn" onclick="showStartForm(${matchId},event)">▶ O'yinni boshlash</button>`;
+}
+
+async function startMatch(matchId){
+  const tableNum=parseInt(document.getElementById('ti-'+matchId)?.value)||0;
+  try{
+    const r=await fetch(`/api/admin/matches/${matchId}/start`,{
+      method:'PUT',headers:{...auth(),'Content-Type':'application/json'},
+      body:JSON.stringify({table_num:tableNum})
+    });
+    const d=await r.json();
+    if(r.ok){
+      showToast('▶ O\'yin boshlandi'+(tableNum>0?' · Stol '+tableNum:''));
+      await loadBracket(currentTrn.id);
+      renderBracket();
+    } else showToast(d.error||'Xatolik','err');
+  }catch(e){showToast('Tarmoq xatosi','err');}
 }
 
 // ─── TOURNAMENT ACTIONS ───
