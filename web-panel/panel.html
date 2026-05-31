@@ -26,14 +26,12 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .nav-logout{font-size:.66rem;color:var(--text3);cursor:pointer;letter-spacing:1px}
 .nav-logout:hover{color:var(--red)}
 
-/* AUTH STATES */
 #state-loading,#state-error,#state-main{display:none}
 #state-loading.show,#state-error.show,#state-main.show{display:block}
 .center-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center;color:var(--text2)}
 .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* HERO */
 .hero{padding:40px 40px 28px;max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
 .hero-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;letter-spacing:-.5px}
 .hero-sub{color:var(--text2);font-size:.78rem;margin-top:4px}
@@ -41,38 +39,34 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .refresh-btn:hover{color:var(--gold);border-color:var(--gold)}
 @media(max-width:600px){.hero{padding:24px 20px 16px}}
 
-/* STATS */
-.stats{max-width:1200px;margin:0 auto;padding:0 40px 32px;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border2)}
+.stats{max-width:1200px;margin:0 auto;padding:0 40px 32px;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border2)}
 .stat-card{background:var(--card);padding:20px 16px}
 .sc-n{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,var(--gold-l),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .sc-l{font-size:.5rem;text-transform:uppercase;letter-spacing:3px;color:var(--text3);margin-top:6px}
-@media(max-width:800px){.stats{grid-template-columns:1fr 1fr;padding:0 20px 20px}}
-@media(max-width:400px){.stats{grid-template-columns:1fr}}
+@media(max-width:960px){.stats{grid-template-columns:repeat(3,1fr);padding:0 20px 20px}}
+@media(max-width:500px){.stats{grid-template-columns:repeat(2,1fr)}}
 
-/* TABS */
 .tabs-wrap{max-width:1200px;margin:0 auto;padding:0 40px;border-bottom:1px solid var(--border2)}
 .tabs{display:flex}
 .tab{padding:13px 22px;font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
 .tab.active{color:var(--gold);border-bottom-color:var(--gold)}
 @media(max-width:600px){.tabs-wrap{padding:0 12px;overflow-x:auto}.tab{padding:11px 14px;font-size:.62rem}}
 
-/* TAB PANES */
 .tab-pane{display:none;max-width:1200px;margin:0 auto;padding:24px 40px 80px}
 .tab-pane.active{display:block}
 @media(max-width:600px){.tab-pane{padding:16px 16px 60px}}
 
 .sec-label{font-size:.52rem;letter-spacing:5px;text-transform:uppercase;color:var(--text3);margin-bottom:14px}
 
-/* FILTER ROW */
 .filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .filter-btn{padding:5px 14px;border-radius:2px;font-size:.62rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--text3);transition:.2s}
 .filter-btn:hover,.filter-btn.active{color:var(--gold);border-color:var(--gold)}
 
-/* TABLE */
 .data-table{width:100%;border-collapse:collapse;font-size:.76rem}
 .data-table th{padding:9px 12px;text-align:left;font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2)}
 .data-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:top}
-.data-table tr:hover td{background:var(--card2)}
+.data-table tr.clickable{cursor:pointer}
+.data-table tr.clickable:hover td{background:var(--card2)}
 .data-table .name-cell{font-weight:700}
 .data-table .sub-cell{font-size:.66rem;color:var(--text2);margin-top:2px}
 .status-pill{display:inline-block;padding:2px 8px;border-radius:2px;font-size:.58rem;font-weight:700;letter-spacing:1px;text-transform:uppercase}
@@ -85,6 +79,8 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .sp-in_progress{background:rgba(52,152,219,.12);color:var(--blue)}
 .sp-finished{background:rgba(46,204,113,.12);color:var(--green)}
 .sp-cancelled{background:rgba(231,76,60,.1);color:var(--red)}
+.sp-approved{background:rgba(46,204,113,.12);color:var(--green)}
+.sp-rejected{background:rgba(231,76,60,.1);color:var(--red)}
 .sp-client{background:rgba(136,136,136,.08);color:#888}
 .sp-operator{background:rgba(230,126,34,.08);color:var(--orange)}
 .sp-admin{background:rgba(52,152,219,.08);color:var(--blue)}
@@ -92,12 +88,44 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .empty-note{color:var(--text3);font-size:.8rem;padding:40px;text-align:center}
 .loading-note{color:var(--text3);font-size:.78rem;padding:24px;text-align:center}
 
-/* Mobile scroll */
 .table-wrap{overflow-x:auto}
 
-footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.foot-logo img{height:24px;opacity:.3}
-.foot-r{font-size:.6rem;color:var(--text3)}
+.pending-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:rgba(230,126,34,.2);color:var(--orange);font-size:.56rem;font-weight:800;padding:0 5px;margin-left:4px;vertical-align:middle}
+
+/* ─── DETAIL PANEL ─── */
+.panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:299;display:none;backdrop-filter:blur(3px)}
+.panel-overlay.show{display:block}
+.detail-panel{position:fixed;top:0;right:0;bottom:0;width:min(520px,100vw);background:var(--bg);border-left:1px solid var(--border);z-index:300;transform:translateX(102%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-20px 0 60px rgba(0,0,0,.6)}
+.detail-panel.open{transform:translateX(0)}
+.dp-head{padding:18px 20px 14px;border-bottom:1px solid var(--border2);display:flex;align-items:flex-start;gap:12px;flex-shrink:0;background:var(--card)}
+.dp-title{flex:1;font-size:.92rem;font-weight:800;line-height:1.3}
+.dp-sub{font-size:.63rem;color:var(--text2);margin-top:3px}
+.dp-close{background:none;border:1px solid var(--border2);color:var(--text3);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;flex-shrink:0;transition:.2s;margin-top:2px}
+.dp-close:hover{color:var(--text);border-color:var(--gold);color:var(--gold)}
+.dp-meta{display:flex;gap:8px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card);align-items:center}
+.dp-prog-wrap{padding:0 20px 12px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card)}
+.dp-prog-label{display:flex;justify-content:space-between;font-size:.58rem;color:var(--text2);margin-bottom:6px}
+.dp-prog-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden}
+.dp-prog-fill{height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:2px;transition:width .4s ease}
+.dp-inner-tabs{display:flex;padding:0 20px;border-bottom:1px solid var(--border2);flex-shrink:0;background:var(--card);overflow-x:auto;gap:0}
+.dp-tab{padding:10px 12px;font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:.2s}
+.dp-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.dp-body{flex:1;overflow-y:auto;padding:12px 16px 24px}
+
+/* REG ITEMS */
+.reg-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:5px;border:1px solid var(--border2);margin-bottom:6px;transition:border-color .2s;background:var(--card)}
+.reg-item:hover{border-color:rgba(212,175,55,.2)}
+.ri-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:900;flex-shrink:0;color:#fff;text-transform:uppercase}
+.ri-info{flex:1;min-width:0}
+.ri-name{font-weight:700;font-size:.79rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ri-date{font-size:.59rem;color:var(--text2);margin-top:2px}
+.ri-acts{display:flex;gap:4px;flex-shrink:0;align-items:center}
+.ri-btn{padding:4px 9px;border-radius:3px;font-size:.6rem;font-weight:700;cursor:pointer;border:1px solid;transition:.2s;letter-spacing:.3px;line-height:1.4}
+.ri-btn.ok{color:var(--green);border-color:rgba(46,204,113,.35);background:transparent}
+.ri-btn.ok:hover{background:rgba(46,204,113,.1)}
+.ri-btn.no{color:var(--red);border-color:rgba(231,76,60,.35);background:transparent}
+.ri-btn.no:hover{background:rgba(231,76,60,.1)}
+.ri-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
 
 /* ─── USERS TAB ─── */
 .role-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
@@ -121,7 +149,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
 .user-card{background:var(--card);border:1px solid var(--border2);border-radius:5px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s,transform .2s}
 .user-card:hover{border-color:rgba(212,175,55,.3);transform:translateY(-1px)}
 .uc-top{padding:14px 14px 10px;display:flex;gap:10px;align-items:flex-start}
-.uc-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:900;color:#fff;flex-shrink:0;text-transform:uppercase;letter-spacing:0}
+.uc-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:900;color:#fff;flex-shrink:0;text-transform:uppercase}
 .uc-info{flex:1;min-width:0}
 .uc-name{font-weight:700;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
 .uc-un{font-size:.68rem;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -155,6 +183,10 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
 .toast.ok{background:#0f2d1e;border:1px solid var(--green);color:var(--green)}
 .toast.err{background:#2d0f0f;border:1px solid var(--red);color:var(--red)}
 .toast.warn{background:#2d1f0f;border:1px solid var(--orange);color:var(--orange)}
+
+footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.foot-logo img{height:24px;opacity:.3}
+.foot-r{font-size:.6rem;color:var(--text3)}
 </style>
 </head>
 <body>
@@ -191,10 +223,11 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
 
   <div class="stats">
     <div class="stat-card"><div class="sc-n" id="s-users">—</div><div class="sc-l">Foydalanuvchilar</div></div>
-    <div class="stat-card"><div class="sc-n" id="s-pending">—</div><div class="sc-l">Kutilmoqda</div></div>
-    <div class="stat-card"><div class="sc-n" id="s-paid">—</div><div class="sc-l">To'langan</div></div>
-    <div class="stat-card"><div class="sc-n" id="s-processing">—</div><div class="sc-l">Jarayonda</div></div>
+    <div class="stat-card"><div class="sc-n" id="s-pending">—</div><div class="sc-l">Klip Kutilmoqda</div></div>
+    <div class="stat-card"><div class="sc-n" id="s-paid">—</div><div class="sc-l">Klip To'langan</div></div>
+    <div class="stat-card"><div class="sc-n" id="s-processing">—</div><div class="sc-l">Klip Jarayonda</div></div>
     <div class="stat-card"><div class="sc-n" id="s-trns">—</div><div class="sc-l">Faol Turnirlar</div></div>
+    <div class="stat-card"><div class="sc-n" id="s-trn-regs">—</div><div class="sc-l">Turnir So'rovlari</div></div>
   </div>
 
   <div class="tabs-wrap">
@@ -217,14 +250,21 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
     </div>
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>#</th><th>Mijoz</th><th>Filial · Stol</th><th>Vaqt</th><th>Holat</th><th>Sana</th></tr></thead>
-        <tbody id="clips-body"><tr><td colspan="6" class="loading-note">Yuklanmoqda…</td></tr></tbody>
+        <thead><tr><th>#</th><th>Mijoz</th><th>Filial · Stol</th><th>Vaqt</th><th>Davomiylik</th><th>Holat</th><th>Sana</th></tr></thead>
+        <tbody id="clips-body"><tr><td colspan="7" class="loading-note">Yuklanmoqda…</td></tr></tbody>
       </table>
     </div>
   </div>
 
   <!-- TOURNAMENTS TAB -->
   <div class="tab-pane" id="tab-tournaments">
+    <div class="filter-row" id="trn-filter-row">
+      <button class="filter-btn active" data-trnstatus="">Hammasi</button>
+      <button class="filter-btn" data-trnstatus="registration">Ro'yxat</button>
+      <button class="filter-btn" data-trnstatus="in_progress">Jarayonda</button>
+      <button class="filter-btn" data-trnstatus="finished">Yakunlandi</button>
+      <button class="filter-btn" data-trnstatus="cancelled">Bekor</button>
+    </div>
     <div class="table-wrap">
       <table class="data-table">
         <thead><tr><th>#</th><th>Nom · Filial</th><th>Sana</th><th>Holat</th><th>Ishtirokchi</th></tr></thead>
@@ -254,6 +294,32 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:16px 40
   </div>
 </div>
 
+<!-- DETAIL PANEL -->
+<div class="panel-overlay" id="panel-overlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="dp-head">
+    <div style="flex:1;min-width:0">
+      <div class="dp-title" id="dp-title">—</div>
+      <div class="dp-sub" id="dp-sub">—</div>
+    </div>
+    <button class="dp-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="dp-meta" id="dp-meta"></div>
+  <div class="dp-prog-wrap" id="dp-prog-wrap" style="display:none">
+    <div class="dp-prog-label"><span id="dp-prog-left">—</span><span id="dp-prog-right">—</span></div>
+    <div class="dp-prog-bar"><div class="dp-prog-fill" id="dp-prog-fill" style="width:0%"></div></div>
+  </div>
+  <div class="dp-inner-tabs" id="dp-tabs">
+    <div class="dp-tab active" data-regtab="all">Barcha <span id="rc-all"></span></div>
+    <div class="dp-tab" data-regtab="pending">Kutilmoqda <span id="rc-pending"></span></div>
+    <div class="dp-tab" data-regtab="approved">Tasdiqlangan <span id="rc-approved"></span></div>
+    <div class="dp-tab" data-regtab="rejected">Rad etilgan <span id="rc-rejected"></span></div>
+  </div>
+  <div class="dp-body" id="dp-body">
+    <div class="loading-note">Yuklanmoqda…</div>
+  </div>
+</div>
+
 <footer>
   <div class="foot-logo"><img src="/logo.jpg" alt="Billiard King"></div>
   <div class="foot-r">© 2026 Billiard King · Admin Panel</div>
@@ -265,17 +331,31 @@ const show = id => { $('state-loading').className=''; $('state-error').className
 
 const STATUS_UZ = {pending:'Kutilmoqda', paid:'To\'langan', processing:'Jarayonda', done:'Tayyor', failed:'Rad etildi', refunded:'Qaytarildi'};
 const TRN_STATUS = {registration:'Ro\'yxat', in_progress:'Jarayonda', finished:'Yakunlandi', cancelled:'Bekor'};
+const REG_STATUS = {pending:'Kutilmoqda', approved:'Tasdiqlangan', rejected:'Rad etilgan'};
 
 function fmtDate(s) {
   if (!s) return '—';
   const d = new Date(s);
   return d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'});
 }
+function fmtShort(s){
+  if(!s) return '—';
+  const d=new Date(s);
+  return d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+function clipDuration(start, end){
+  if(!start||!end) return '—';
+  const ms = new Date(end)-new Date(start);
+  if(ms<=0) return '—';
+  const m = Math.round(ms/60000);
+  return m+'daq';
+}
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 let jwt = null;
 let currentClipStatus = '';
 let isSuperadmin = false;
+let isAdmin = false;
 let searchTimer = null;
 const ROLES = ['client', 'operator', 'admin', 'superadmin'];
 const ROLE_UZ = {client:'Mijoz', operator:'Operator', admin:'Admin', superadmin:'Superadmin'};
@@ -287,6 +367,15 @@ let currentSearchQ = '';
 let currentPage = 1;
 const PAGE_SIZE = 18;
 
+// tournaments state
+let trnList = [];
+let currentTrnStatus = '';
+
+// detail panel state
+let currentTrnId = null;
+let allRegs = [];
+let currentRegTab = 'all';
+
 function logout() {
   localStorage.removeItem('bk_jwt');
   location.href = '/';
@@ -296,7 +385,6 @@ async function init() {
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
 
-  // initData: from WebApp API or from URL hash (Telegram Desktop fallback)
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
   const rawHashData = hashParams.get('tgWebAppData');
   const initData = (tg?.initData) || (rawHashData ? decodeURIComponent(rawHashData) : '');
@@ -325,25 +413,18 @@ async function init() {
     return;
   }
 
-  // Parse JWT payload for role/name
   try {
     const payload = JSON.parse(atob(jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-
-    // Clients belong on /me, not the admin panel
     if (payload.role === 'client') {
       window.location.replace('/me');
       return;
     }
-
     isSuperadmin = payload.role === 'superadmin';
+    isAdmin = payload.role === 'admin' || isSuperadmin;
     $('nav-user').textContent = (ROLE_UZ[payload.role] || payload.role) + ' · ' + payload.tg_id;
     $('hero-sub').textContent = 'Billiard King — ' + (ROLE_UZ[payload.role] || payload.role);
-    if (isSuperadmin) {
-      $('actions-th').style.display = '';
-    }
   } catch(_){}
 
-  // Verify & load stats
   try {
     const r = await fetch('/api/admin/stats', { headers: auth() });
     if (r.status === 401) {
@@ -361,11 +442,7 @@ async function init() {
       return;
     }
     const s = await r.json();
-    $('s-users').textContent = s.users ?? '—';
-    $('s-pending').textContent = s.pending_clips ?? '—';
-    $('s-paid').textContent = s.paid_clips ?? '—';
-    $('s-processing').textContent = s.processing_clips ?? '—';
-    $('s-trns').textContent = s.active_tournaments ?? '—';
+    updateStats(s);
   } catch(e) {
     show('state-error');
     $('err-title').textContent = 'Server bilan bog\'lanib bo\'lmadi';
@@ -379,42 +456,231 @@ async function init() {
 
 function auth() { return { Authorization: 'Bearer ' + jwt }; }
 
+function updateStats(s) {
+  $('s-users').textContent = s.users ?? '—';
+  $('s-pending').textContent = s.pending_clips ?? '—';
+  $('s-paid').textContent = s.paid_clips ?? '—';
+  $('s-processing').textContent = s.processing_clips ?? '—';
+  $('s-trns').textContent = s.active_tournaments ?? '—';
+  $('s-trn-regs').textContent = s.pending_trn_regs ?? '—';
+}
+
 async function loadClips(status) {
   currentClipStatus = status;
   const url = '/api/admin/clips' + (status ? '?status=' + status : '');
   const body = $('clips-body');
-  body.innerHTML = '<tr><td colspan="6" class="loading-note">Yuklanmoqda…</td></tr>';
+  body.innerHTML = '<tr><td colspan="7" class="loading-note">Yuklanmoqda…</td></tr>';
   try {
     const r = await fetch(url, { headers: auth() });
     const list = r.ok ? await r.json() : [];
-    if (!list.length) { body.innerHTML = '<tr><td colspan="6" class="empty-note">Kliplar topilmadi</td></tr>'; return; }
+    if (!list.length) { body.innerHTML = '<tr><td colspan="7" class="empty-note">Kliplar topilmadi</td></tr>'; return; }
     body.innerHTML = list.map(c => `<tr>
       <td>${c.id}</td>
       <td><div class="name-cell">${esc(c.client_name)}</div></td>
       <td>${esc(c.branch_name)} · Stol ${c.table_num}</td>
-      <td><div>${fmtDate(c.start_time)}</div><div class="sub-cell">– ${fmtDate(c.end_time)}</div></td>
+      <td><div>${fmtDate(c.start_time)}</div></td>
+      <td>${clipDuration(c.start_time, c.end_time)}</td>
       <td><span class="status-pill sp-${c.status}">${STATUS_UZ[c.status]||c.status}</span>${c.notes?'<div class="sub-cell">'+esc(c.notes)+'</div>':''}</td>
-      <td>${fmtDate(c.created_at)}</td>
+      <td class="sub-cell">${fmtShort(c.created_at)}</td>
     </tr>`).join('');
-  } catch(e) { body.innerHTML = '<tr><td colspan="6" class="empty-note">Xatolik: '+esc(e.message)+'</td></tr>'; }
+  } catch(e) { body.innerHTML = '<tr><td colspan="7" class="empty-note">Xatolik: '+esc(e.message)+'</td></tr>'; }
 }
 
-async function loadTournaments() {
+async function loadTournaments(status) {
+  if (status === undefined) status = currentTrnStatus;
+  currentTrnStatus = status;
+  const url = '/api/admin/tournaments' + (status ? '?status=' + status : '');
   const body = $('trns-body');
   body.innerHTML = '<tr><td colspan="5" class="loading-note">Yuklanmoqda…</td></tr>';
   try {
-    const r = await fetch('/api/admin/tournaments', { headers: auth() });
-    const list = r.ok ? await r.json() : [];
-    if (!list.length) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Turnirlar topilmadi</td></tr>'; return; }
-    body.innerHTML = list.map(t => `<tr>
-      <td>${t.id}</td>
-      <td><div class="name-cell">${esc(t.name)}</div><div class="sub-cell">${esc(t.branch_name)}</div></td>
-      <td>${fmtDate(t.scheduled_at)}</td>
-      <td><span class="status-pill sp-${t.status}">${TRN_STATUS[t.status]||t.status}</span></td>
-      <td>${t.registered} / ${t.max_players}</td>
-    </tr>`).join('');
+    const r = await fetch(url, { headers: auth() });
+    trnList = r.ok ? await r.json() : [];
+    if (!trnList.length) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Turnirlar topilmadi</td></tr>'; return; }
+    body.innerHTML = trnList.map(t => {
+      const pendingHtml = (t.pending > 0) ? `<span class="pending-badge">${t.pending}</span>` : '';
+      return `<tr class="clickable" onclick="openTrnDetail(${t.id})">
+        <td style="color:var(--text3)">${t.id}</td>
+        <td><div class="name-cell">${esc(t.name)}</div><div class="sub-cell">${esc(t.branch_name)}</div></td>
+        <td>${fmtDate(t.scheduled_at)}</td>
+        <td><span class="status-pill sp-${t.status}">${TRN_STATUS[t.status]||t.status}</span></td>
+        <td>${t.registered}${pendingHtml} / ${t.max_players}</td>
+      </tr>`;
+    }).join('');
   } catch(e) { body.innerHTML = '<tr><td colspan="5" class="empty-note">Xatolik</td></tr>'; }
 }
+
+// ─── Tournament detail panel ───
+
+function avatarBg(name) {
+  const pal = ['#b8442e','#2a7fbf','#27975a','#7a3dbf','#c46020','#1a8a7a','#9e3060','#4a6741'];
+  let h = 0; for (let i=0; i<(name||'').length; i++) h = (h*31+name.charCodeAt(i))&0xffffff;
+  return pal[Math.abs(h)%pal.length];
+}
+function fl(s){ return ((s||'?')[0]).toUpperCase(); }
+
+async function openTrnDetail(trnId) {
+  const trn = trnList.find(t => t.id === trnId);
+  if (!trn) return;
+
+  currentTrnId = trnId;
+  currentRegTab = 'all';
+  allRegs = [];
+
+  $('dp-title').textContent = trn.name;
+  $('dp-sub').textContent = trn.branch_name;
+
+  $('dp-meta').innerHTML = `
+    <span class="status-pill sp-${trn.status}">${TRN_STATUS[trn.status]||trn.status}</span>
+    <span style="font-size:.6rem;color:var(--text2)">${fmtDate(trn.scheduled_at)}</span>
+  `;
+
+  const pct = trn.max_players > 0 ? Math.round(trn.registered / trn.max_players * 100) : 0;
+  const pw = $('dp-prog-wrap');
+  pw.style.display = '';
+  $('dp-prog-left').textContent = trn.registered + ' tasdiqlangan';
+  $('dp-prog-right').textContent = trn.max_players + ' max';
+  $('dp-prog-fill').style.width = Math.min(100, pct) + '%';
+
+  document.querySelectorAll('.dp-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.dp-tab[data-regtab="all"]').classList.add('active');
+  ['rc-all','rc-pending','rc-approved','rc-rejected'].forEach(id => $(id).textContent = '');
+
+  $('panel-overlay').classList.add('show');
+  $('detail-panel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  $('dp-body').innerHTML = '<div class="loading-note">Yuklanmoqda…</div>';
+  await loadTrnRegs(trnId);
+}
+
+async function loadTrnRegs(trnId) {
+  try {
+    const r = await fetch(`/api/admin/tournaments/${trnId}/registrations`, { headers: auth() });
+    allRegs = r.ok ? (await r.json() || []) : [];
+  } catch(e) { allRegs = []; }
+  updateRegCounts();
+  renderRegs();
+}
+
+function updateRegCounts() {
+  const c = {all: allRegs.length, pending: 0, approved: 0, rejected: 0};
+  allRegs.forEach(r => { if (c[r.status] !== undefined) c[r.status]++; });
+  $('rc-all').textContent = c.all;
+  $('rc-pending').textContent = c.pending || '';
+  $('rc-approved').textContent = c.approved || '';
+  $('rc-rejected').textContent = c.rejected || '';
+}
+
+function renderRegs() {
+  const canAct = isAdmin;
+  const filtered = currentRegTab === 'all' ? allRegs : allRegs.filter(r => r.status === currentRegTab);
+  if (!filtered.length) {
+    $('dp-body').innerHTML = '<div class="empty-note">Ishtirokchilar yo\'q</div>';
+    return;
+  }
+  $('dp-body').innerHTML = filtered.map(reg => {
+    const isPending = reg.status === 'pending';
+    const acts = (isPending && canAct) ? `
+      <button class="ri-btn ok" onclick="approveReg(${currentTrnId},${reg.id},this)">✅ Tasdiqlash</button>
+      <button class="ri-btn no" onclick="rejectReg(${currentTrnId},${reg.id},this)">❌</button>
+    ` : '';
+    return `<div class="reg-item" id="reg-${reg.id}">
+      <div class="ri-av" style="background:${avatarBg(reg.user_name)}">${fl(reg.user_name)}</div>
+      <div class="ri-info">
+        <div class="ri-name">${esc(reg.user_name)}</div>
+        <div class="ri-date">${fmtDate(reg.registered_at)}</div>
+      </div>
+      <span class="status-pill sp-${reg.status}">${REG_STATUS[reg.status]||reg.status}</span>
+      <div class="ri-acts">${acts}</div>
+    </div>`;
+  }).join('');
+}
+
+async function approveReg(trnId, regId, btn) {
+  btn.disabled = true;
+  btn.nextElementSibling && (btn.nextElementSibling.disabled = true);
+  try {
+    const r = await fetch(`/api/admin/tournaments/${trnId}/registrations/${regId}/approve`, {
+      method: 'PUT', headers: auth()
+    });
+    if (r.ok) {
+      const reg = allRegs.find(x => x.id === regId);
+      if (reg) reg.status = 'approved';
+      updateRegCounts();
+      renderRegs();
+      refreshTrnRow(trnId);
+      showToast('✅ Tasdiqlandi');
+    } else {
+      const d = await r.json();
+      showToast(d.error || 'Xatolik', 'err');
+      btn.disabled = false;
+      btn.nextElementSibling && (btn.nextElementSibling.disabled = false);
+    }
+  } catch(e) {
+    showToast('Tarmoq xatosi', 'err');
+    btn.disabled = false;
+  }
+}
+
+async function rejectReg(trnId, regId, btn) {
+  btn.disabled = true;
+  btn.previousElementSibling && (btn.previousElementSibling.disabled = true);
+  try {
+    const r = await fetch(`/api/admin/tournaments/${trnId}/registrations/${regId}/reject`, {
+      method: 'PUT', headers: auth()
+    });
+    if (r.ok) {
+      const reg = allRegs.find(x => x.id === regId);
+      if (reg) reg.status = 'rejected';
+      updateRegCounts();
+      renderRegs();
+      refreshTrnRow(trnId);
+      showToast('Rad etildi', 'warn');
+    } else {
+      btn.disabled = false;
+      btn.previousElementSibling && (btn.previousElementSibling.disabled = false);
+    }
+  } catch(e) {
+    btn.disabled = false;
+  }
+}
+
+function refreshTrnRow(trnId) {
+  const trn = trnList.find(t => t.id === trnId);
+  if (!trn) return;
+  const approved = allRegs.filter(r => r.status === 'approved').length;
+  const pending = allRegs.filter(r => r.status === 'pending').length;
+  trn.registered = approved;
+  trn.pending = pending;
+  const pendingHtml = pending > 0 ? `<span class="pending-badge">${pending}</span>` : '';
+  $('dp-prog-left').textContent = approved + ' tasdiqlangan';
+  $('dp-prog-fill').style.width = Math.min(100, Math.round(approved/trn.max_players*100)) + '%';
+  const rows = $('trns-body').querySelectorAll('tr');
+  rows.forEach(row => {
+    if (row.querySelector('td')?.textContent == trnId) {
+      const cells = row.querySelectorAll('td');
+      if (cells[4]) cells[4].innerHTML = `${approved}${pendingHtml} / ${trn.max_players}`;
+    }
+  });
+}
+
+function closeDetail() {
+  $('panel-overlay').classList.remove('show');
+  $('detail-panel').classList.remove('open');
+  document.body.style.overflow = '';
+  currentTrnId = null;
+}
+
+document.querySelectorAll('.dp-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.dp-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentRegTab = tab.dataset.regtab;
+    renderRegs();
+  });
+});
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
 
 // ─── Toast ───
 function showToast(msg, type='ok') {
@@ -427,17 +693,6 @@ function showToast(msg, type='ok') {
 }
 
 // ─── Users helpers ───
-function avatarBg(name) {
-  const pal = ['#b8442e','#2a7fbf','#27975a','#7a3dbf','#c46020','#1a8a7a','#9e3060','#4a6741'];
-  let h = 0; for (let i=0; i<(name||'').length; i++) h = (h*31+name.charCodeAt(i))&0xffffff;
-  return pal[Math.abs(h)%pal.length];
-}
-function fl(s){ return ((s||'?')[0]).toUpperCase(); }
-function fmtShort(s){
-  if(!s) return '—';
-  const d=new Date(s);
-  return d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'2-digit'});
-}
 function showSkelUsers(){
   $('user-grid').innerHTML=Array(9).fill('<div class="skel skel-uc"></div>').join('');
   $('user-pg').innerHTML='';
@@ -607,34 +862,27 @@ async function toggleActive(tgid, active){
 
 async function refresh() {
   const r = await fetch('/api/admin/stats', { headers: auth() });
-  if (r.ok) {
-    const s = await r.json();
-    $('s-users').textContent = s.users;
-    $('s-pending').textContent = s.pending_clips;
-    $('s-paid').textContent = s.paid_clips;
-    $('s-processing').textContent = s.processing_clips;
-    $('s-trns').textContent = s.active_tournaments;
-  }
+  if (r.ok) updateStats(await r.json());
   const active = document.querySelector('.tab.active')?.dataset?.tab;
   if (active === 'clips') loadClips(currentClipStatus);
-  else if (active === 'tournaments') loadTournaments();
+  else if (active === 'tournaments') loadTournaments(currentTrnStatus);
   else if (active === 'users') refreshUsers();
 }
 
-// Tabs
+// ─── Tab switching ───
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-    if (tab.dataset.tab === 'tournaments') loadTournaments();
+    if (tab.dataset.tab === 'tournaments') loadTournaments(currentTrnStatus);
     else if (tab.dataset.tab === 'users') loadUsers(currentSearchQ, currentRoleFilter);
     else loadClips(currentClipStatus);
   });
 });
 
-// Clip filters
+// ─── Clip filters ───
 document.querySelectorAll('.filter-btn[data-status]').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.remove('active'));
@@ -643,7 +891,16 @@ document.querySelectorAll('.filter-btn[data-status]').forEach(btn => {
   });
 });
 
-// Role chip filters
+// ─── Tournament filters ───
+document.querySelectorAll('.filter-btn[data-trnstatus]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn[data-trnstatus]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadTournaments(btn.dataset.trnstatus);
+  });
+});
+
+// ─── Role chip filters ───
 document.querySelectorAll('.role-chip').forEach(chip => {
   chip.addEventListener('click', () => {
     document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active'));

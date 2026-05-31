@@ -48,6 +48,11 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/admin/tournaments", h.withRole(h.adminTournaments, "operator", "admin", "superadmin"))
 	mux.HandleFunc("GET /api/admin/users", h.withRole(h.adminUsers, "admin", "superadmin"))
 
+	// Tournament registration management
+	mux.HandleFunc("GET /api/admin/tournaments/{id}/registrations", h.withRole(h.adminTrnRegistrations, "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/tournaments/{id}/registrations/{reg_id}/approve", h.withRole(h.adminApproveTrnReg, "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/tournaments/{id}/registrations/{reg_id}/reject", h.withRole(h.adminRejectTrnReg, "admin", "superadmin"))
+
 	// Superadmin-only user management
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/role", h.withRole(h.adminSetRole, "superadmin"))
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/active", h.withRole(h.adminSetActive, "superadmin"))
@@ -374,6 +379,7 @@ func (h *Handler) adminStats(w http.ResponseWriter, r *http.Request) {
 		"paid_clips":         `SELECT COUNT(*) FROM clip_requests WHERE status='paid'`,
 		"processing_clips":   `SELECT COUNT(*) FROM clip_requests WHERE status='processing'`,
 		"active_tournaments": `SELECT COUNT(*) FROM tournaments WHERE status IN ('registration','in_progress')`,
+		"pending_trn_regs":   `SELECT COUNT(*) FROM tournament_registrations WHERE status='pending'`,
 	} {
 		var n int
 		_ = h.db.QueryRow(q).Scan(&n)
@@ -424,13 +430,20 @@ func (h *Handler) adminClips(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) adminTournaments(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.db.Query(`
-		SELECT t.id, t.name, COALESCE(b.name,'?'), t.scheduled_at, t.status, t.max_players,
-		       COUNT(tr.id) FILTER (WHERE tr.status='approved')
+	status := r.URL.Query().Get("status")
+	q := `SELECT t.id, t.name, COALESCE(b.name,'?'), t.scheduled_at, t.status, t.max_players,
+		       COUNT(tr.id) FILTER (WHERE tr.status='approved'),
+		       COUNT(tr.id) FILTER (WHERE tr.status='pending')
 		FROM tournaments t
 		LEFT JOIN branches b ON b.id=t.branch_id
-		LEFT JOIN tournament_registrations tr ON tr.tournament_id=t.id
-		GROUP BY t.id, b.name ORDER BY t.created_at DESC LIMIT 30`)
+		LEFT JOIN tournament_registrations tr ON tr.tournament_id=t.id`
+	var args []any
+	if status != "" {
+		q += " WHERE t.status=$1"
+		args = append(args, status)
+	}
+	q += " GROUP BY t.id, b.name ORDER BY t.created_at DESC LIMIT 50"
+	rows, err := h.db.Query(q, args...)
 	if err != nil {
 		writeErr(w, 500, err.Error())
 		return
@@ -444,16 +457,103 @@ func (h *Handler) adminTournaments(w http.ResponseWriter, r *http.Request) {
 		Status      string `json:"status"`
 		MaxPlayers  int    `json:"max_players"`
 		Registered  int    `json:"registered"`
+		Pending     int    `json:"pending"`
 	}
 	list := []item{}
 	for rows.Next() {
 		var i item
 		if err := rows.Scan(&i.ID, &i.Name, &i.BranchName, &i.ScheduledAt,
-			&i.Status, &i.MaxPlayers, &i.Registered); err == nil {
+			&i.Status, &i.MaxPlayers, &i.Registered, &i.Pending); err == nil {
 			list = append(list, i)
 		}
 	}
 	writeJSON(w, 200, list)
+}
+
+func (h *Handler) adminTrnRegistrations(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	rows, err := h.db.Query(`
+		SELECT id, user_tg_id, user_name, status, registered_at,
+		       COALESCE(decided_at::text, '')
+		FROM tournament_registrations
+		WHERE tournament_id=$1
+		ORDER BY
+		    CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END,
+		    registered_at DESC`, id)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	defer rows.Close()
+	type item struct {
+		ID           int64  `json:"id"`
+		UserTgID     int64  `json:"user_tg_id"`
+		UserName     string `json:"user_name"`
+		Status       string `json:"status"`
+		RegisteredAt string `json:"registered_at"`
+		DecidedAt    string `json:"decided_at"`
+	}
+	list := []item{}
+	for rows.Next() {
+		var i item
+		if err := rows.Scan(&i.ID, &i.UserTgID, &i.UserName, &i.Status,
+			&i.RegisteredAt, &i.DecidedAt); err == nil {
+			list = append(list, i)
+		}
+	}
+	writeJSON(w, 200, list)
+}
+
+func (h *Handler) adminApproveTrnReg(w http.ResponseWriter, r *http.Request) {
+	tID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	rID, err := strconv.ParseInt(r.PathValue("reg_id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid reg_id")
+		return
+	}
+	var tStatus string
+	_ = h.db.QueryRow(`SELECT status FROM tournaments WHERE id=$1`, tID).Scan(&tStatus)
+	if tStatus != "registration" {
+		writeErr(w, 400, "turnir ro'yxat qabul qilmayapti")
+		return
+	}
+	_, err = h.db.Exec(`
+		UPDATE tournament_registrations SET status='approved', decided_at=NOW()
+		WHERE id=$1 AND tournament_id=$2 AND status='pending'`, rID, tID)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) adminRejectTrnReg(w http.ResponseWriter, r *http.Request) {
+	tID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	rID, err := strconv.ParseInt(r.PathValue("reg_id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid reg_id")
+		return
+	}
+	_, err = h.db.Exec(`
+		UPDATE tournament_registrations SET status='rejected', decided_at=NOW()
+		WHERE id=$1 AND tournament_id=$2 AND status='pending'`, rID, tID)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
 func (h *Handler) adminUsers(w http.ResponseWriter, r *http.Request) {
