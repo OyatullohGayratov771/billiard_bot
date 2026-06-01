@@ -90,6 +90,7 @@ func (h *Handler) createTournament(w http.ResponseWriter, r *http.Request) {
 		AdminTgID   int64  `json:"admin_tg_id"`
 		JoinCode    string `json:"join_code"`
 		Type        string `json:"type"`
+		TableCount  int    `json:"table_count"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, 400, "invalid request")
@@ -100,7 +101,7 @@ func (h *Handler) createTournament(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "invalid scheduled_at (RFC3339)")
 		return
 	}
-	tournament, err := h.svc.CreateTournament(req.Name, req.BranchID, req.TableID, t, req.Price, req.MaxPlayers, req.AdminTgID, req.JoinCode, req.Type)
+	tournament, err := h.svc.CreateTournament(req.Name, req.BranchID, req.TableID, t, req.Price, req.MaxPlayers, req.AdminTgID, req.JoinCode, req.Type, req.TableCount)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return
@@ -414,7 +415,7 @@ func (h *Handler) setResult(w http.ResponseWriter, r *http.Request) {
 	} else {
 		winnerTgID = req.WinnerTgID
 	}
-	winnerNextID, loserNextID, finished, trnID, err := h.svc.SetResult(id, winnerTgID)
+	winnerNextID, loserNextID, assignedMatchID, assignedTableNum, finished, trnID, err := h.svc.SetResult(id, winnerTgID)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return
@@ -422,9 +423,11 @@ func (h *Handler) setResult(w http.ResponseWriter, r *http.Request) {
 	h.hub.Broadcast(fmt.Sprintf("trn:%d", trnID))
 	h.hub.Broadcast("tournaments")
 	writeJSON(w, 200, map[string]any{
-		"next_match_id":       winnerNextID,
-		"loser_next_match_id": loserNextID,
-		"finished":            finished,
+		"next_match_id":        winnerNextID,
+		"loser_next_match_id":  loserNextID,
+		"finished":             finished,
+		"assigned_match_id":    assignedMatchID,
+		"assigned_table_num":   assignedTableNum,
 	})
 }
 

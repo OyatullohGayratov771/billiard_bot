@@ -724,12 +724,52 @@ func (h *Handler) adminDeleteTrn(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) adminGenBracket(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	h.trnProxy(w, r, http.MethodPost, "/tournaments/"+id+"/bracket", bytes.NewReader([]byte("{}")))
+	h.genBracketAndNotify(w, r, "/tournaments/"+id+"/bracket")
 }
 
 func (h *Handler) adminShuffleBracket(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	h.trnProxy(w, r, http.MethodPost, "/tournaments/"+id+"/bracket/shuffle", bytes.NewReader([]byte("{}")))
+	h.genBracketAndNotify(w, r, "/tournaments/"+id+"/bracket/shuffle")
+}
+
+func (h *Handler) genBracketAndNotify(w http.ResponseWriter, r *http.Request, path string) {
+	tReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost,
+		h.trnSvcURL+path, bytes.NewReader([]byte("{}")))
+	if err != nil {
+		writeErr(w, 500, "internal error")
+		return
+	}
+	tReq.Header.Set("Content-Type", "application/json")
+	tReq.Header.Set("X-Internal-Token", h.internalToken)
+	resp, err := http.DefaultClient.Do(tReq)
+	if err != nil {
+		writeErr(w, 502, "tournament service unavailable")
+		return
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(resp.Body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	_, _ = w.Write(respBody)
+	if resp.StatusCode != 200 {
+		return
+	}
+	// Send notifications for auto-assigned matches
+	go func() {
+		var matches []struct {
+			ID       int64  `json:"id"`
+			Status   string `json:"status"`
+			TableNum int    `json:"table_num"`
+		}
+		if json.Unmarshal(respBody, &matches) != nil {
+			return
+		}
+		for _, m := range matches {
+			if m.Status == "ready" && m.TableNum > 0 {
+				h.sendMatchTableNotifications(m.ID, m.TableNum)
+			}
+		}
+	}()
 }
 
 func (h *Handler) adminGetBracket(w http.ResponseWriter, r *http.Request) {
@@ -739,7 +779,38 @@ func (h *Handler) adminGetBracket(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) adminMatchResult(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	h.trnProxy(w, r, http.MethodPut, "/matches/"+id+"/result", r.Body)
+	body, _ := io.ReadAll(r.Body)
+	tReq, err := http.NewRequestWithContext(r.Context(), http.MethodPut,
+		h.trnSvcURL+"/matches/"+id+"/result", bytes.NewReader(body))
+	if err != nil {
+		writeErr(w, 500, "internal error")
+		return
+	}
+	tReq.Header.Set("Content-Type", "application/json")
+	tReq.Header.Set("X-Internal-Token", h.internalToken)
+	resp, err := http.DefaultClient.Do(tReq)
+	if err != nil {
+		writeErr(w, 502, "tournament service unavailable")
+		return
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(resp.Body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	_, _ = w.Write(respBody)
+	if resp.StatusCode != 200 {
+		return
+	}
+	// If a table was auto-reassigned to a new match, notify those players
+	go func() {
+		var res struct {
+			AssignedMatchID  int64 `json:"assigned_match_id"`
+			AssignedTableNum int   `json:"assigned_table_num"`
+		}
+		if json.Unmarshal(respBody, &res) == nil && res.AssignedMatchID > 0 {
+			h.sendMatchTableNotifications(res.AssignedMatchID, res.AssignedTableNum)
+		}
+	}()
 }
 
 func (h *Handler) adminRegisterManual(w http.ResponseWriter, r *http.Request) {

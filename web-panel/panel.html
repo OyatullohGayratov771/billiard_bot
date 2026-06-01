@@ -464,6 +464,10 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
           <input type="number" id="f-max" class="form-input" min="2" max="128" value="8">
         </div>
       </div>
+      <div class="form-group" id="f-tables-wrap">
+        <label class="form-label">Stollar soni <span style="color:var(--text3);font-weight:400">(0 = belgilanmagan)</span></label>
+        <input type="number" id="f-tables" class="form-input" min="0" max="50" value="0" placeholder="Masalan: 4">
+      </div>
       <div class="form-group" id="f-type-group">
         <label class="form-label">Format</label>
         <select id="f-type" class="form-input">
@@ -1376,8 +1380,8 @@ async function openCreateModal(){
   await loadBranches();
   modalMode='create';
   $('modal-title').textContent='Yangi Turnir';
-  $('f-name').value='';$('f-date').value='';$('f-max').value='8';$('f-type').value='single_elimination';
-  $('f-branch-wrap').style.display='';$('f-type-group').style.display='';
+  $('f-name').value='';$('f-date').value='';$('f-max').value='8';$('f-type').value='single_elimination';$('f-tables').value='0';
+  $('f-branch-wrap').style.display='';$('f-type-group').style.display='';$('f-tables-wrap').style.display='';
   populateBranchSelect(null);
   $('modal-submit').disabled=false;
   $('modal-overlay').classList.add('show');
@@ -1395,7 +1399,7 @@ async function openEditModal(){
     $('f-date').value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
   $('f-max').value=currentTrn.max_players;
-  $('f-branch-wrap').style.display='none';$('f-type-group').style.display='none';
+  $('f-branch-wrap').style.display='none';$('f-type-group').style.display='none';$('f-tables-wrap').style.display='none';
   $('modal-submit').disabled=false;
   $('modal-overlay').classList.add('show');
   setTimeout(()=>$('f-name').focus(),100);
@@ -1414,9 +1418,10 @@ async function submitTrnForm(){
     if(modalMode==='create'){
       const branchId=parseInt($('f-branch').value)||0;
       const type=$('f-type').value||'single_elimination';
+      const tableCount=parseInt($('f-tables').value)||0;
       r=await fetch('/api/admin/tournaments',{
         method:'POST',headers:{...auth(),'Content-Type':'application/json'},
-        body:JSON.stringify({name,branch_id:branchId,scheduled_at:scheduledAt,max_players:maxPlayers,type})
+        body:JSON.stringify({name,branch_id:branchId,scheduled_at:scheduledAt,max_players:maxPlayers,type,table_count:tableCount})
       });
     } else {
       r=await fetch(`/api/admin/tournaments/${currentTrn.id}`,{

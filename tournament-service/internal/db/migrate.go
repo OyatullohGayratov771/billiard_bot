@@ -32,6 +32,7 @@ func alterMigrate(db *sql.DB) error {
 	_, err := db.Exec(`
 		ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS join_code TEXT NOT NULL DEFAULT '';
 		ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'single_elimination';
+		ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS table_count INT NOT NULL DEFAULT 0;
 		ALTER TABLE tournament_matches ADD COLUMN IF NOT EXISTS match_type TEXT NOT NULL DEFAULT 'winners';
 		ALTER TABLE tournament_matches ADD COLUMN IF NOT EXISTS loser_next_match_id BIGINT;
 		ALTER TABLE tournament_matches ADD COLUMN IF NOT EXISTS winner_next_match_id BIGINT;

@@ -20,17 +20,17 @@ func New(db *sql.DB) *Repo {
 
 // ===================== TOURNAMENTS =====================
 
-func (r *Repo) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, createdBy int64, joinCode string, tournamentType string) (*models.Tournament, error) {
+func (r *Repo) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, createdBy int64, joinCode string, tournamentType string, tableCount int) (*models.Tournament, error) {
 	if tournamentType == "" {
 		tournamentType = models.TournamentTypeSingleElim
 	}
 	t := &models.Tournament{}
 	err := r.db.QueryRow(`
-		INSERT INTO tournaments (name, branch_id, table_id, scheduled_at, price, max_players, created_by, join_code, type)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-		RETURNING id, name, branch_id, table_id, scheduled_at, price, max_players, status, type, created_by, created_at, join_code`,
-		name, branchID, tableID, scheduledAt, price, maxPlayers, createdBy, joinCode, tournamentType,
-	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.Type, &t.CreatedBy, &t.CreatedAt, &t.JoinCode)
+		INSERT INTO tournaments (name, branch_id, table_id, scheduled_at, price, max_players, created_by, join_code, type, table_count)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+		RETURNING id, name, branch_id, table_id, scheduled_at, price, max_players, status, type, created_by, created_at, join_code, table_count`,
+		name, branchID, tableID, scheduledAt, price, maxPlayers, createdBy, joinCode, tournamentType, tableCount,
+	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.Type, &t.CreatedBy, &t.CreatedAt, &t.JoinCode, &t.TableCount)
 	if err != nil {
 		return nil, err
 	}
@@ -41,9 +41,10 @@ func (r *Repo) CreateTournament(name string, branchID int64, tableID *int64, sch
 func (r *Repo) GetTournament(id int64) (*models.Tournament, error) {
 	t := &models.Tournament{}
 	err := r.db.QueryRow(`
-		SELECT id, name, branch_id, table_id, scheduled_at, price, max_players, status, COALESCE(type,'single_elimination'), created_by, created_at, join_code
+		SELECT id, name, branch_id, table_id, scheduled_at, price, max_players, status,
+		       COALESCE(type,'single_elimination'), created_by, created_at, join_code, COALESCE(table_count,0)
 		FROM tournaments WHERE id=$1`, id,
-	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.Type, &t.CreatedBy, &t.CreatedAt, &t.JoinCode)
+	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.Type, &t.CreatedBy, &t.CreatedAt, &t.JoinCode, &t.TableCount)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -52,6 +53,30 @@ func (r *Repo) GetTournament(id int64) (*models.Tournament, error) {
 	}
 	r.fillTournamentJoins(t)
 	return t, nil
+}
+
+func (r *Repo) GetNextReadyMatchWithoutTable(trnID int64) (*models.Match, error) {
+	m := &models.Match{}
+	err := r.db.QueryRow(`
+		SELECT m.id, m.tournament_id, m.round, m.match_num,
+		       m.player1_tg_id, m.player2_tg_id, m.winner_tg_id, m.status,
+		       COALESCE(m.match_type,'winners'), COALESCE(m.table_num,0),
+		       COALESCE(m.player1_score,0), COALESCE(m.player2_score,0),
+		       COALESCE(r1.user_name,''), COALESCE(r2.user_name,''), ''
+		FROM tournament_matches m
+		LEFT JOIN tournament_registrations r1 ON r1.tournament_id=m.tournament_id AND r1.user_tg_id=m.player1_tg_id
+		LEFT JOIN tournament_registrations r2 ON r2.tournament_id=m.tournament_id AND r2.user_tg_id=m.player2_tg_id
+		WHERE m.tournament_id=$1 AND m.status='ready' AND COALESCE(m.table_num,0)=0
+		ORDER BY m.round ASC, m.match_num ASC
+		LIMIT 1`, trnID,
+	).Scan(&m.ID, &m.TournamentID, &m.Round, &m.MatchNum,
+		&m.Player1TgID, &m.Player2TgID, &m.WinnerTgID, &m.Status, &m.MatchType,
+		&m.TableNum, &m.Player1Score, &m.Player2Score,
+		&m.Player1Name, &m.Player2Name, &m.WinnerName)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	return m, err
 }
 
 func (r *Repo) ListTournaments(status string) ([]*models.Tournament, error) {

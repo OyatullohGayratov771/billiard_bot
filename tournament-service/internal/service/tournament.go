@@ -24,7 +24,7 @@ func New(db *sql.DB, repo *repository.Repo) *Service {
 
 // ===================== TOURNAMENTS =====================
 
-func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string, tournamentType string) (*models.Tournament, error) {
+func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string, tournamentType string, tableCount int) (*models.Tournament, error) {
 	if name == "" {
 		return nil, errors.New("turnir nomi bo'sh bo'lmasin")
 	}
@@ -44,7 +44,7 @@ func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, 
 	default:
 		return nil, fmt.Errorf("noto'g'ri turnir turi: %s", tournamentType)
 	}
-	return s.repo.CreateTournament(name, branchID, tableID, scheduledAt, price, maxPlayers, adminTgID, joinCode, tournamentType)
+	return s.repo.CreateTournament(name, branchID, tableID, scheduledAt, price, maxPlayers, adminTgID, joinCode, tournamentType, tableCount)
 }
 
 func (s *Service) GetTournament(id int64) (*models.Tournament, error) {
@@ -240,18 +240,33 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 	if t.Status != models.TournamentStatusRegistration {
 		return nil, errors.New("faqat ro'yxatga olish holatidagi turnir uchun bracket yaratish mumkin")
 	}
-	// Delete existing bracket before regenerating (allows reshuffling)
 	if err := s.repo.DeleteBracket(tournamentID); err != nil {
 		return nil, fmt.Errorf("eski bracket o'chirishda xato: %v", err)
 	}
+	var matches []*models.Match
 	switch t.Type {
 	case models.TournamentTypeDoubleElim:
-		return s.generateDoubleElimBracket(tournamentID)
+		matches, err = s.generateDoubleElimBracket(tournamentID)
 	case models.TournamentTypeRoundRobin:
-		return s.generateRoundRobinBracket(tournamentID)
+		matches, err = s.generateRoundRobinBracket(tournamentID)
 	default:
-		return s.generateSingleElimBracket(tournamentID)
+		matches, err = s.generateSingleElimBracket(tournamentID)
 	}
+	if err != nil {
+		return nil, err
+	}
+	// Auto-assign tables to ready matches if table_count is set
+	if t.TableCount > 0 {
+		tableIdx := 1
+		for _, m := range matches {
+			if m.Status == models.MatchStatusReady && tableIdx <= t.TableCount {
+				_ = s.repo.SetMatchTableNum(m.ID, tableIdx)
+				m.TableNum = tableIdx
+				tableIdx++
+			}
+		}
+	}
+	return matches, nil
 }
 
 func (s *Service) ShuffleBracket(tournamentID int64) ([]*models.Match, error) {
@@ -640,48 +655,61 @@ func (s *Service) GetMatch(matchID int64) (*models.Match, error) {
 
 // ===================== MATCH RESULT =====================
 
-// SetResult records winner, advances players. Returns (winnerNextID, loserNextID, finished, trnID, err).
-// loserNextID is non-zero only for Double Elimination WB matches.
-func (s *Service) SetResult(matchID, winnerTgID int64) (winnerNextID int64, loserNextID int64, finished bool, trnID int64, err error) {
+// SetResult records winner, advances players.
+// Returns (winnerNextID, loserNextID, finished, trnID, assignedMatchID, assignedTableNum, err).
+// assignedMatchID > 0 means a newly ready match was auto-assigned a freed table.
+func (s *Service) SetResult(matchID, winnerTgID int64) (winnerNextID, loserNextID, assignedMatchID int64, assignedTableNum int, finished bool, trnID int64, err error) {
 	m, err := s.repo.GetMatch(matchID)
 	if err != nil {
-		return 0, 0, false, 0, errors.New("o'yin topilmadi")
+		return 0, 0, 0, 0, false, 0, errors.New("o'yin topilmadi")
 	}
 	if m.Status != models.MatchStatusInProgress {
-		return 0, 0, false, 0, fmt.Errorf("o'yin boshlanmagan (holat: %s)", m.Status)
+		return 0, 0, 0, 0, false, 0, fmt.Errorf("o'yin boshlanmagan (holat: %s)", m.Status)
 	}
 	isP1 := m.Player1TgID != nil && *m.Player1TgID == winnerTgID
 	isP2 := m.Player2TgID != nil && *m.Player2TgID == winnerTgID
 	if !isP1 && !isP2 {
-		return 0, 0, false, 0, errors.New("bu o'yinchi ushbu o'yinda yo'q")
+		return 0, 0, 0, 0, false, 0, errors.New("bu o'yinchi ushbu o'yinda yo'q")
 	}
 
 	if err := s.repo.SetMatchWinner(matchID, winnerTgID); err != nil {
-		return 0, 0, false, 0, err
+		return 0, 0, 0, 0, false, 0, err
 	}
 
 	t, err := s.repo.GetTournament(m.TournamentID)
 	if err != nil {
-		return 0, 0, false, 0, err
+		return 0, 0, 0, 0, false, 0, err
 	}
 
+	var wn, ln int64
+	var fin bool
+	var advErr error
 	switch t.Type {
 	case models.TournamentTypeRoundRobin:
 		allDone, _ := s.repo.AllMatchesDone(m.TournamentID)
 		if allDone {
 			_ = s.repo.SetTournamentStatus(m.TournamentID, models.TournamentStatusFinished)
-			return 0, 0, true, m.TournamentID, nil
+			fin = true
 		}
-		return 0, 0, false, m.TournamentID, nil
-
 	case models.TournamentTypeDoubleElim:
-		wn, ln, fin, advErr := s.advanceDEResult(m, winnerTgID)
-		return wn, ln, fin, m.TournamentID, advErr
-
-	default: // single_elimination
-		wn, fin, advErr := s.advanceSEResult(m, winnerTgID)
-		return wn, 0, fin, m.TournamentID, advErr
+		wn, ln, fin, advErr = s.advanceDEResult(m, winnerTgID)
+	default:
+		wn, fin, advErr = s.advanceSEResult(m, winnerTgID)
 	}
+	if advErr != nil {
+		return 0, 0, 0, 0, false, m.TournamentID, advErr
+	}
+
+	// Auto-reassign freed table to next waiting match
+	if !fin && m.TableNum > 0 && t.TableCount > 0 {
+		if next, _ := s.repo.GetNextReadyMatchWithoutTable(m.TournamentID); next != nil {
+			_ = s.repo.SetMatchTableNum(next.ID, m.TableNum)
+			assignedMatchID = next.ID
+			assignedTableNum = m.TableNum
+		}
+	}
+
+	return wn, ln, assignedMatchID, assignedTableNum, fin, m.TournamentID, nil
 }
 
 func (s *Service) advanceSEResult(m *models.Match, winnerTgID int64) (nextMatchID int64, finished bool, err error) {
