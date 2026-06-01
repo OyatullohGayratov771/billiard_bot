@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -591,7 +592,7 @@ func (h *Handler) adminMatchStart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) adminBranches(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.db.Query(`SELECT id, name FROM branches WHERE is_active=true ORDER BY id`)
+	rows, err := h.db.Query(`SELECT id, name FROM branches ORDER BY id`)
 	if err != nil {
 		writeErr(w, 500, err.Error())
 		return
@@ -723,12 +724,24 @@ func (h *Handler) adminApproveTrnReg(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 400, "turnir ro'yxat qabul qilmayapti")
 		return
 	}
+	var clientTgID int64
+	var trnName, scheduledAt string
+	_ = h.db.QueryRow(`
+		SELECT tr.user_tg_id, t.name, COALESCE(t.scheduled_at::text,'')
+		FROM tournament_registrations tr
+		JOIN tournaments t ON t.id=tr.tournament_id
+		WHERE tr.id=$1 AND tr.tournament_id=$2`, rID, tID).Scan(&clientTgID, &trnName, &scheduledAt)
+
 	_, err = h.db.Exec(`
 		UPDATE tournament_registrations SET status='approved', decided_at=NOW()
 		WHERE id=$1 AND tournament_id=$2 AND status='pending'`, rID, tID)
 	if err != nil {
 		writeErr(w, 500, err.Error())
 		return
+	}
+	if clientTgID > 0 {
+		msg := fmt.Sprintf("✅ <b>%s</b> turnirida ro'yxatingiz tasdiqlandi!\n\nSiz ishtirokchisiz. Turnir boshlanishi haqida xabardor qilinasiz.", trnName)
+		go h.sendTelegramMessage(clientTgID, msg, nil)
 	}
 	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
@@ -744,12 +757,24 @@ func (h *Handler) adminRejectTrnReg(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 400, "invalid reg_id")
 		return
 	}
+	var clientTgID int64
+	var trnName string
+	_ = h.db.QueryRow(`
+		SELECT tr.user_tg_id, t.name
+		FROM tournament_registrations tr
+		JOIN tournaments t ON t.id=tr.tournament_id
+		WHERE tr.id=$1 AND tr.tournament_id=$2`, rID, tID).Scan(&clientTgID, &trnName)
+
 	_, err = h.db.Exec(`
 		UPDATE tournament_registrations SET status='rejected', decided_at=NOW()
 		WHERE id=$1 AND tournament_id=$2 AND status='pending'`, rID, tID)
 	if err != nil {
 		writeErr(w, 500, err.Error())
 		return
+	}
+	if clientTgID > 0 {
+		msg := fmt.Sprintf("❌ <b>%s</b> turnirida ro'yxatingiz rad etildi.\n\nQo'shimcha ma'lumot uchun admin bilan bog'laning.", trnName)
+		go h.sendTelegramMessage(clientTgID, msg, nil)
 	}
 	writeJSON(w, 200, map[string]string{"status": "ok"})
 }

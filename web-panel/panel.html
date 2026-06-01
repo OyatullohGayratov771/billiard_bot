@@ -1175,8 +1175,8 @@ function matchCard(m,readonly){
   const st=m.status;
   const p1=m.player1_name||'TBD';
   const p2=m.player2_name||'TBD';
-  const w1=m.winner_tg_id&&m.player1_tg_id&&m.winner_tg_id==m.player1_tg_id;
-  const w2=m.winner_tg_id&&m.player2_tg_id&&m.winner_tg_id==m.player2_tg_id;
+  const w1=m.winner_slot===1;
+  const w2=m.winner_slot===2;
 
   if(st==='void') return`<div class="match-card mc-pending"><div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot pending"></div></div><div style="color:var(--text3);font-size:.7rem">Kutilmoqda</div></div>`;
   if(st==='bye'){
@@ -1184,14 +1184,15 @@ function matchCard(m,readonly){
     return`<div class="match-card mc-bye"><div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot bye"></div></div><div class="mc-player-row winner"><span class="mc-pname">${esc(bn)}</span><span class="mc-trophy">🏆</span></div><div class="mc-bye-text">Avtomatik o'tadi (BYE)</div></div>`;
   }
 
-  const canPick=!readonly&&(st==='in_progress'||st==='ready');
+  const canPick=!readonly&&st==='in_progress';
   const canStart=!readonly&&st==='ready'&&m.player1_tg_id&&m.player2_tg_id;
   const dotClass=st==='done'?'done':st==='in_progress'?'ready':st==='ready'?'ready':'pending';
 
   // Header extras
   let headerExtra='';
-  if(st==='in_progress'&&m.table_num>0) headerExtra=`<span style="font-size:.54rem;color:var(--blue);background:rgba(52,152,219,.12);padding:2px 7px;border-radius:3px">🎱 Stol ${m.table_num}</span>`;
+  if(st==='in_progress'&&m.table_num>0) headerExtra=`<span style="font-size:.54rem;color:var(--blue);background:rgba(52,152,219,.12);padding:2px 7px;border-radius:3px">🎱 ${m.table_num}-stol</span>`;
   if(st==='in_progress'&&!m.table_num) headerExtra=`<span style="font-size:.54rem;color:var(--blue)">Jarayonda</span>`;
+  if(st==='done'&&m.table_num>0) headerExtra=`<span style="font-size:.54rem;color:var(--text3);background:rgba(255,255,255,.06);padding:2px 7px;border-radius:3px">🎱 ${m.table_num}-stol</span>`;
 
   // Footer: start button or winner buttons
   let footer='';
@@ -1207,12 +1208,12 @@ function matchCard(m,readonly){
       <div style="display:flex;gap:5px;align-items:center">${headerExtra}<div class="mc-status-dot ${dotClass}"></div></div>
     </div>
     <div class="mc-player-row ${w1?'winner':w2?'loser':''}">
-      <span class="mc-trophy">${w1?'🏆':'　'}</span>
+      <span class="mc-trophy">${w1?'🏆':w2&&st==='done'?'❌':'　'}</span>
       <span class="mc-pname">${esc(p1)}</span>
       ${canPick&&m.player1_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},1)">🏆 G'olib</button>`:''}
     </div>
     <div class="mc-player-row ${w2?'winner':w1?'loser':''}">
-      <span class="mc-trophy">${w2?'🏆':'　'}</span>
+      <span class="mc-trophy">${w2?'🏆':w1&&st==='done'?'❌':'　'}</span>
       <span class="mc-pname">${esc(p2)}</span>
       ${canPick&&m.player2_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},2)">🏆 G'olib</button>`:''}
     </div>

@@ -104,4 +104,5 @@ type Match struct {
 	Player1Name string `json:"player1_name"`
 	Player2Name string `json:"player2_name"`
 	WinnerName  string `json:"winner_name"`
+	WinnerSlot  int    `json:"winner_slot"` // 1 or 2, 0 if no winner
 }

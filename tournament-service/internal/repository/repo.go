@@ -369,6 +369,13 @@ func (r *Repo) GetBracket(tournamentID int64) ([]*models.Match, error) {
 			&m.Player1Name, &m.Player2Name, &m.WinnerName); err != nil {
 			return nil, err
 		}
+		if m.WinnerTgID != nil {
+			if m.Player1TgID != nil && *m.WinnerTgID == *m.Player1TgID {
+				m.WinnerSlot = 1
+			} else if m.Player2TgID != nil && *m.WinnerTgID == *m.Player2TgID {
+				m.WinnerSlot = 2
+			}
+		}
 		list = append(list, m)
 	}
 	return list, rows.Err()
