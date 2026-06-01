@@ -355,13 +355,37 @@ func (h *Handler) setResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		WinnerTgID int64 `json:"winner_tg_id"`
+		WinnerSlot int   `json:"winner_slot"`  // 1 or 2
+		WinnerTgID int64 `json:"winner_tg_id"` // legacy, ignored if winner_slot set
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, 400, "invalid request")
 		return
 	}
-	winnerNextID, loserNextID, finished, trnID, err := h.svc.SetResult(id, req.WinnerTgID)
+	var winnerTgID int64
+	if req.WinnerSlot == 1 || req.WinnerSlot == 2 {
+		m, err2 := h.svc.GetMatch(id)
+		if err2 != nil {
+			writeError(w, 404, "o'yin topilmadi")
+			return
+		}
+		if req.WinnerSlot == 1 {
+			if m.Player1TgID == nil {
+				writeError(w, 400, "1-o'yinchi belgilanmagan")
+				return
+			}
+			winnerTgID = *m.Player1TgID
+		} else {
+			if m.Player2TgID == nil {
+				writeError(w, 400, "2-o'yinchi belgilanmagan")
+				return
+			}
+			winnerTgID = *m.Player2TgID
+		}
+	} else {
+		winnerTgID = req.WinnerTgID
+	}
+	winnerNextID, loserNextID, finished, trnID, err := h.svc.SetResult(id, winnerTgID)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return

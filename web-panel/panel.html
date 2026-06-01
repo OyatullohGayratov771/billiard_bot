@@ -1209,23 +1209,23 @@ function matchCard(m,readonly){
     <div class="mc-player-row ${w1?'winner':w2?'loser':''}">
       <span class="mc-trophy">${w1?'🏆':'　'}</span>
       <span class="mc-pname">${esc(p1)}</span>
-      ${canPick&&m.player1_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},${m.player1_tg_id})">🏆 G'olib</button>`:''}
+      ${canPick&&m.player1_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},1)">🏆 G'olib</button>`:''}
     </div>
     <div class="mc-player-row ${w2?'winner':w1?'loser':''}">
       <span class="mc-trophy">${w2?'🏆':'　'}</span>
       <span class="mc-pname">${esc(p2)}</span>
-      ${canPick&&m.player2_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},${m.player2_tg_id})">🏆 G'olib</button>`:''}
+      ${canPick&&m.player2_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},2)">🏆 G'olib</button>`:''}
     </div>
     ${footer}
   </div>`;
 }
 
-async function setWinner(matchId,tgId){
+async function setWinner(matchId,slot){
   document.querySelectorAll('.mc-win-btn').forEach(b=>b.disabled=true);
   try{
     const r=await fetch(`/api/admin/matches/${matchId}/result`,{
       method:'PUT',headers:{...auth(),'Content-Type':'application/json'},
-      body:JSON.stringify({winner_tg_id:tgId})
+      body:JSON.stringify({winner_slot:slot})
     });
     const d=await r.json();
     if(r.ok){
