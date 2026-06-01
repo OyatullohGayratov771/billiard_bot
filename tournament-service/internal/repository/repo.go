@@ -314,6 +314,11 @@ func (r *Repo) DeleteBracket(tournamentID int64) error {
 	return err
 }
 
+func (r *Repo) SetMatchTableNum(matchID int64, tableNum int) error {
+	_, err := r.db.Exec(`UPDATE tournament_matches SET table_num=$1 WHERE id=$2`, tableNum, matchID)
+	return err
+}
+
 func (r *Repo) StartMatch(matchID int64, tableNum int) error {
 	_, err := r.db.Exec(`UPDATE tournament_matches SET status='in_progress', table_num=$1 WHERE id=$2`, tableNum, matchID)
 	return err

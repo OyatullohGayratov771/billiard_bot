@@ -59,6 +59,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /tournaments/sse", h.tournamentsSSE)
 	mux.HandleFunc("GET /tournaments/{id}/sse", h.tournamentSSE)
 
+	mux.HandleFunc("PUT /matches/{id}/table", h.setMatchTable)
 	mux.HandleFunc("PUT /matches/{id}/start", h.startMatch)
 	mux.HandleFunc("PUT /matches/{id}/result", h.setResult)
 
@@ -308,6 +309,34 @@ func (h *Handler) shuffleBracket(w http.ResponseWriter, r *http.Request) {
 	}
 	h.hub.Broadcast(fmt.Sprintf("trn:%d", id))
 	writeJSON(w, 200, matches)
+}
+
+func (h *Handler) setMatchTable(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, 400, "invalid id")
+		return
+	}
+	var req struct {
+		TableNum int `json:"table_num"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, 400, "invalid request")
+		return
+	}
+	if req.TableNum <= 0 {
+		writeError(w, 400, "stol raqami 0 dan katta bo'lishi kerak")
+		return
+	}
+	if err := h.svc.SetMatchTable(id, req.TableNum); err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	match, _ := h.svc.GetMatch(id)
+	if match != nil {
+		h.hub.Broadcast(fmt.Sprintf("trn:%d", match.TournamentID))
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
 func (h *Handler) startMatch(w http.ResponseWriter, r *http.Request) {

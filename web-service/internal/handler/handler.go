@@ -77,6 +77,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/admin/clips/{id}/done", h.withRole(h.adminClipDone, "operator", "admin", "superadmin"))
 	mux.HandleFunc("PUT /api/admin/clips/{id}/retry", h.withRole(h.adminClipRetry, "operator", "admin", "superadmin"))
 	// Match management
+	mux.HandleFunc("PUT /api/admin/matches/{id}/table", h.withRole(h.adminMatchAssignTable, "operator", "admin", "superadmin"))
 	mux.HandleFunc("PUT /api/admin/matches/{id}/start", h.withRole(h.adminMatchStart, "operator", "admin", "superadmin"))
 
 	// Superadmin-only user management
@@ -584,6 +585,85 @@ func (h *Handler) adminClipRetry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) adminMatchAssignTable(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	matchID, _ := strconv.ParseInt(id, 10, 64)
+
+	body, _ := io.ReadAll(r.Body)
+	var req struct {
+		TableNum int `json:"table_num"`
+	}
+	_ = json.Unmarshal(body, &req)
+
+	tReq, err := http.NewRequestWithContext(r.Context(), http.MethodPut,
+		h.trnSvcURL+"/matches/"+id+"/table", bytes.NewReader(body))
+	if err != nil {
+		writeErr(w, 500, "internal error")
+		return
+	}
+	tReq.Header.Set("Content-Type", "application/json")
+	tReq.Header.Set("X-Internal-Token", h.internalToken)
+	resp, err := http.DefaultClient.Do(tReq)
+	if err != nil {
+		writeErr(w, 502, "tournament service unavailable")
+		return
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+		_, _ = w.Write(respBody)
+		return
+	}
+
+	go h.sendMatchTableNotifications(matchID, req.TableNum)
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) sendMatchTableNotifications(matchID int64, tableNum int) {
+	var p1TgID, p2TgID *int64
+	var p1Name, p2Name, trnName string
+	var scheduledAt *time.Time
+	err := h.db.QueryRow(`
+		SELECT m.player1_tg_id, m.player2_tg_id,
+		       COALESCE(r1.user_name, u1.first_name, ''), COALESCE(r2.user_name, u2.first_name, ''),
+		       t.name, t.scheduled_at
+		FROM tournament_matches m
+		JOIN tournaments t ON t.id=m.tournament_id
+		LEFT JOIN tournament_registrations r1 ON r1.tournament_id=m.tournament_id AND r1.user_tg_id=m.player1_tg_id
+		LEFT JOIN tournament_registrations r2 ON r2.tournament_id=m.tournament_id AND r2.user_tg_id=m.player2_tg_id
+		LEFT JOIN users u1 ON u1.telegram_id=m.player1_tg_id
+		LEFT JOIN users u2 ON u2.telegram_id=m.player2_tg_id
+		WHERE m.id=$1`, matchID).Scan(&p1TgID, &p2TgID, &p1Name, &p2Name, &trnName, &scheduledAt)
+	if err != nil {
+		return
+	}
+
+	timeStr := ""
+	if scheduledAt != nil {
+		tz := time.FixedZone("UZT", 5*3600)
+		timeStr = "\n🕐 Vaqt: <b>" + scheduledAt.In(tz).Format("02.01.2006 15:04") + "</b>"
+	}
+
+	notify := func(tgID int64, opponentName string) {
+		if tgID <= 0 {
+			return
+		}
+		msg := fmt.Sprintf(
+			"⚡ <b>Navbatdagi o'yiningiz!</b>\n\n🏆 Turnir: <b>%s</b>\n🆚 Raqibingiz: <b>%s</b>\n🎱 Stol: <b>%d-stol</b>%s\n\nOmad! 🍀",
+			trnName, opponentName, tableNum, timeStr)
+		h.sendTelegramMessage(tgID, msg, nil)
+	}
+
+	if p1TgID != nil {
+		notify(*p1TgID, p2Name)
+	}
+	if p2TgID != nil {
+		notify(*p2TgID, p1Name)
+	}
 }
 
 func (h *Handler) adminMatchStart(w http.ResponseWriter, r *http.Request) {

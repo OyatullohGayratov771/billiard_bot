@@ -1185,21 +1185,33 @@ function matchCard(m,readonly){
   }
 
   const canPick=!readonly&&st==='in_progress';
-  const canStart=!readonly&&st==='ready'&&m.player1_tg_id&&m.player2_tg_id;
+  const canAssign=!readonly&&st==='ready'&&m.player1_tg_id&&m.player2_tg_id;
   const dotClass=st==='done'?'done':st==='in_progress'?'ready':st==='ready'?'ready':'pending';
 
   // Header extras
   let headerExtra='';
-  if(st==='in_progress'&&m.table_num>0) headerExtra=`<span style="font-size:.54rem;color:var(--blue);background:rgba(52,152,219,.12);padding:2px 7px;border-radius:3px">🎱 ${m.table_num}-stol</span>`;
+  if((st==='ready'||st==='in_progress')&&m.table_num>0) headerExtra=`<span style="font-size:.54rem;color:var(--blue);background:rgba(52,152,219,.12);padding:2px 7px;border-radius:3px">🎱 ${m.table_num}-stol</span>`;
   if(st==='in_progress'&&!m.table_num) headerExtra=`<span style="font-size:.54rem;color:var(--blue)">Jarayonda</span>`;
   if(st==='done'&&m.table_num>0) headerExtra=`<span style="font-size:.54rem;color:var(--text3);background:rgba(255,255,255,.06);padding:2px 7px;border-radius:3px">🎱 ${m.table_num}-stol</span>`;
 
-  // Footer: start button or winner buttons
+  // Footer for ready matches: table assignment or start
   let footer='';
-  if(canStart){
-    footer=`<div id="sf-${m.id}" style="margin-top:7px">
-      <button class="mc-start-btn" onclick="showStartForm(${m.id},event)">▶ O'yinni boshlash</button>
-    </div>`;
+  if(canAssign){
+    if(m.table_num>0){
+      footer=`<div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap">
+        <button class="mc-start-btn" onclick="quickStart(${m.id})">▶ Boshlash</button>
+        <button onclick="reNotify(${m.id},${m.table_num})" style="background:rgba(240,192,48,.08);border:1px solid rgba(240,192,48,.3);color:var(--gold);padding:4px 9px;border-radius:3px;font-size:.6rem;font-weight:700;cursor:pointer">📬 Qayta xabar</button>
+      </div>`;
+    } else {
+      footer=`<div id="sf-${m.id}" style="margin-top:7px">
+        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:.6rem;color:var(--text3);white-space:nowrap">🎱 Stol:</span>
+          <input type="number" id="ti-${m.id}" class="mc-table-inp" min="1" max="50" placeholder="№"
+                 onkeydown="if(event.key==='Enter')assignTable(${m.id})">
+          <button onclick="assignTable(${m.id})" style="background:rgba(240,192,48,.1);border:1px solid rgba(240,192,48,.4);color:var(--gold);padding:4px 10px;border-radius:3px;font-size:.6rem;font-weight:700;cursor:pointer;white-space:nowrap">📬 Belgilash & Xabar</button>
+        </div>
+      </div>`;
+    }
   }
 
   return`<div class="match-card${st==='done'?' mc-done':st==='in_progress'||st==='ready'?' mc-ready':' mc-pending'}">
@@ -1248,22 +1260,45 @@ async function setWinner(matchId,slot){
   }catch(e){showToast('Tarmoq xatosi','err');document.querySelectorAll('.mc-win-btn').forEach(b=>b.disabled=false);}
 }
 
-function showStartForm(matchId, e){
-  e?.stopPropagation();
-  const el=document.getElementById('sf-'+matchId);
-  if(!el) return;
-  el.innerHTML=`<div class="mc-start-form">
-    <input type="number" id="ti-${matchId}" class="mc-table-inp" min="1" max="50" placeholder="Stol №"
-           onkeydown="if(event.key==='Enter')startMatch(${matchId});if(event.key==='Escape')cancelStartForm(${matchId})">
-    <button onclick="startMatch(${matchId})" style="background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.35);color:var(--green);padding:4px 10px;border-radius:3px;font-size:.62rem;font-weight:700;cursor:pointer">▶</button>
-    <button onclick="cancelStartForm(${matchId})" style="background:none;border:1px solid var(--border2);color:var(--text3);padding:4px 8px;border-radius:3px;font-size:.7rem;cursor:pointer">✕</button>
-  </div>`;
-  setTimeout(()=>document.getElementById('ti-'+matchId)?.focus(),50);
+async function assignTable(matchId){
+  const tableNum=parseInt(document.getElementById('ti-'+matchId)?.value)||0;
+  if(!tableNum){showToast('Stol raqamini kiriting','err');document.getElementById('ti-'+matchId)?.focus();return;}
+  try{
+    const r=await fetch(`/api/admin/matches/${matchId}/table`,{
+      method:'PUT',headers:{...auth(),'Content-Type':'application/json'},
+      body:JSON.stringify({table_num:tableNum})
+    });
+    const d=await r.json();
+    if(r.ok){
+      showToast('📬 Stol belgilandi, ishtirokchilarga xabar yuborildi!');
+      await loadBracket(currentTrn.id);renderBracket();
+    } else showToast(d.error||'Xatolik','err');
+  }catch(e){showToast('Tarmoq xatosi','err');}
 }
 
-function cancelStartForm(matchId){
-  const el=document.getElementById('sf-'+matchId);
-  if(el) el.innerHTML=`<button class="mc-start-btn" onclick="showStartForm(${matchId},event)">▶ O'yinni boshlash</button>`;
+async function reNotify(matchId, tableNum){
+  try{
+    const r=await fetch(`/api/admin/matches/${matchId}/table`,{
+      method:'PUT',headers:{...auth(),'Content-Type':'application/json'},
+      body:JSON.stringify({table_num:tableNum})
+    });
+    if(r.ok) showToast('📬 Xabar qayta yuborildi');
+    else showToast('Xatolik','err');
+  }catch(e){showToast('Tarmoq xatosi','err');}
+}
+
+async function quickStart(matchId){
+  try{
+    const r=await fetch(`/api/admin/matches/${matchId}/start`,{
+      method:'PUT',headers:{...auth(),'Content-Type':'application/json'},
+      body:JSON.stringify({table_num:0})
+    });
+    const d=await r.json();
+    if(r.ok){
+      showToast('▶ O\'yin boshlandi');
+      await loadBracket(currentTrn.id);renderBracket();
+    } else showToast(d.error||'Xatolik','err');
+  }catch(e){showToast('Tarmoq xatosi','err');}
 }
 
 async function startMatch(matchId){

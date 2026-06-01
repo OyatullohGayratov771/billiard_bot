@@ -258,6 +258,17 @@ func (s *Service) ShuffleBracket(tournamentID int64) ([]*models.Match, error) {
 	return s.GenerateBracket(tournamentID)
 }
 
+func (s *Service) SetMatchTable(matchID int64, tableNum int) error {
+	m, err := s.repo.GetMatch(matchID)
+	if err != nil {
+		return errors.New("o'yin topilmadi")
+	}
+	if m.Status != models.MatchStatusReady && m.Status != models.MatchStatusInProgress {
+		return fmt.Errorf("bu o'yinga stol belgilab bo'lmaydi (holat: %s)", m.Status)
+	}
+	return s.repo.SetMatchTableNum(matchID, tableNum)
+}
+
 func (s *Service) StartMatch(matchID int64, tableNum int) error {
 	m, err := s.repo.GetMatch(matchID)
 	if err != nil {
@@ -266,7 +277,11 @@ func (s *Service) StartMatch(matchID int64, tableNum int) error {
 	if m.Status != models.MatchStatusReady {
 		return fmt.Errorf("o'yin boshlash uchun tayyor emas (holat: %s)", m.Status)
 	}
-	if err := s.repo.StartMatch(matchID, tableNum); err != nil {
+	effective := tableNum
+	if effective == 0 {
+		effective = m.TableNum
+	}
+	if err := s.repo.StartMatch(matchID, effective); err != nil {
 		return err
 	}
 	t, err := s.repo.GetTournament(m.TournamentID)
