@@ -193,6 +193,33 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
 .queue-p{color:#5050a0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .queue-vs{color:#282850;font-size:.68rem}
 
+/* ── SCHEDULE VIEW ── */
+.sched-wrap{padding:16px 24px 60px;display:flex;flex-direction:column;gap:18px}
+.sched-hdr{font-size:.58rem;text-transform:uppercase;letter-spacing:2.5px;color:#4040a0;margin-bottom:8px;padding:0 2px;font-weight:700}
+.sched-hdr.wb{color:#c0a000}
+.sched-hdr.lb{color:#5080c0}
+.sched-hdr.gf{color:#c04080}
+.sched-list{display:flex;flex-direction:column;gap:5px}
+.sched-row{
+  display:grid;grid-template-columns:36px 1fr 28px 1fr auto;
+  align-items:center;gap:10px;
+  padding:10px 14px;border-radius:8px;
+  border:1px solid #12122a;background:linear-gradient(90deg,#0d0d22,#0a0a1a);
+  font-size:.84rem;
+}
+.sched-row.sr-ready{border-color:rgba(52,120,219,.35);background:rgba(30,60,120,.12)}
+.sched-row.sr-active{border-color:rgba(212,160,18,.35);background:rgba(212,160,18,.07);animation:glow 2.2s ease-in-out infinite}
+.sched-row.sr-done{opacity:.55}
+.sched-mn{font-size:.58rem;color:#303060;font-weight:700}
+.sched-p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.sched-p.win{color:#f0c030;font-weight:700}
+.sched-p.lose{color:#252550}
+.sched-p.tbd{color:#252550;font-style:italic}
+.sched-vs{font-size:.65rem;color:#252550;text-align:center}
+.sched-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.sched-tbl{font-size:.6rem;color:#3080c0;background:rgba(48,128,192,.12);padding:2px 8px;border-radius:4px}
+.sched-ico{font-size:.75rem}
+
 /* ── MOBILE ── */
 @media(max-width:700px){
   .bracket{flex-direction:column;padding:8px 12px 0}
@@ -204,6 +231,8 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
   .gf-wrap{padding:12px 14px 40px}
   .rr-wrap{padding:12px 14px 40px}
   .tbl-grid{grid-template-columns:1fr;padding:12px 12px 60px}
+  .sched-wrap{padding:10px 12px 60px}
+  .sched-row{grid-template-columns:28px 1fr 22px 1fr auto;gap:6px;padding:8px 10px}
 }
 </style>
 </head>
@@ -225,6 +254,7 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
 
 <nav class="tv-tabs">
   <button class="tv-tab active" data-tab="bracket" onclick="switchTab('bracket')">🏆 Bracket</button>
+  <button class="tv-tab" data-tab="jadval" id="tab-jadval" style="display:none" onclick="switchTab('jadval')">📋 Jadval</button>
   <button class="tv-tab" data-tab="tables" id="tab-tables" style="display:none" onclick="switchTab('tables')">🎱 Stollar</button>
 </nav>
 
@@ -313,11 +343,14 @@ function render(data) {
   if (typeInfo) { tp.textContent = typeInfo; tp.style.display = 'inline-flex'; }
   else tp.style.display = 'none';
 
-  // Show/hide tables tab
+  // Show/hide tabs
   const hasTables = matches.some(m => m.table_num > 0);
   const tablesTab = document.getElementById('tab-tables');
+  const jadvalTab = document.getElementById('tab-jadval');
   if (tablesTab) tablesTab.style.display = hasTables ? '' : 'none';
+  if (jadvalTab) jadvalTab.style.display = matches.length ? '' : 'none';
   if (!hasTables && activeTab === 'tables') activeTab = 'bracket';
+  if (!matches.length && activeTab === 'jadval') activeTab = 'bracket';
 
   // Sync tab highlight
   document.querySelectorAll('.tv-tab').forEach(el => {
@@ -341,6 +374,8 @@ function renderActiveTab() {
 
   if (activeTab === 'tables') {
     renderTablesView(main, t, matches);
+  } else if (activeTab === 'jadval') {
+    renderScheduleView(main, t, matches);
   } else if (t.type === 'double_elimination') renderDE(main, t, matches);
   else if (t.type === 'round_robin')   renderRR(main, t, matches);
   else                                 renderSE(main, t, matches);
@@ -635,7 +670,11 @@ function mkWinner(name) {
 
 function buildCard(m) {
   if (m.status === 'void') {
-    const d = document.createElement('div'); d.className='void-el'; return d;
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.style.opacity = '0.3';
+    d.innerHTML = mkPlayer('Kutilmoqda', false, false, false) + mkPlayer('Kutilmoqda', false, false, false);
+    return d;
   }
   if (m.status === 'bye') {
     const d = document.createElement('div'); d.className='bye';
@@ -672,6 +711,98 @@ function statusLabel(s) {
 }
 function typeLabel(t) {
   return {single_elimination:'🎯 Single Elimination',double_elimination:'🔄 Double Elimination',round_robin:'🔁 Round Robin'}[t]||null;
+}
+
+/* ══════════════════════════════════════════
+   SCHEDULE VIEW
+══════════════════════════════════════════ */
+function renderScheduleView(container, t, matches) {
+  const LBO = 1000, GF = 2000;
+
+  // Collect all displayable matches (skip bye/void with no players)
+  const visible = matches.filter(m => {
+    if (m.status === 'bye') return false;
+    if (m.status === 'void' && !m.player1_name && !m.player2_name) return false;
+    return true;
+  });
+
+  if (!visible.length) {
+    container.innerHTML = '<div class="empty"><div class="big">📋</div><div>Jadval yo\'q</div></div>';
+    return;
+  }
+
+  // Group by round
+  const rounds = {};
+  for (const m of visible) {
+    if (!rounds[m.round]) rounds[m.round] = [];
+    rounds[m.round].push(m);
+  }
+  const roundNums = Object.keys(rounds).map(Number).sort((a,b)=>a-b);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'sched-wrap';
+
+  for (const rn of roundNums) {
+    const rmatches = rounds[rn].slice().sort((a,b) => a.match_num - b.match_num);
+
+    let label, hdrCls = '';
+    if (rn === GF)      { label = '🏆 Grand Final';              hdrCls = 'gf'; }
+    else if (rn >= LBO+1){ label = 'Yutqazuvchilar · R'+(rn-LBO); hdrCls = 'lb'; }
+    else                 { label = 'Raund ' + rn;                 hdrCls = 'wb'; }
+
+    const sec = document.createElement('div');
+    const hdr = document.createElement('div');
+    hdr.className = 'sched-hdr ' + hdrCls;
+    hdr.textContent = label;
+    sec.appendChild(hdr);
+
+    const list = document.createElement('div');
+    list.className = 'sched-list';
+
+    for (const m of rmatches) {
+      const done  = m.status === 'done';
+      const live  = m.status === 'in_progress';
+      const ready = m.status === 'ready';
+      const tbd   = m.status === 'void' || m.status === 'pending';
+      const w1 = done && m.winner_slot === 1;
+      const w2 = done && m.winner_slot === 2;
+
+      const p1 = m.player1_name || '?';
+      const p2 = m.player2_name || '?';
+      const p1tbd = !m.player1_name;
+      const p2tbd = !m.player2_name;
+
+      let rowCls = 'sched-row';
+      if (live)        rowCls += ' sr-active';
+      else if (ready)  rowCls += ' sr-ready';
+      else if (done)   rowCls += ' sr-done';
+
+      let ico = '⏳', icoClr = '#303060';
+      if (live)        { ico = '▶';  icoClr = '#f0c030'; }
+      else if (ready)  { ico = '🎱'; icoClr = '#3080c0'; }
+      else if (done)   { ico = '✅'; icoClr = '#30c060'; }
+
+      const tblBadge = m.table_num > 0
+        ? '<span class="sched-tbl">🎱 ' + m.table_num + '-stol</span>'
+        : '';
+
+      const row = document.createElement('div');
+      row.className = rowCls;
+      row.innerHTML =
+        '<span class="sched-mn">M' + m.match_num + '</span>' +
+        '<span class="sched-p' + (w1?' win':done&&!w1?' lose':p1tbd?' tbd':'') + '">' + (w1?'🏆 ':'') + esc(p1) + '</span>' +
+        '<span class="sched-vs">vs</span>' +
+        '<span class="sched-p' + (w2?' win':done&&!w2?' lose':p2tbd?' tbd':'') + '">' + (w2?'🏆 ':'') + esc(p2) + '</span>' +
+        '<div class="sched-right">' + tblBadge + '<span class="sched-ico" style="color:' + icoClr + '">' + ico + '</span></div>';
+
+      list.appendChild(row);
+    }
+
+    sec.appendChild(list);
+    wrap.appendChild(sec);
+  }
+
+  container.appendChild(wrap);
 }
 
 /* ══════════════════════════════════════════

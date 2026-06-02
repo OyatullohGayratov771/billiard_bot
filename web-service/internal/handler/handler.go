@@ -84,6 +84,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/role", h.withRole(h.adminSetRole, "superadmin"))
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/active", h.withRole(h.adminSetActive, "superadmin"))
 
+	// Public tournament bracket (all authenticated users)
+	mux.HandleFunc("GET /api/tournaments/{id}/bracket", h.withAuth(h.publicTrnBracket))
+
 	// Tournament registration proxy (auth via JWT, proxies to tournament-service)
 	mux.HandleFunc("POST /api/me/tournaments/{id}/register", h.withAuth(h.meTournamentRegister))
 
@@ -726,15 +729,15 @@ func (h *Handler) adminDeleteTrn(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) adminGenBracket(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	h.genBracketAndNotify(w, r, "/tournaments/"+id+"/bracket")
+	h.genBracketAndNotify(w, r, id, "/tournaments/"+id+"/bracket")
 }
 
 func (h *Handler) adminShuffleBracket(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	h.genBracketAndNotify(w, r, "/tournaments/"+id+"/bracket/shuffle")
+	h.genBracketAndNotify(w, r, id, "/tournaments/"+id+"/bracket/shuffle")
 }
 
-func (h *Handler) genBracketAndNotify(w http.ResponseWriter, r *http.Request, path string) {
+func (h *Handler) genBracketAndNotify(w http.ResponseWriter, r *http.Request, trnID, path string) {
 	tReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost,
 		h.trnSvcURL+path, bytes.NewReader([]byte("{}")))
 	if err != nil {
@@ -756,25 +759,100 @@ func (h *Handler) genBracketAndNotify(w http.ResponseWriter, r *http.Request, pa
 	if resp.StatusCode != 200 {
 		return
 	}
-	// Send notifications for auto-assigned matches
 	go func() {
-		var matches []struct {
-			ID       int64  `json:"id"`
-			Status   string `json:"status"`
-			TableNum int    `json:"table_num"`
+		type mEntry struct {
+			ID          int64  `json:"id"`
+			Round       int    `json:"round"`
+			MatchNum    int    `json:"match_num"`
+			Status      string `json:"status"`
+			TableNum    int    `json:"table_num"`
+			Player1TgID *int64 `json:"player1_tg_id"`
+			Player2TgID *int64 `json:"player2_tg_id"`
+			Player1Name string `json:"player1_name"`
+			Player2Name string `json:"player2_name"`
 		}
+		var matches []mEntry
 		if json.Unmarshal(respBody, &matches) != nil {
 			return
 		}
+
+		// Auto-assigned table notifications (existing logic)
 		for _, m := range matches {
 			if m.Status == "ready" && m.TableNum > 0 {
 				h.sendMatchTableNotifications(m.ID, m.TableNum)
 			}
 		}
+
+		// Bracket-created notification to all approved participants
+		trnIDInt, _ := strconv.ParseInt(trnID, 10, 64)
+		var trnName string
+		if h.db.QueryRow(`SELECT name FROM tournaments WHERE id=$1`, trnIDInt).Scan(&trnName) != nil {
+			return
+		}
+
+		// Find the minimum WB round (round < 1000) for first-match info
+		minRound := 0
+		for _, m := range matches {
+			if m.Round > 0 && m.Round < 1000 {
+				if minRound == 0 || m.Round < minRound {
+					minRound = m.Round
+				}
+			}
+		}
+
+		type firstMatchInfo struct{ opponent string; tableNum int }
+		playerFirst := map[int64]firstMatchInfo{}
+		for _, m := range matches {
+			if m.Round != minRound || minRound == 0 {
+				continue
+			}
+			if m.Player1TgID != nil && *m.Player1TgID > 0 {
+				if _, ok := playerFirst[*m.Player1TgID]; !ok {
+					playerFirst[*m.Player1TgID] = firstMatchInfo{m.Player2Name, m.TableNum}
+				}
+			}
+			if m.Player2TgID != nil && *m.Player2TgID > 0 {
+				if _, ok := playerFirst[*m.Player2TgID]; !ok {
+					playerFirst[*m.Player2TgID] = firstMatchInfo{m.Player1Name, m.TableNum}
+				}
+			}
+		}
+
+		rows, err := h.db.Query(`SELECT user_tg_id FROM tournament_registrations WHERE tournament_id=$1 AND status='approved'`, trnIDInt)
+		if err != nil {
+			return
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var tgID int64
+			if rows.Scan(&tgID) != nil || tgID <= 0 {
+				continue
+			}
+			var msg string
+			if info, ok := playerFirst[tgID]; ok {
+				opponent := info.opponent
+				if opponent == "" {
+					opponent = "Noma'lum"
+				}
+				tableStr := ""
+				if info.tableNum > 0 {
+					tableStr = fmt.Sprintf("\n🎱 Stol: <b>%d-stol</b>", info.tableNum)
+				}
+				msg = fmt.Sprintf("⚡ <b>%s</b> turniri sеtkasi yaratildi!\n\nSizning birinchi o'yiningiz:\n🆚 Raqib: <b>%s</b>%s\n\nOmad! 🍀", trnName, opponent, tableStr)
+			} else {
+				msg = fmt.Sprintf("⚡ <b>%s</b> turniri sеtkasi yaratildi!\n\nJadval va o'yin ma'lumotlari web saytda mavjud. Omad! 🍀", trnName)
+			}
+			go h.sendTelegramMessage(tgID, msg, nil)
+		}
 	}()
 }
 
 func (h *Handler) adminGetBracket(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.trnProxy(w, r, http.MethodGet, "/tournaments/"+id+"/bracket", nil)
+}
+
+func (h *Handler) publicTrnBracket(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	h.trnProxy(w, r, http.MethodGet, "/tournaments/"+id+"/bracket", nil)
 }

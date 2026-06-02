@@ -252,6 +252,22 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .tbl-match-sp.wait{background:rgba(255,255,255,.05);color:var(--text3)}
 .tbl-empty{padding:20px;text-align:center;color:var(--text3);font-size:.65rem}
 
+/* Schedule / Jadval */
+.sched-section{margin-bottom:14px}
+.sched-section-label{font-size:.55rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--text3);margin-bottom:7px;padding:0 2px}
+.sched-row{display:grid;grid-template-columns:32px 1fr 24px 1fr auto;align-items:center;gap:8px;padding:9px 12px;background:var(--card);border:1px solid var(--border2);border-radius:4px;font-size:.8rem;margin-bottom:4px}
+.sched-row.sr-ready{border-color:rgba(52,152,219,.3);background:rgba(52,152,219,.04)}
+.sched-row.sr-active{border-color:rgba(212,175,55,.3);background:rgba(212,175,55,.04)}
+.sched-row.sr-done{opacity:.6}
+.sched-mn{font-size:.56rem;color:var(--text3);font-weight:700}
+.sched-p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sched-p.win{color:var(--gold);font-weight:700}
+.sched-p.lose{color:var(--text3)}
+.sched-vs{font-size:.6rem;color:var(--text3);text-align:center}
+.sched-right{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.sched-tbl{font-size:.58rem;color:var(--blue);background:rgba(52,152,219,.1);padding:2px 7px;border-radius:3px}
+.sched-ico{font-size:.72rem}
+
 /* ─── MODAL ─── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:16px}
 .modal-overlay.show{display:flex}
@@ -970,17 +986,25 @@ async function openTrnDetail(trnId){
   $('detail-panel').classList.add('open');
   document.body.style.overflow='hidden';
 
-  setupDetailTabs(trn.status);
   updateDetailActions();
 
   const hasBracket=trn.status==='in_progress'||trn.status==='finished';
   $('dp-body').innerHTML='<div class="loading-note">Yuklanmoqda…</div>';
   if(hasBracket){
-    await Promise.all([loadBracket(trnId),loadTrnRegs(trnId)]);
-    switchDetailTab('bracket');
+    if(isAdmin){
+      await Promise.all([loadBracket(trnId),loadTrnRegs(trnId)]);
+    } else {
+      await loadBracket(trnId);
+    }
+    setupDetailTabs(trn.status);
+    updateDetailActions();
+    switchDetailTab(isAdmin?'bracket':'jadval');
   } else {
-    await loadTrnRegs(trnId);
-    renderRegs();
+    if(isAdmin) await loadTrnRegs(trnId);
+    setupDetailTabs(trn.status);
+    updateDetailActions();
+    if(isAdmin) renderRegs();
+    else $('dp-body').innerHTML='<div class="empty-note">Setka hali yaratilmagan</div>';
   }
 }
 
@@ -989,9 +1013,10 @@ function setupDetailTabs(status){
   const hasTables=hasBracket&&(currentTrn?.table_count>0||bracketMatches.some(m=>m.table_num>0));
   const tabs=$('dp-inner-tabs');
   let html='';
-  if(hasBracket) html+=`<div class="dp-tab" data-dtab="bracket">Setka</div>`;
-  if(hasTables)  html+=`<div class="dp-tab" data-dtab="tables">🎱 Stollar</div>`;
-  html+=`<div class="dp-tab" data-dtab="regs">Ro'yxat <span class="dp-cnt" id="rc-all"></span></div>`;
+  if(hasBracket&&isAdmin) html+=`<div class="dp-tab" data-dtab="bracket">Setka</div>`;
+  if(hasBracket)          html+=`<div class="dp-tab" data-dtab="jadval">📋 Jadval</div>`;
+  if(hasTables&&isAdmin)  html+=`<div class="dp-tab" data-dtab="tables">🎱 Stollar</div>`;
+  if(isAdmin) html+=`<div class="dp-tab" data-dtab="regs">Ro'yxat <span class="dp-cnt" id="rc-all"></span></div>`;
   tabs.innerHTML=html;
   document.querySelectorAll('.dp-tab').forEach(t=>{
     t.addEventListener('click',()=>{
@@ -1000,7 +1025,10 @@ function setupDetailTabs(status){
       switchDetailTab(t.dataset.dtab);
     });
   });
-  currentDetailTab=hasBracket?'bracket':'regs';
+  // default tab selection
+  if(hasBracket&&isAdmin) currentDetailTab='bracket';
+  else if(hasBracket)     currentDetailTab='jadval';
+  else                    currentDetailTab='regs';
   document.querySelectorAll('.dp-tab').forEach(t=>{
     if(t.dataset.dtab===currentDetailTab) t.classList.add('active');
   });
@@ -1010,6 +1038,7 @@ function switchDetailTab(tab){
   currentDetailTab=tab;
   if(tab==='bracket') renderBracket();
   else if(tab==='tables') renderTableView();
+  else if(tab==='jadval') renderSchedule();
   else renderRegs();
 }
 
@@ -1174,7 +1203,10 @@ function refreshProgBar(){
 // ─── BRACKET ───
 async function loadBracket(trnId){
   try{
-    const r=await fetch(`/api/admin/tournaments/${trnId}/bracket`,{headers:auth()});
+    const url=isAdmin
+      ?`/api/admin/tournaments/${trnId}/bracket`
+      :`/api/tournaments/${trnId}/bracket`;
+    const r=await fetch(url,{headers:auth()});
     bracketMatches=r.ok?await r.json()||[]:[];
   }catch(e){bracketMatches=[];}
 }
@@ -1273,6 +1305,72 @@ function renderTableView(){
   }
 
   body.innerHTML=`<div class="tables-grid">${cards}</div>${waitingHtml}`;
+}
+
+function renderSchedule(){
+  const body=$('dp-body');
+  if(!bracketMatches||!bracketMatches.length){
+    body.innerHTML='<div class="empty-note">Setka yo\'q</div>';return;
+  }
+  const GF=2000,LBO=1000;
+  const rounds={};
+  bracketMatches.forEach(m=>{
+    if(m.status==='bye'||m.status==='void') return; // skip BYE and empty slots
+    if(!rounds[m.round]) rounds[m.round]=[];
+    rounds[m.round].push(m);
+  });
+  // Also include void matches if they have at least one player
+  bracketMatches.forEach(m=>{
+    if((m.status==='void'||m.status==='pending')&&(m.player1_name||m.player2_name)){
+      if(!rounds[m.round]) rounds[m.round]=[];
+      if(!rounds[m.round].find(x=>x.id===m.id)) rounds[m.round].push(m);
+    }
+  });
+  const rnums=Object.keys(rounds).map(Number).sort((a,b)=>a-b);
+  if(!rnums.length){body.innerHTML='<div class="empty-note">O\'yinlar yo\'q</div>';return;}
+
+  body.innerHTML=rnums.map(rn=>{
+    let lbl;
+    if(rn===GF) lbl='🏆 Grand Final';
+    else if(rn>=LBO+1) lbl='Yutqazuvchilar · Raund '+(rn-LBO);
+    else lbl='Raund '+rn;
+
+    const rows=rounds[rn].map(m=>{
+      const st=m.status;
+      const p1=m.player1_name||'—';
+      const p2=m.player2_name||'—';
+      const w1=m.winner_slot===1;
+      const w2=m.winner_slot===2;
+      const done=st==='done';
+      const live=st==='in_progress';
+      const ready=st==='ready';
+
+      let rowCls='sched-row';
+      if(live) rowCls+=' sr-active';
+      else if(ready) rowCls+=' sr-ready';
+      else if(done) rowCls+=' sr-done';
+
+      let ico='⏳',icoColor='var(--text3)';
+      if(live){ico='▶';icoColor='var(--gold)';}
+      else if(ready){ico='🎱';icoColor='var(--blue)';}
+      else if(done){ico='✅';icoColor='var(--green)';}
+
+      const tblBadge=m.table_num>0?`<span class="sched-tbl">🎱 ${m.table_num}-stol</span>`:'';
+
+      return `<div class="${rowCls}">
+        <span class="sched-mn">M${m.match_num}</span>
+        <span class="sched-p ${w1?'win':done&&!w1?'lose':''}">${w1?'🏆 ':''}${esc(p1)}</span>
+        <span class="sched-vs">vs</span>
+        <span class="sched-p ${w2?'win':done&&!w2?'lose':''}">${w2?'🏆 ':''}${esc(p2)}</span>
+        <div class="sched-right">${tblBadge}<span class="sched-ico" style="color:${icoColor}">${ico}</span></div>
+      </div>`;
+    }).join('');
+
+    return `<div class="sched-section">
+      <div class="sched-section-label">${lbl}</div>
+      ${rows}
+    </div>`;
+  }).join('');
 }
 
 function renderBracket(){
@@ -1379,7 +1477,9 @@ async function setWinner(matchId,slot){
         if(trn) trn.status='finished';
         setupDetailTabs('finished');updateDetailActions();
       }
-      await loadBracket(currentTrn.id);renderBracket();
+      await loadBracket(currentTrn.id);
+      setupDetailTabs(currentTrn.status);
+      switchDetailTab(currentDetailTab==='jadval'?'jadval':'bracket');
     } else {
       showToast(d.error||'Xatolik','err');
       document.querySelectorAll('.mc-win-btn').forEach(b=>b.disabled=false);
@@ -1398,7 +1498,7 @@ async function assignTable(matchId){
     const d=await r.json();
     if(r.ok){
       showToast('📬 Stol belgilandi, ishtirokchilarga xabar yuborildi!');
-      await loadBracket(currentTrn.id);renderBracket();
+      await loadBracket(currentTrn.id);setupDetailTabs(currentTrn.status);switchDetailTab(currentDetailTab);
     } else showToast(d.error||'Xatolik','err');
   }catch(e){showToast('Tarmoq xatosi','err');}
 }
@@ -1423,7 +1523,7 @@ async function quickStart(matchId){
     const d=await r.json();
     if(r.ok){
       showToast('▶ O\'yin boshlandi');
-      await loadBracket(currentTrn.id);renderBracket();
+      await loadBracket(currentTrn.id);setupDetailTabs(currentTrn.status);switchDetailTab(currentDetailTab);
     } else showToast(d.error||'Xatolik','err');
   }catch(e){showToast('Tarmoq xatosi','err');}
 }
@@ -1438,8 +1538,7 @@ async function startMatch(matchId){
     const d=await r.json();
     if(r.ok){
       showToast('▶ O\'yin boshlandi'+(tableNum>0?' · Stol '+tableNum:''));
-      await loadBracket(currentTrn.id);
-      renderBracket();
+      await loadBracket(currentTrn.id);setupDetailTabs(currentTrn.status);switchDetailTab(currentDetailTab);
     } else showToast(d.error||'Xatolik','err');
   }catch(e){showToast('Tarmoq xatosi','err');}
 }
@@ -1457,7 +1556,7 @@ async function genBracket(id){
       $('dp-meta').innerHTML=`<span class="sp sp-in_progress">Jarayonda</span>`;
       $('dp-prog-wrap').style.display='none';
       const trn=trnList.find(t=>t.id===id);if(trn) trn.status='in_progress';
-      setupDetailTabs('in_progress');updateDetailActions();renderBracket();
+      setupDetailTabs('in_progress');updateDetailActions();switchDetailTab('bracket');
       loadTournaments(currentTrnStatus);
     } else {showToast(d.error||'Xatolik','err');if(btn) btn.disabled=false;}
   }catch(e){showToast('Tarmoq xatosi','err');if(btn) btn.disabled=false;}
@@ -1468,7 +1567,7 @@ async function shuffleSeed(id){
   try{
     const r=await fetch(`/api/admin/tournaments/${id}/bracket/shuffle`,{method:'POST',headers:auth()});
     const d=await r.json();
-    if(r.ok){showToast('🔀 Tartib yangilandi');bracketMatches=Array.isArray(d)?d:[];if(currentDetailTab==='bracket') renderBracket();}
+    if(r.ok){showToast('🔀 Tartib yangilandi');bracketMatches=Array.isArray(d)?d:[];setupDetailTabs(currentTrn.status);switchDetailTab(currentDetailTab);}
     else showToast(d.error||'Xatolik','err');
   }catch(e){showToast('Tarmoq xatosi','err');}
 }
