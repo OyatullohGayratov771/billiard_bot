@@ -162,6 +162,37 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
 /* ── FOOTER ── */
 .foot{position:fixed;bottom:0;left:0;right:0;background:#04040c;border-top:1px solid #101024;padding:6px 22px;display:flex;justify-content:space-between;font-size:.68rem;color:#282850}
 
+/* ── TABS ── */
+.tv-tabs{display:flex;gap:0;border-bottom:2px solid #12122a;background:#07070f;padding:0 24px}
+.tv-tab{padding:10px 22px;font-size:.78rem;font-weight:600;letter-spacing:.5px;cursor:pointer;border:none;background:none;color:#404070;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .2s,border-color .2s}
+.tv-tab:hover{color:#7070c0}
+.tv-tab.active{color:#f0c030;border-bottom-color:#f0c030}
+
+/* ── TABLE VIEW ── */
+.tbl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:20px 24px 60px}
+.tbl-card{border-radius:12px;overflow:hidden;border:1px solid #1a1a38;background:linear-gradient(160deg,#0d0d22,#0a0a1a)}
+.tbl-card.tbl-active{border-color:#d4a012;box-shadow:0 0 20px rgba(212,160,18,.25)}
+.tbl-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid #12122a}
+.tbl-num{font-size:.9rem;font-weight:800;color:#f0c030}
+.tbl-status{font-size:.68rem;color:#404070;letter-spacing:1px;display:flex;align-items:center;gap:5px}
+.tbl-status.is-active{color:#30c060}
+.tbl-live-dot{width:6px;height:6px;border-radius:50%;background:#30c060;animation:pulse 1.4s infinite;display:inline-block}
+.tbl-match{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s}
+.tbl-match:last-child{border-bottom:none}
+.tbl-match.tbl-match-live{background:rgba(212,160,18,.06)}
+.tbl-match.tbl-match-done{opacity:.8}
+.tbl-round{font-size:.6rem;color:#303060;margin-bottom:5px;letter-spacing:1px;text-transform:uppercase}
+.tbl-players{display:flex;flex-direction:column;gap:4px}
+.tbl-player{font-size:.84rem;font-weight:500;padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbl-player.win{color:#f0c030;font-weight:700}
+.tbl-player.lose{color:#2a2a52}
+.tbl-vs{font-size:.65rem;color:#282850;text-align:center}
+.queue-list{padding:8px 24px 20px;display:flex;flex-direction:column;gap:6px}
+.queue-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid #12122a;font-size:.84rem}
+.queue-num{color:#303060;min-width:22px;font-size:.7rem}
+.queue-p{color:#5050a0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue-vs{color:#282850;font-size:.68rem}
+
 /* ── MOBILE ── */
 @media(max-width:700px){
   .bracket{flex-direction:column;padding:8px 12px 0}
@@ -172,6 +203,7 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
   .section-hdr{padding:14px 14px 8px}
   .gf-wrap{padding:12px 14px 40px}
   .rr-wrap{padding:12px 14px 40px}
+  .tbl-grid{grid-template-columns:1fr;padding:12px 12px 60px}
 }
 </style>
 </head>
@@ -191,6 +223,11 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
   </div>
 </header>
 
+<nav class="tv-tabs">
+  <button class="tv-tab active" data-tab="bracket" onclick="switchTab('bracket')">🏆 Bracket</button>
+  <button class="tv-tab" data-tab="tables" id="tab-tables" style="display:none" onclick="switchTab('tables')">🎱 Stollar</button>
+</nav>
+
 <div id="main">
   <div class="empty"><div class="big">⏳</div><div>Bracket yuklanmoqda…</div></div>
 </div>
@@ -204,6 +241,9 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
 const TOKEN   = '{{TOKEN}}';
 const dataURL = '/tv/' + TOKEN + '/data';
 const sseURL  = '/tv/' + TOKEN + '/sse';
+
+let currentData = null;
+let activeTab = 'bracket';
 
 /* ── SSE ── */
 let sse, retryMs = 1500;
@@ -242,8 +282,18 @@ async function loadData() {
   finally { ov.className = 'overlay'; }
 }
 
+/* ── TAB SWITCH ── */
+function switchTab(name) {
+  activeTab = name;
+  document.querySelectorAll('.tv-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === name);
+  });
+  renderActiveTab();
+}
+
 /* ── RENDER ROUTER ── */
 function render(data) {
+  currentData = data;
   const t = data.tournament || {};
   const matches = data.matches || [];
 
@@ -263,6 +313,24 @@ function render(data) {
   if (typeInfo) { tp.textContent = typeInfo; tp.style.display = 'inline-flex'; }
   else tp.style.display = 'none';
 
+  // Show/hide tables tab
+  const hasTables = matches.some(m => m.table_num > 0);
+  const tablesTab = document.getElementById('tab-tables');
+  if (tablesTab) tablesTab.style.display = hasTables ? '' : 'none';
+  if (!hasTables && activeTab === 'tables') activeTab = 'bracket';
+
+  // Sync tab highlight
+  document.querySelectorAll('.tv-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === activeTab);
+  });
+
+  renderActiveTab();
+}
+
+function renderActiveTab() {
+  if (!currentData) return;
+  const t = currentData.tournament || {};
+  const matches = currentData.matches || [];
   const main = document.getElementById('main');
   main.innerHTML = '';
 
@@ -271,7 +339,9 @@ function render(data) {
     return;
   }
 
-  if (t.type === 'double_elimination') renderDE(main, t, matches);
+  if (activeTab === 'tables') {
+    renderTablesView(main, t, matches);
+  } else if (t.type === 'double_elimination') renderDE(main, t, matches);
   else if (t.type === 'round_robin')   renderRR(main, t, matches);
   else                                 renderSE(main, t, matches);
 }
@@ -404,8 +474,8 @@ function renderRR(container, t, matches) {
     const card = document.createElement('div');
     card.className = 'rr-card' + (m.status==='ready'?' live':(m.status==='done'?' done':''));
     const done = m.status === 'done';
-    const p1win = done && m.winner_tg_id != null && m.winner_tg_id === m.player1_tg_id;
-    const p2win = done && m.winner_tg_id != null && m.winner_tg_id === m.player2_tg_id;
+    const p1win = done && m.winner_slot === 1;
+    const p2win = done && m.winner_slot === 2;
 
     const numEl = document.createElement('span');
     numEl.className = 'rr-num';
@@ -443,33 +513,25 @@ function renderRR(container, t, matches) {
   shdr.textContent = 'Jadval';
   stand.appendChild(shdr);
 
-  // compute wins
+  // compute wins and played — keyed by player name (avoids int64 precision issues)
   const wins = {}, played = {};
   for (const m of matches) {
-    if (m.status !== 'done' || !m.winner_tg_id) continue;
-    const wid = String(m.winner_tg_id);
-    wins[wid] = (wins[wid]||0) + 1;
-  }
-  // collect all players
-  const players = {};
-  for (const m of matches) {
-    if (m.player1_tg_id && m.player1_name) players[m.player1_tg_id] = m.player1_name;
-    if (m.player2_tg_id && m.player2_name) players[m.player2_tg_id] = m.player2_name;
-  }
-  const total = matches.length;
-  const done  = matches.filter(m=>m.status==='done').length;
-
-  // count played
-  for (const m of matches) {
     if (m.status !== 'done') continue;
-    [m.player1_tg_id, m.player2_tg_id].forEach(id => {
-      if (id) played[id] = (played[id]||0)+1;
-    });
+    const wname = m.winner_slot===1 ? m.player1_name : m.winner_slot===2 ? m.player2_name : null;
+    if (wname) wins[wname] = (wins[wname]||0) + 1;
+    if (m.player1_name) played[m.player1_name] = (played[m.player1_name]||0)+1;
+    if (m.player2_name) played[m.player2_name] = (played[m.player2_name]||0)+1;
+  }
+  // collect all players by name
+  const playerNames = new Set();
+  for (const m of matches) {
+    if (m.player1_name) playerNames.add(m.player1_name);
+    if (m.player2_name) playerNames.add(m.player2_name);
   }
 
-  const sorted = Object.entries(players).sort((a,b)=>{
-    const wa = wins[String(a[0])]||0;
-    const wb2 = wins[String(b[0])]||0;
+  const sorted = [...playerNames].map(n => [n, n]).sort((a,b)=>{
+    const wa = wins[a[0]]||0;
+    const wb2 = wins[b[0]]||0;
     return wb2 - wa;
   });
 
@@ -481,9 +543,9 @@ function renderRR(container, t, matches) {
     '<span class="s-num" title="O\'ynagan">O</span><span class="s-num" title="G\'alaba">G</span><span class="s-num" title="Mag\'lubiyat">M</span>';
   stand.appendChild(hr);
 
-  sorted.forEach(([id, name], idx) => {
-    const w = wins[String(id)]||0;
-    const p = played[id]||0;
+  sorted.forEach(([name], idx) => {
+    const w = wins[name]||0;
+    const p = played[name]||0;
     const l = p - w;
     const row = document.createElement('div');
     row.className = 'standings-row' + (idx===0?' first':'');
@@ -584,8 +646,8 @@ function buildCard(m) {
   const done = m.status === 'done';
   const div = document.createElement('div');
   div.className = 'card' + (live?' live':'') + (done?' done':'');
-  const p1win = done && m.winner_tg_id != null && m.winner_tg_id === m.player1_tg_id;
-  const p2win = done && m.winner_tg_id != null && m.winner_tg_id === m.player2_tg_id;
+  const p1win = done && m.winner_slot === 1;
+  const p2win = done && m.winner_slot === 2;
   div.innerHTML = mkPlayer(m.player1_name, live, p1win, done&&!p1win) +
                   mkPlayer(m.player2_name, live, p2win, done&&!p2win);
   return div;
@@ -610,6 +672,137 @@ function statusLabel(s) {
 }
 function typeLabel(t) {
   return {single_elimination:'🎯 Single Elimination',double_elimination:'🔄 Double Elimination',round_robin:'🔁 Round Robin'}[t]||null;
+}
+
+/* ══════════════════════════════════════════
+   TABLE VIEW
+══════════════════════════════════════════ */
+function renderTablesView(container, t, matches) {
+  // Group by table_num; collect unassigned ready/pending as queue
+  const tableMap = {};
+  const queue = [];
+
+  for (const m of matches) {
+    if (m.status === 'void') continue;
+    if (m.table_num && m.table_num > 0) {
+      if (!tableMap[m.table_num]) tableMap[m.table_num] = [];
+      tableMap[m.table_num].push(m);
+    } else if (m.status === 'ready' || m.status === 'pending') {
+      queue.push(m);
+    }
+  }
+
+  const tableNums = Object.keys(tableMap).map(Number).sort((a,b)=>a-b);
+
+  if (!tableNums.length && !queue.length) {
+    container.innerHTML = '<div class="empty"><div class="big">🎱</div><div>Stollar hali belgilanmagan</div></div>';
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'tbl-grid';
+
+  for (const tn of tableNums) {
+    const tMatches = tableMap[tn].slice().sort((a,b)=>{
+      const ra = a.round < 1000 ? a.round : a.round - 1000;
+      const rb = b.round < 1000 ? b.round : b.round - 1000;
+      return ra - rb || a.match_num - b.match_num;
+    });
+
+    const activeMatch = tMatches.find(m => m.status === 'ready');
+
+    const card = document.createElement('div');
+    card.className = 'tbl-card' + (activeMatch ? ' tbl-active' : '');
+
+    // Header
+    const head = document.createElement('div');
+    head.className = 'tbl-head';
+    const numEl = document.createElement('div');
+    numEl.className = 'tbl-num';
+    numEl.textContent = tn + '-stol';
+    const stEl = document.createElement('div');
+    stEl.className = 'tbl-status';
+    if (activeMatch) {
+      stEl.innerHTML = '<span class="tbl-live-dot"></span> FAOL';
+      stEl.classList.add('is-active');
+    } else {
+      const lastDone = [...tMatches].reverse().find(m => m.status === 'done');
+      stEl.textContent = lastDone ? 'Tugan' : 'Kutmoqda';
+    }
+    head.appendChild(numEl);
+    head.appendChild(stEl);
+    card.appendChild(head);
+
+    // Match rows (skip pending/bye)
+    for (const m of tMatches) {
+      if (m.status === 'pending' || m.status === 'bye') continue;
+      const done = m.status === 'done';
+      const live = m.status === 'ready';
+      const w1 = done && m.winner_slot === 1;
+      const w2 = done && m.winner_slot === 2;
+
+      const row = document.createElement('div');
+      row.className = 'tbl-match' + (live ? ' tbl-match-live' : '') + (done ? ' tbl-match-done' : '');
+
+      const rlbl = document.createElement('div');
+      rlbl.className = 'tbl-round';
+      const rn = m.round >= 2000 ? 'GF' : m.round >= 1000 ? 'LB R'+(m.round-1000) : 'R'+m.round;
+      rlbl.textContent = rn;
+
+      const pl = document.createElement('div');
+      pl.className = 'tbl-players';
+
+      const p1 = document.createElement('div');
+      p1.className = 'tbl-player' + (w1 ? ' win' : (done ? ' lose' : ''));
+      p1.textContent = (w1 ? '🏆 ' : (done ? '❌ ' : (live ? '🎱 ' : ''))) + esc(m.player1_name || '—');
+
+      const vs = document.createElement('div');
+      vs.className = 'tbl-vs';
+      vs.textContent = 'vs';
+
+      const p2 = document.createElement('div');
+      p2.className = 'tbl-player' + (w2 ? ' win' : (done ? ' lose' : ''));
+      p2.textContent = (w2 ? '🏆 ' : (done ? '❌ ' : (live ? '🎱 ' : ''))) + esc(m.player2_name || '—');
+
+      pl.appendChild(p1);
+      pl.appendChild(vs);
+      pl.appendChild(p2);
+      row.appendChild(rlbl);
+      row.appendChild(pl);
+      card.appendChild(row);
+    }
+
+    grid.appendChild(card);
+  }
+
+  container.appendChild(grid);
+
+  // Queue section
+  if (queue.length) {
+    const qSec = document.createElement('div');
+    qSec.className = 'section-wrap';
+    const qHdr = document.createElement('div');
+    qHdr.className = 'section-hdr';
+    qHdr.textContent = '⏳ Navbatda (' + queue.length + ')';
+    qSec.appendChild(qHdr);
+
+    const qList = document.createElement('div');
+    qList.className = 'queue-list';
+
+    queue.forEach((m, i) => {
+      const row = document.createElement('div');
+      row.className = 'queue-row';
+      row.innerHTML =
+        '<span class="queue-num">'+(i+1)+'.</span>'+
+        '<span class="queue-p">'+esc(m.player1_name||'—')+'</span>'+
+        '<span class="queue-vs">vs</span>'+
+        '<span class="queue-p">'+esc(m.player2_name||'—')+'</span>';
+      qList.appendChild(row);
+    });
+
+    qSec.appendChild(qList);
+    container.appendChild(qSec);
+  }
 }
 
 // boot

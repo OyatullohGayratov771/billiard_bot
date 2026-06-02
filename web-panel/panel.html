@@ -228,6 +228,30 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .mc-table-inp{width:68px;background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:4px 7px;border-radius:3px;font-size:.73rem;outline:none;font-family:inherit}
 .mc-table-inp:focus{border-color:rgba(46,204,113,.4)}
 
+/* Tables view */
+.tables-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:16px}
+.tbl-card{background:var(--card2);border:1px solid var(--border2);border-radius:7px;overflow:hidden}
+.tbl-card-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(52,152,219,.07);border-bottom:1px solid var(--border2)}
+.tbl-card-num{font-size:.75rem;font-weight:800;color:var(--blue);letter-spacing:.5px}
+.tbl-card-status{font-size:.54rem;font-weight:700;padding:2px 8px;border-radius:3px}
+.tbl-card-status.active{background:rgba(46,204,113,.12);color:var(--green)}
+.tbl-card-status.idle{background:rgba(255,255,255,.05);color:var(--text3)}
+.tbl-match-row{display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--border2);font-size:.63rem}
+.tbl-match-row:last-child{border-bottom:none}
+.tbl-match-row.active-row{background:rgba(240,192,48,.05);border-left:2px solid var(--gold)}
+.tbl-match-row.done-row{opacity:.75}
+.tbl-round-lbl{color:var(--text3);font-size:.52rem;min-width:28px;flex-shrink:0}
+.tbl-players{flex:1;display:flex;flex-direction:column;gap:2px}
+.tbl-player{display:flex;align-items:center;gap:4px;font-size:.62rem}
+.tbl-player.winner{color:var(--green);font-weight:700}
+.tbl-player.loser{color:var(--text3)}
+.tbl-player.current{color:var(--text)}
+.tbl-match-sp{font-size:.52rem;padding:1px 5px;border-radius:2px;flex-shrink:0}
+.tbl-match-sp.done{background:rgba(46,204,113,.1);color:var(--green)}
+.tbl-match-sp.active{background:rgba(240,192,48,.12);color:var(--gold)}
+.tbl-match-sp.wait{background:rgba(255,255,255,.05);color:var(--text3)}
+.tbl-empty{padding:20px;text-align:center;color:var(--text3);font-size:.65rem}
+
 /* ─── MODAL ─── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:16px}
 .modal-overlay.show{display:flex}
@@ -962,9 +986,11 @@ async function openTrnDetail(trnId){
 
 function setupDetailTabs(status){
   const hasBracket=status==='in_progress'||status==='finished';
+  const hasTables=hasBracket&&(currentTrn?.table_count>0||bracketMatches.some(m=>m.table_num>0));
   const tabs=$('dp-inner-tabs');
   let html='';
   if(hasBracket) html+=`<div class="dp-tab" data-dtab="bracket">Setka</div>`;
+  if(hasTables)  html+=`<div class="dp-tab" data-dtab="tables">🎱 Stollar</div>`;
   html+=`<div class="dp-tab" data-dtab="regs">Ro'yxat <span class="dp-cnt" id="rc-all"></span></div>`;
   tabs.innerHTML=html;
   document.querySelectorAll('.dp-tab').forEach(t=>{
@@ -983,6 +1009,7 @@ function setupDetailTabs(status){
 function switchDetailTab(tab){
   currentDetailTab=tab;
   if(tab==='bracket') renderBracket();
+  else if(tab==='tables') renderTableView();
   else renderRegs();
 }
 
@@ -1150,6 +1177,102 @@ async function loadBracket(trnId){
     const r=await fetch(`/api/admin/tournaments/${trnId}/bracket`,{headers:auth()});
     bracketMatches=r.ok?await r.json()||[]:[];
   }catch(e){bracketMatches=[];}
+}
+
+function renderTableView(){
+  const body=$('dp-body');
+  if(!bracketMatches||!bracketMatches.length){
+    body.innerHTML='<div class="empty-note">Setka yo\'q</div>';return;
+  }
+
+  // Group matches by table_num (only assigned ones)
+  const tables={};
+  for(const m of bracketMatches){
+    if(m.table_num>0){
+      if(!tables[m.table_num]) tables[m.table_num]=[];
+      tables[m.table_num].push(m);
+    }
+  }
+  const tableNums=Object.keys(tables).map(Number).sort((a,b)=>a-b);
+
+  if(!tableNums.length){
+    body.innerHTML='<div class="empty-note">Hali hech bir matchga stol belgilanmagan</div>';return;
+  }
+
+  // Also find unassigned ready matches (waiting queue)
+  const waiting=bracketMatches.filter(m=>m.status==='ready'&&m.table_num===0);
+
+  const cards=tableNums.map(tn=>{
+    const ms=tables[tn].slice().sort((a,b)=>a.round-b.round||a.match_num-b.match_num);
+    const active=ms.find(m=>m.status==='in_progress');
+    const statusHtml=active
+      ? `<span class="tbl-card-status active">⚡ Faol</span>`
+      : `<span class="tbl-card-status idle">⏳ Navbat</span>`;
+
+    const rows=ms.map(m=>{
+      const p1=m.player1_name||'TBD', p2=m.player2_name||'TBD';
+      const w1=m.winner_slot===1, w2=m.winner_slot===2;
+      const isDone=m.status==='done', isActive=m.status==='in_progress';
+      const isReady=m.status==='ready';
+      const rowClass=isActive?'active-row':isDone?'done-row':'';
+      const spClass=isDone?'done':isActive?'active':'wait';
+      const spText=isDone?'Tugadi':isActive?'Jarayonda':'Navbatda';
+
+      const p1class=w1?'winner':isDone&&!w1?'loser':'current';
+      const p2class=w2?'winner':isDone&&!w2?'loser':'current';
+      const p1ico=w1?'🏆':isDone&&!w1?'❌':isActive?'🎱':'';
+      const p2ico=w2?'🏆':isDone&&!w2?'❌':isActive?'🎱':'';
+
+      // Round label
+      const GF=2000,LBO=1000;
+      let rlbl=`R${m.round}`;
+      if(m.round===GF) rlbl='GF';
+      else if(m.round>LBO) rlbl=`LB${m.round-LBO}`;
+
+      return`<div class="tbl-match-row ${rowClass}">
+        <span class="tbl-round-lbl">${rlbl} M${m.match_num}</span>
+        <div class="tbl-players">
+          <span class="tbl-player ${p1class}">${p1ico?p1ico+' ':''}${esc(p1)}</span>
+          <span class="tbl-player ${p2class}">${p2ico?p2ico+' ':''}${esc(p2)}</span>
+        </div>
+        <span class="tbl-match-sp ${spClass}">${spText}</span>
+      </div>`;
+    }).join('');
+
+    return`<div class="tbl-card">
+      <div class="tbl-card-head">
+        <span class="tbl-card-num">🎱 ${tn}-STOL</span>
+        ${statusHtml}
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+
+  // Waiting queue section
+  let waitingHtml='';
+  if(waiting.length){
+    const wRows=waiting.map(m=>{
+      const p1=m.player1_name||'TBD',p2=m.player2_name||'TBD';
+      const GF=2000,LBO=1000;
+      let rlbl=`R${m.round}`;
+      if(m.round===GF) rlbl='GF';
+      else if(m.round>LBO) rlbl=`LB${m.round-LBO}`;
+      return`<div class="tbl-match-row">
+        <span class="tbl-round-lbl">${rlbl} M${m.match_num}</span>
+        <div class="tbl-players">
+          <span class="tbl-player current">⏳ ${esc(p1)}</span>
+          <span class="tbl-player current">⏳ ${esc(p2)}</span>
+        </div>
+        <span class="tbl-match-sp wait">Navbatda</span>
+      </div>`;
+    }).join('');
+    waitingHtml=`<div style="margin-top:12px;padding:0 16px 16px">
+      <div class="br-section-label" style="margin-bottom:8px">⏳ Stol kutayotganlar</div>
+      <div class="tbl-card">${wRows}</div>
+    </div>`;
+  }
+
+  body.innerHTML=`<div class="tables-grid">${cards}</div>${waitingHtml}`;
 }
 
 function renderBracket(){

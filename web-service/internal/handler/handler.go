@@ -459,6 +459,7 @@ func (h *Handler) adminClips(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) adminTournaments(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
 	q := `SELECT t.id, t.name, COALESCE(b.name,'?'), t.scheduled_at, t.status, t.max_players,
+		       COALESCE(t.table_count,0),
 		       COUNT(tr.id) FILTER (WHERE tr.status='approved'),
 		       COUNT(tr.id) FILTER (WHERE tr.status='pending')
 		FROM tournaments t
@@ -483,6 +484,7 @@ func (h *Handler) adminTournaments(w http.ResponseWriter, r *http.Request) {
 		ScheduledAt string `json:"scheduled_at"`
 		Status      string `json:"status"`
 		MaxPlayers  int    `json:"max_players"`
+		TableCount  int    `json:"table_count"`
 		Registered  int    `json:"registered"`
 		Pending     int    `json:"pending"`
 	}
@@ -490,7 +492,7 @@ func (h *Handler) adminTournaments(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var i item
 		if err := rows.Scan(&i.ID, &i.Name, &i.BranchName, &i.ScheduledAt,
-			&i.Status, &i.MaxPlayers, &i.Registered, &i.Pending); err == nil {
+			&i.Status, &i.MaxPlayers, &i.TableCount, &i.Registered, &i.Pending); err == nil {
 			list = append(list, i)
 		}
 	}
