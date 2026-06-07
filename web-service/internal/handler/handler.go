@@ -78,6 +78,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/admin/clips/{id}/retry", h.withRole(h.adminClipRetry, "operator", "admin", "superadmin"))
 	// Match management
 	mux.HandleFunc("PUT /api/admin/matches/{id}/table", h.withRole(h.adminMatchAssignTable, "operator", "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/matches/{id}/schedule", h.withRole(h.adminMatchSchedule, "admin", "superadmin"))
 	mux.HandleFunc("PUT /api/admin/matches/{id}/start", h.withRole(h.adminMatchStart, "operator", "admin", "superadmin"))
 
 	// Superadmin-only user management
@@ -631,26 +632,26 @@ func (h *Handler) adminMatchAssignTable(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) sendMatchTableNotifications(matchID int64, tableNum int) {
 	var p1TgID, p2TgID *int64
 	var p1Name, p2Name, trnName string
-	var scheduledAt *time.Time
+	var matchScheduledAt *time.Time
 	err := h.db.QueryRow(`
 		SELECT m.player1_tg_id, m.player2_tg_id,
 		       COALESCE(r1.user_name, u1.first_name, ''), COALESCE(r2.user_name, u2.first_name, ''),
-		       t.name, t.scheduled_at
+		       t.name, m.match_scheduled_at
 		FROM tournament_matches m
 		JOIN tournaments t ON t.id=m.tournament_id
 		LEFT JOIN tournament_registrations r1 ON r1.tournament_id=m.tournament_id AND r1.user_tg_id=m.player1_tg_id
 		LEFT JOIN tournament_registrations r2 ON r2.tournament_id=m.tournament_id AND r2.user_tg_id=m.player2_tg_id
 		LEFT JOIN users u1 ON u1.telegram_id=m.player1_tg_id
 		LEFT JOIN users u2 ON u2.telegram_id=m.player2_tg_id
-		WHERE m.id=$1`, matchID).Scan(&p1TgID, &p2TgID, &p1Name, &p2Name, &trnName, &scheduledAt)
+		WHERE m.id=$1`, matchID).Scan(&p1TgID, &p2TgID, &p1Name, &p2Name, &trnName, &matchScheduledAt)
 	if err != nil {
 		return
 	}
 
 	timeStr := ""
-	if scheduledAt != nil {
+	if matchScheduledAt != nil {
 		tz := time.FixedZone("UZT", 5*3600)
-		timeStr = "\n🕐 Vaqt: <b>" + scheduledAt.In(tz).Format("02.01.2006 15:04") + "</b>"
+		timeStr = "\n🕐 Vaqt: <b>" + matchScheduledAt.In(tz).Format("02.01.2006 15:04") + "</b>"
 	}
 
 	notify := func(tgID int64, opponentName string) {
@@ -674,6 +675,11 @@ func (h *Handler) sendMatchTableNotifications(matchID int64, tableNum int) {
 func (h *Handler) adminMatchStart(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	h.trnProxy(w, r, http.MethodPut, "/matches/"+id+"/start", r.Body)
+}
+
+func (h *Handler) adminMatchSchedule(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	h.trnProxy(w, r, http.MethodPut, "/matches/"+id+"/schedule", r.Body)
 }
 
 func (h *Handler) adminBranches(w http.ResponseWriter, r *http.Request) {

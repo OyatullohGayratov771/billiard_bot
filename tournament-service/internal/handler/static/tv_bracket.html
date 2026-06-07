@@ -706,6 +706,13 @@ function fmtDate(iso) {
   return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+
          d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
 }
+function fmtTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  // UTC+5 (UZT)
+  const uz = new Date(d.getTime() + 5*3600000);
+  return String(uz.getUTCHours()).padStart(2,'0') + ':' + String(uz.getUTCMinutes()).padStart(2,'0');
+}
 function statusLabel(s) {
   return {registration:"📋 Ro'yxat",in_progress:'⚡ Jarayonda',finished:'🏆 Yakunlandi',cancelled:'❌ Bekor'}[s]||s;
 }
@@ -786,6 +793,10 @@ function renderScheduleView(container, t, matches) {
         ? '<span class="sched-tbl">🎱 ' + m.table_num + '-stol</span>'
         : '';
 
+      const timeBadge = m.match_scheduled_at
+        ? '<span style="font-size:.6rem;color:#c0a000;background:rgba(192,160,0,.1);padding:2px 8px;border-radius:4px;white-space:nowrap">🕐 ' + fmtTime(m.match_scheduled_at) + '</span>'
+        : '';
+
       const row = document.createElement('div');
       row.className = rowCls;
       row.innerHTML =
@@ -793,7 +804,7 @@ function renderScheduleView(container, t, matches) {
         '<span class="sched-p' + (w1?' win':done&&!w1?' lose':p1tbd?' tbd':'') + '">' + (w1?'🏆 ':'') + esc(p1) + '</span>' +
         '<span class="sched-vs">vs</span>' +
         '<span class="sched-p' + (w2?' win':done&&!w2?' lose':p2tbd?' tbd':'') + '">' + (w2?'🏆 ':'') + esc(p2) + '</span>' +
-        '<div class="sched-right">' + tblBadge + '<span class="sched-ico" style="color:' + icoClr + '">' + ico + '</span></div>';
+        '<div class="sched-right">' + tblBadge + timeBadge + '<span class="sched-ico" style="color:' + icoClr + '">' + ico + '</span></div>';
 
       list.appendChild(row);
     }

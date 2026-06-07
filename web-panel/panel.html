@@ -508,6 +508,10 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
         <label class="form-label">Stollar soni <span style="color:var(--text3);font-weight:400">(0 = belgilanmagan)</span></label>
         <input type="number" id="f-tables" class="form-input" min="0" max="50" value="0" placeholder="Masalan: 4">
       </div>
+      <div class="form-group" id="f-slot-wrap">
+        <label class="form-label">O'yin davomiyligi <span style="color:var(--text3);font-weight:400">(daqiqa, har bir stol uchun)</span></label>
+        <input type="number" id="f-slot" class="form-input" min="5" max="180" value="30" placeholder="30">
+      </div>
       <div class="form-group" id="f-type-group">
         <label class="form-label">Format</label>
         <select id="f-type" class="form-input">
@@ -1307,6 +1311,46 @@ function renderTableView(){
   body.innerHTML=`<div class="tables-grid">${cards}</div>${waitingHtml}`;
 }
 
+function fmtMatchTime(isoStr){
+  if(!isoStr) return '';
+  const d=new Date(isoStr);
+  // UTC+5
+  const uz=new Date(d.getTime()+5*3600000);
+  const pad=n=>String(n).padStart(2,'0');
+  return `${pad(uz.getUTCHours())}:${pad(uz.getUTCMinutes())}`;
+}
+function fmtMatchDate(isoStr){
+  if(!isoStr) return '';
+  const d=new Date(isoStr);
+  const uz=new Date(d.getTime()+5*3600000);
+  const pad=n=>String(n).padStart(2,'0');
+  return `${pad(uz.getUTCDate())}.${pad(uz.getUTCMonth()+1)} ${pad(uz.getUTCHours())}:${pad(uz.getUTCMinutes())}`;
+}
+
+async function setMatchSchedule(matchId, inputId){
+  const val=document.getElementById(inputId)?.value;
+  if(!val){return;}
+  // val is "HH:MM" from the time input — combine with tournament date
+  const trnDate=currentTrn?.scheduled_at;
+  if(!trnDate){showToast('Turnir sanasi yo\'q','err');return;}
+  const base=new Date(trnDate);
+  const [h,min]=val.split(':').map(Number);
+  // Build ISO string: same date as tournament, new time (UZT = UTC+5)
+  const utcMs=Date.UTC(base.getFullYear(),base.getMonth(),base.getDate(),h-5<0?h-5+24:h-5,min);
+  const iso=new Date(utcMs).toISOString();
+  try{
+    const r=await fetch(`/api/admin/matches/${matchId}/schedule`,{
+      method:'PUT',headers:{...auth(),'Content-Type':'application/json'},
+      body:JSON.stringify({scheduled_at:iso})
+    });
+    if(r.ok){
+      showToast('🕐 Vaqt saqlandi');
+      await loadBracket(currentTrn.id);
+      renderSchedule();
+    } else showToast('Xatolik','err');
+  }catch(e){showToast('Tarmoq xatosi','err');}
+}
+
 function renderSchedule(){
   const body=$('dp-body');
   if(!bracketMatches||!bracketMatches.length){
@@ -1315,11 +1359,10 @@ function renderSchedule(){
   const GF=2000,LBO=1000;
   const rounds={};
   bracketMatches.forEach(m=>{
-    if(m.status==='bye'||m.status==='void') return; // skip BYE and empty slots
+    if(m.status==='bye'||m.status==='void') return;
     if(!rounds[m.round]) rounds[m.round]=[];
     rounds[m.round].push(m);
   });
-  // Also include void matches if they have at least one player
   bracketMatches.forEach(m=>{
     if((m.status==='void'||m.status==='pending')&&(m.player1_name||m.player2_name)){
       if(!rounds[m.round]) rounds[m.round]=[];
@@ -1357,12 +1400,30 @@ function renderSchedule(){
 
       const tblBadge=m.table_num>0?`<span class="sched-tbl">🎱 ${m.table_num}-stol</span>`:'';
 
-      return `<div class="${rowCls}">
-        <span class="sched-mn">M${m.match_num}</span>
-        <span class="sched-p ${w1?'win':done&&!w1?'lose':''}">${w1?'🏆 ':''}${esc(p1)}</span>
-        <span class="sched-vs">vs</span>
-        <span class="sched-p ${w2?'win':done&&!w2?'lose':''}">${w2?'🏆 ':''}${esc(p2)}</span>
-        <div class="sched-right">${tblBadge}<span class="sched-ico" style="color:${icoColor}">${ico}</span></div>
+      // Time badge
+      const matchTime=fmtMatchTime(m.match_scheduled_at);
+      const timeBadge=matchTime?`<span style="font-size:.58rem;color:var(--gold);background:rgba(212,175,55,.1);padding:2px 7px;border-radius:3px;white-space:nowrap">🕐 ${matchTime}</span>`:'';
+
+      // Admin time edit (only for non-done matches)
+      let timeEdit='';
+      if(isAdmin&&!done){
+        const inputId=`sti-${m.id}`;
+        const curTime=matchTime||'';
+        timeEdit=`<div style="display:flex;align-items:center;gap:4px;margin-top:5px">
+          <input type="time" id="${inputId}" value="${curTime}" style="background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:3px 6px;border-radius:3px;font-size:.65rem;outline:none;font-family:inherit;width:88px">
+          <button onclick="setMatchSchedule(${m.id},'${inputId}')" style="background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.3);color:var(--gold);padding:3px 8px;border-radius:3px;font-size:.6rem;font-weight:700;cursor:pointer;white-space:nowrap">💾</button>
+        </div>`;
+      }
+
+      return `<div style="margin-bottom:4px">
+        <div class="${rowCls}">
+          <span class="sched-mn">M${m.match_num}</span>
+          <span class="sched-p ${w1?'win':done&&!w1?'lose':''}">${w1?'🏆 ':''}${esc(p1)}</span>
+          <span class="sched-vs">vs</span>
+          <span class="sched-p ${w2?'win':done&&!w2?'lose':''}">${w2?'🏆 ':''}${esc(p2)}</span>
+          <div class="sched-right">${tblBadge}${timeBadge}<span class="sched-ico" style="color:${icoColor}">${ico}</span></div>
+        </div>
+        ${timeEdit}
       </div>`;
     }).join('');
 
@@ -1602,8 +1663,8 @@ async function openCreateModal(){
   await loadBranches();
   modalMode='create';
   $('modal-title').textContent='Yangi Turnir';
-  $('f-name').value='';$('f-date').value='';$('f-max').value='8';$('f-type').value='single_elimination';$('f-tables').value='0';
-  $('f-branch-wrap').style.display='';$('f-type-group').style.display='';$('f-tables-wrap').style.display='';
+  $('f-name').value='';$('f-date').value='';$('f-max').value='8';$('f-type').value='single_elimination';$('f-tables').value='0';$('f-slot').value='30';
+  $('f-branch-wrap').style.display='';$('f-type-group').style.display='';$('f-tables-wrap').style.display='';$('f-slot-wrap').style.display='';
   populateBranchSelect(null);
   $('modal-submit').disabled=false;
   $('modal-overlay').classList.add('show');
@@ -1621,7 +1682,7 @@ async function openEditModal(){
     $('f-date').value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
   $('f-max').value=currentTrn.max_players;
-  $('f-branch-wrap').style.display='none';$('f-type-group').style.display='none';$('f-tables-wrap').style.display='none';
+  $('f-branch-wrap').style.display='none';$('f-type-group').style.display='none';$('f-tables-wrap').style.display='none';$('f-slot-wrap').style.display='none';
   $('modal-submit').disabled=false;
   $('modal-overlay').classList.add('show');
   setTimeout(()=>$('f-name').focus(),100);
@@ -1641,9 +1702,10 @@ async function submitTrnForm(){
       const branchId=parseInt($('f-branch').value)||0;
       const type=$('f-type').value||'single_elimination';
       const tableCount=parseInt($('f-tables').value)||0;
+      const slotMinutes=parseInt($('f-slot').value)||30;
       r=await fetch('/api/admin/tournaments',{
         method:'POST',headers:{...auth(),'Content-Type':'application/json'},
-        body:JSON.stringify({name,branch_id:branchId,scheduled_at:scheduledAt,max_players:maxPlayers,type,table_count:tableCount})
+        body:JSON.stringify({name,branch_id:branchId,scheduled_at:scheduledAt,max_players:maxPlayers,type,table_count:tableCount,slot_minutes:slotMinutes})
       });
     } else {
       r=await fetch(`/api/admin/tournaments/${currentTrn.id}`,{

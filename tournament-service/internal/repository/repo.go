@@ -20,17 +20,20 @@ func New(db *sql.DB) *Repo {
 
 // ===================== TOURNAMENTS =====================
 
-func (r *Repo) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, createdBy int64, joinCode string, tournamentType string, tableCount int) (*models.Tournament, error) {
+func (r *Repo) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, createdBy int64, joinCode string, tournamentType string, tableCount int, slotMinutes int) (*models.Tournament, error) {
 	if tournamentType == "" {
 		tournamentType = models.TournamentTypeSingleElim
 	}
+	if slotMinutes <= 0 {
+		slotMinutes = 30
+	}
 	t := &models.Tournament{}
 	err := r.db.QueryRow(`
-		INSERT INTO tournaments (name, branch_id, table_id, scheduled_at, price, max_players, created_by, join_code, type, table_count)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-		RETURNING id, name, branch_id, table_id, scheduled_at, price, max_players, status, type, created_by, created_at, join_code, table_count`,
-		name, branchID, tableID, scheduledAt, price, maxPlayers, createdBy, joinCode, tournamentType, tableCount,
-	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.Type, &t.CreatedBy, &t.CreatedAt, &t.JoinCode, &t.TableCount)
+		INSERT INTO tournaments (name, branch_id, table_id, scheduled_at, price, max_players, created_by, join_code, type, table_count, slot_minutes)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+		RETURNING id, name, branch_id, table_id, scheduled_at, price, max_players, status, type, created_by, created_at, join_code, table_count, slot_minutes`,
+		name, branchID, tableID, scheduledAt, price, maxPlayers, createdBy, joinCode, tournamentType, tableCount, slotMinutes,
+	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.Type, &t.CreatedBy, &t.CreatedAt, &t.JoinCode, &t.TableCount, &t.SlotMinutes)
 	if err != nil {
 		return nil, err
 	}
@@ -42,9 +45,10 @@ func (r *Repo) GetTournament(id int64) (*models.Tournament, error) {
 	t := &models.Tournament{}
 	err := r.db.QueryRow(`
 		SELECT id, name, branch_id, table_id, scheduled_at, price, max_players, status,
-		       COALESCE(type,'single_elimination'), created_by, created_at, join_code, COALESCE(table_count,0)
+		       COALESCE(type,'single_elimination'), created_by, created_at, join_code,
+		       COALESCE(table_count,0), COALESCE(slot_minutes,30)
 		FROM tournaments WHERE id=$1`, id,
-	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.Type, &t.CreatedBy, &t.CreatedAt, &t.JoinCode, &t.TableCount)
+	).Scan(&t.ID, &t.Name, &t.BranchID, &t.TableID, &t.ScheduledAt, &t.Price, &t.MaxPlayers, &t.Status, &t.Type, &t.CreatedBy, &t.CreatedAt, &t.JoinCode, &t.TableCount, &t.SlotMinutes)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -379,7 +383,8 @@ func (r *Repo) GetBracket(tournamentID int64) ([]*models.Match, error) {
 		       m.player1_tg_id, m.player2_tg_id, m.winner_tg_id, m.status,
 		       COALESCE(m.match_type,'winners'),
 		       COALESCE(m.table_num,0), COALESCE(m.player1_score,0), COALESCE(m.player2_score,0),
-		       COALESCE(r1.user_name,''), COALESCE(r2.user_name,''), COALESCE(rw.user_name,'')
+		       COALESCE(r1.user_name,''), COALESCE(r2.user_name,''), COALESCE(rw.user_name,''),
+		       m.match_scheduled_at
 		FROM tournament_matches m
 		LEFT JOIN tournament_registrations r1 ON r1.tournament_id=m.tournament_id AND r1.user_tg_id=m.player1_tg_id
 		LEFT JOIN tournament_registrations r2 ON r2.tournament_id=m.tournament_id AND r2.user_tg_id=m.player2_tg_id
@@ -396,7 +401,8 @@ func (r *Repo) GetBracket(tournamentID int64) ([]*models.Match, error) {
 		if err := rows.Scan(&m.ID, &m.TournamentID, &m.Round, &m.MatchNum,
 			&m.Player1TgID, &m.Player2TgID, &m.WinnerTgID, &m.Status, &m.MatchType,
 			&m.TableNum, &m.Player1Score, &m.Player2Score,
-			&m.Player1Name, &m.Player2Name, &m.WinnerName); err != nil {
+			&m.Player1Name, &m.Player2Name, &m.WinnerName,
+			&m.MatchScheduledAt); err != nil {
 			return nil, err
 		}
 		if m.WinnerTgID != nil {
@@ -409,6 +415,22 @@ func (r *Repo) GetBracket(tournamentID int64) ([]*models.Match, error) {
 		list = append(list, m)
 	}
 	return list, rows.Err()
+}
+
+func (r *Repo) SetMatchScheduledAt(matchID int64, t time.Time) error {
+	_, err := r.db.Exec(`UPDATE tournament_matches SET match_scheduled_at=$1 WHERE id=$2`, t, matchID)
+	return err
+}
+
+// CountPrevMatchesAtTable returns how many matches (excluding matchID itself) already have this table assigned.
+// Used to calculate the slot index for match_scheduled_at.
+func (r *Repo) CountPrevMatchesAtTable(trnID int64, tableNum int, excludeMatchID int64) int {
+	var n int
+	r.db.QueryRow(
+		`SELECT COUNT(*) FROM tournament_matches WHERE tournament_id=$1 AND table_num=$2 AND id!=$3`,
+		trnID, tableNum, excludeMatchID,
+	).Scan(&n)
+	return n
 }
 
 // ===================== TV TOKENS =====================

@@ -54,8 +54,9 @@ type Tournament struct {
 	CreatedBy   int64     `json:"created_by"`
 	CreatedAt   time.Time `json:"created_at"`
 
-	JoinCode   string `json:"join_code"`
-	TableCount int    `json:"table_count"`
+	JoinCode    string `json:"join_code"`
+	TableCount  int    `json:"table_count"`
+	SlotMinutes int    `json:"slot_minutes"` // estimated minutes per match slot at a table
 
 	BranchName string `json:"branch_name"`
 	TableNum   int    `json:"table_num"`
@@ -95,9 +96,10 @@ type Match struct {
 	WinnerTgID   *int64 `json:"winner_tg_id"`
 	Status       string `json:"status"`
 	MatchType    string `json:"match_type"`
-	TableNum     int    `json:"table_num"`
-	Player1Score int    `json:"player1_score"`
-	Player2Score int    `json:"player2_score"`
+	TableNum          int        `json:"table_num"`
+	Player1Score      int        `json:"player1_score"`
+	Player2Score      int        `json:"player2_score"`
+	MatchScheduledAt  *time.Time `json:"match_scheduled_at,omitempty"`
 
 	LoserNextMatchID  *int64 `json:"-"`
 	WinnerNextMatchID *int64 `json:"-"`

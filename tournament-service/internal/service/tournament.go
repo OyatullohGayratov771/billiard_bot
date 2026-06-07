@@ -24,7 +24,7 @@ func New(db *sql.DB, repo *repository.Repo) *Service {
 
 // ===================== TOURNAMENTS =====================
 
-func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string, tournamentType string, tableCount int) (*models.Tournament, error) {
+func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, scheduledAt time.Time, price int64, maxPlayers int, adminTgID int64, joinCode string, tournamentType string, tableCount int, slotMinutes int) (*models.Tournament, error) {
 	if name == "" {
 		return nil, errors.New("turnir nomi bo'sh bo'lmasin")
 	}
@@ -44,7 +44,14 @@ func (s *Service) CreateTournament(name string, branchID int64, tableID *int64, 
 	default:
 		return nil, fmt.Errorf("noto'g'ri turnir turi: %s", tournamentType)
 	}
-	return s.repo.CreateTournament(name, branchID, tableID, scheduledAt, price, maxPlayers, adminTgID, joinCode, tournamentType, tableCount)
+	if slotMinutes <= 0 {
+		slotMinutes = 30
+	}
+	return s.repo.CreateTournament(name, branchID, tableID, scheduledAt, price, maxPlayers, adminTgID, joinCode, tournamentType, tableCount, slotMinutes)
+}
+
+func (s *Service) SetMatchScheduledAt(matchID int64, scheduledAt time.Time) error {
+	return s.repo.SetMatchScheduledAt(matchID, scheduledAt)
 }
 
 func (s *Service) GetTournament(id int64) (*models.Tournament, error) {
@@ -255,13 +262,20 @@ func (s *Service) GenerateBracket(tournamentID int64) ([]*models.Match, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Auto-assign tables to ready matches if table_count is set
+	// Auto-assign tables and match times to ready matches if table_count is set
 	if t.TableCount > 0 {
 		tableIdx := 1
 		for _, m := range matches {
 			if m.Status == models.MatchStatusReady && tableIdx <= t.TableCount {
 				_ = s.repo.SetMatchTableNum(m.ID, tableIdx)
 				m.TableNum = tableIdx
+				// Slot 0 for all first-round matches → start at tournament time
+				if !t.ScheduledAt.IsZero() {
+					slotIdx := s.repo.CountPrevMatchesAtTable(t.ID, tableIdx, m.ID)
+					slotTime := t.ScheduledAt.Add(time.Duration(slotIdx*t.SlotMinutes) * time.Minute)
+					_ = s.repo.SetMatchScheduledAt(m.ID, slotTime)
+					m.MatchScheduledAt = &slotTime
+				}
 				tableIdx++
 			}
 		}
@@ -281,7 +295,17 @@ func (s *Service) SetMatchTable(matchID int64, tableNum int) error {
 	if m.Status != models.MatchStatusReady && m.Status != models.MatchStatusInProgress {
 		return fmt.Errorf("bu o'yinga stol belgilab bo'lmaydi (holat: %s)", m.Status)
 	}
-	return s.repo.SetMatchTableNum(matchID, tableNum)
+	if err := s.repo.SetMatchTableNum(matchID, tableNum); err != nil {
+		return err
+	}
+	// Auto-calculate scheduled time for this match slot
+	t, err2 := s.repo.GetTournament(m.TournamentID)
+	if err2 == nil && !t.ScheduledAt.IsZero() && t.SlotMinutes > 0 {
+		slotIdx := s.repo.CountPrevMatchesAtTable(t.ID, tableNum, matchID)
+		slotTime := t.ScheduledAt.Add(time.Duration(slotIdx*t.SlotMinutes) * time.Minute)
+		_ = s.repo.SetMatchScheduledAt(matchID, slotTime)
+	}
+	return nil
 }
 
 func (s *Service) StartMatch(matchID int64, tableNum int) error {
@@ -706,6 +730,12 @@ func (s *Service) SetResult(matchID, winnerTgID int64) (winnerNextID, loserNextI
 			_ = s.repo.SetMatchTableNum(next.ID, m.TableNum)
 			assignedMatchID = next.ID
 			assignedTableNum = m.TableNum
+			// Auto-calc scheduled time: slot = number of previous matches at this table
+			if !t.ScheduledAt.IsZero() && t.SlotMinutes > 0 {
+				slotIdx := s.repo.CountPrevMatchesAtTable(t.ID, m.TableNum, next.ID)
+				slotTime := t.ScheduledAt.Add(time.Duration(slotIdx*t.SlotMinutes) * time.Minute)
+				_ = s.repo.SetMatchScheduledAt(next.ID, slotTime)
+			}
 		}
 	}
 

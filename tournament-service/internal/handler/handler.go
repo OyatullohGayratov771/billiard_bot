@@ -60,6 +60,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /tournaments/{id}/sse", h.tournamentSSE)
 
 	mux.HandleFunc("PUT /matches/{id}/table", h.setMatchTable)
+	mux.HandleFunc("PUT /matches/{id}/schedule", h.setMatchSchedule)
 	mux.HandleFunc("PUT /matches/{id}/start", h.startMatch)
 	mux.HandleFunc("PUT /matches/{id}/result", h.setResult)
 
@@ -91,6 +92,7 @@ func (h *Handler) createTournament(w http.ResponseWriter, r *http.Request) {
 		JoinCode    string `json:"join_code"`
 		Type        string `json:"type"`
 		TableCount  int    `json:"table_count"`
+		SlotMinutes int    `json:"slot_minutes"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, 400, "invalid request")
@@ -101,7 +103,7 @@ func (h *Handler) createTournament(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "invalid scheduled_at (RFC3339)")
 		return
 	}
-	tournament, err := h.svc.CreateTournament(req.Name, req.BranchID, req.TableID, t, req.Price, req.MaxPlayers, req.AdminTgID, req.JoinCode, req.Type, req.TableCount)
+	tournament, err := h.svc.CreateTournament(req.Name, req.BranchID, req.TableID, t, req.Price, req.MaxPlayers, req.AdminTgID, req.JoinCode, req.Type, req.TableCount, req.SlotMinutes)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return
@@ -330,6 +332,35 @@ func (h *Handler) setMatchTable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.svc.SetMatchTable(id, req.TableNum); err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	match, _ := h.svc.GetMatch(id)
+	if match != nil {
+		h.hub.Broadcast(fmt.Sprintf("trn:%d", match.TournamentID))
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) setMatchSchedule(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, 400, "invalid id")
+		return
+	}
+	var req struct {
+		ScheduledAt string `json:"scheduled_at"` // RFC3339
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, 400, "invalid request")
+		return
+	}
+	t, err := time.Parse(time.RFC3339, req.ScheduledAt)
+	if err != nil {
+		writeError(w, 400, "invalid scheduled_at (RFC3339)")
+		return
+	}
+	if err := h.svc.SetMatchScheduledAt(id, t); err != nil {
 		writeError(w, 400, err.Error())
 		return
 	}
