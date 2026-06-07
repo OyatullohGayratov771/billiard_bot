@@ -85,7 +85,8 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/role", h.withRole(h.adminSetRole, "superadmin"))
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/active", h.withRole(h.adminSetActive, "superadmin"))
 
-	// Public tournament bracket (all authenticated users)
+	// Public tournament endpoints (all authenticated users)
+	mux.HandleFunc("GET /api/tournaments", h.withAuth(h.publicTournaments))
 	mux.HandleFunc("GET /api/tournaments/{id}/bracket", h.withAuth(h.publicTrnBracket))
 
 	// Tournament registration proxy (auth via JWT, proxies to tournament-service)
@@ -861,6 +862,52 @@ func (h *Handler) adminGetBracket(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) publicTrnBracket(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	h.trnProxy(w, r, http.MethodGet, "/tournaments/"+id+"/bracket", nil)
+}
+
+func (h *Handler) publicTournaments(w http.ResponseWriter, r *http.Request) {
+	status := r.URL.Query().Get("status")
+	q := `SELECT t.id, t.name, COALESCE(b.name,'?'), t.scheduled_at, t.status, t.max_players,
+		       COALESCE(t.type,'single_elimination'), COALESCE(t.table_count,0),
+		       COUNT(tr.id) FILTER (WHERE tr.status='approved'),
+		       COUNT(tr.id) FILTER (WHERE tr.status='pending')
+		FROM tournaments t
+		LEFT JOIN branches b ON b.id=t.branch_id
+		LEFT JOIN tournament_registrations tr ON tr.tournament_id=t.id`
+	var args []any
+	if status != "" {
+		q += " WHERE t.status=$1"
+		args = append(args, status)
+	} else {
+		q += " WHERE t.status IN ('registration','in_progress','finished')"
+	}
+	q += " GROUP BY t.id, b.name ORDER BY t.scheduled_at DESC LIMIT 50"
+	rows, err := h.db.Query(q, args...)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	defer rows.Close()
+	type item struct {
+		ID          int64  `json:"id"`
+		Name        string `json:"name"`
+		BranchName  string `json:"branch_name"`
+		ScheduledAt string `json:"scheduled_at"`
+		Status      string `json:"status"`
+		MaxPlayers  int    `json:"max_players"`
+		Type        string `json:"type"`
+		TableCount  int    `json:"table_count"`
+		Registered  int    `json:"registered"`
+		Pending     int    `json:"pending"`
+	}
+	list := []item{}
+	for rows.Next() {
+		var i item
+		if err := rows.Scan(&i.ID, &i.Name, &i.BranchName, &i.ScheduledAt,
+			&i.Status, &i.MaxPlayers, &i.Type, &i.TableCount, &i.Registered, &i.Pending); err == nil {
+			list = append(list, i)
+		}
+	}
+	writeJSON(w, 200, list)
 }
 
 func (h *Handler) adminMatchResult(w http.ResponseWriter, r *http.Request) {

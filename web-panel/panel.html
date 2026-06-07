@@ -358,7 +358,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
   <span class="nav-badge">Admin Panel</span>
   <div class="nav-right">
     <span class="nav-user" id="nav-user"></span>
-    <button class="refresh-btn" id="refresh-btn" onclick="refresh()">↺ Yangilash</button>
+    <button class="refresh-btn admin-only" id="refresh-btn" onclick="refresh()">↺ Yangilash</button>
     <span class="nav-logout" onclick="logout()">Chiqish</span>
   </div>
 </nav>
@@ -383,7 +383,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
     </div>
   </div>
 
-  <div class="stats">
+  <div class="stats admin-only">
     <div class="stat-card" onclick="jumpToClips('')"><div class="sc-n" id="s-users">—</div><div class="sc-l">Foydalanuvchilar</div></div>
     <div class="stat-card" onclick="jumpToClips('pending')"><div class="sc-n" id="s-pending">—</div><div class="sc-l">Klip Kutilmoqda</div></div>
     <div class="stat-card" onclick="jumpToClips('paid')"><div class="sc-n" id="s-paid">—</div><div class="sc-l">Klip To'langan</div></div>
@@ -394,14 +394,14 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
 
   <div class="tabs-wrap">
     <div class="tabs">
-      <div class="tab active" data-tab="clips">🎬 Kliplar<span class="tab-badge" id="tab-badge-clips"></span></div>
+      <div class="tab active admin-only" data-tab="clips">🎬 Kliplar<span class="tab-badge" id="tab-badge-clips"></span></div>
       <div class="tab" data-tab="tournaments">🏆 Turnirlar<span class="tab-badge" id="tab-badge-trns"></span></div>
-      <div class="tab" data-tab="users">👥 Foydalanuvchilar</div>
+      <div class="tab admin-only" data-tab="users">👥 Foydalanuvchilar</div>
     </div>
   </div>
 
   <!-- ═══ CLIPS TAB ═══ -->
-  <div class="tab-pane active" id="tab-clips">
+  <div class="tab-pane active admin-only" id="tab-clips">
     <div class="clip-top-bar">
       <div class="clips-search-wrap">
         <svg width="12" height="12" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -426,13 +426,13 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
 
   <!-- ═══ TOURNAMENTS TAB ═══ -->
   <div class="tab-pane" id="tab-tournaments">
-    <div class="filter-row">
+    <div class="filter-row" id="trn-filter-row">
       <button class="filter-btn active" data-trnstatus="">Hammasi</button>
       <button class="filter-btn" data-trnstatus="registration">Ro'yxat</button>
       <button class="filter-btn" data-trnstatus="in_progress">Jarayonda</button>
       <button class="filter-btn" data-trnstatus="finished">Yakunlandi</button>
-      <button class="filter-btn" data-trnstatus="cancelled">Bekor</button>
-      <button class="filter-btn" onclick="openCreateModal()" style="margin-left:auto;color:var(--gold);border-color:rgba(212,175,55,.35)">➕ Yangi turnir</button>
+      <button class="filter-btn admin-only" data-trnstatus="cancelled">Bekor</button>
+      <button class="filter-btn admin-only" onclick="openCreateModal()" style="margin-left:auto;color:var(--gold);border-color:rgba(212,175,55,.35)">➕ Yangi turnir</button>
     </div>
     <div class="table-wrap">
       <table class="data-table">
@@ -443,7 +443,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
   </div>
 
   <!-- ═══ USERS TAB ═══ -->
-  <div class="tab-pane" id="tab-users">
+  <div class="tab-pane admin-only" id="tab-users">
     <div class="role-chips">
       <button class="role-chip active" data-role="">Barcha <span class="chip-cnt" id="chip-all">—</span></button>
       <button class="role-chip" data-role="client">Mijoz <span class="chip-cnt" id="chip-cl">—</span></button>
@@ -615,23 +615,32 @@ async function init(){
 
   try{
     const pay=JSON.parse(atob(jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-    if(pay.role==='client'){window.location.replace('/me');return;}
     isSuperadmin=pay.role==='superadmin';
     isAdmin=pay.role==='admin'||isSuperadmin;
+    const isClient=pay.role==='client'||pay.role==='operator'||(!isAdmin&&!isSuperadmin);
     $('nav-user').textContent=(ROLE_UZ[pay.role]||pay.role)+' · '+pay.tg_id;
     $('hero-sub').textContent='Billiard King — '+(ROLE_UZ[pay.role]||pay.role);
+
+    // Hide admin-only UI elements for non-admin users
+    if(!isAdmin){
+      document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
+    }
   }catch(_){}
 
-  try{
-    const r=await fetch('/api/admin/stats',{headers:auth()});
-    if(r.status===401){show('state-error');$('err-title').textContent='Sessiya tugagan';$('err-sub').textContent='Qayta kirish uchun botni bosing.';return;}
-    if(r.status===403){show('state-error');$('err-title').textContent='Ruxsat yo\'q';$('err-sub').textContent='Faqat admin va operatorlar kirishi mumkin.';return;}
-    updateStats(await r.json());
-  }catch(e){show('state-error');$('err-title').textContent='Server bilan bog\'lanib bo\'lmadi';$('err-sub').textContent=e.message;return;}
+  if(isAdmin){
+    try{
+      const r=await fetch('/api/admin/stats',{headers:auth()});
+      if(r.status===401){show('state-error');$('err-title').textContent='Sessiya tugagan';$('err-sub').textContent='Qayta kirish uchun botni bosing.';return;}
+      if(r.status===403){show('state-error');$('err-title').textContent='Ruxsat yo\'q';$('err-sub').textContent='Faqat admin va operatorlar kirishi mumkin.';return;}
+      updateStats(await r.json());
+    }catch(e){show('state-error');$('err-title').textContent='Server bilan bog\'lanib bo\'lmadi';$('err-sub').textContent=e.message;return;}
+  }
 
   show('state-main');
-  loadClips('');
-  startAutoRefresh();
+  if(isAdmin) loadClips('');
+  else activateTab('tournaments');   // clients land on tournament list
+  loadTournaments('');
+  if(isAdmin) startAutoRefresh();
 }
 
 // ─── AUTO-REFRESH ───
@@ -652,6 +661,7 @@ function updateRefreshBtn(){
 }
 
 async function silentRefreshStats(){
+  if(!isAdmin) return;
   try{
     const r=await fetch('/api/admin/stats',{headers:auth()});
     if(r.ok) updateStats(await r.json());
@@ -660,6 +670,7 @@ async function silentRefreshStats(){
 
 async function refresh(){
   arSeconds=60;updateRefreshBtn();
+  if(!isAdmin) return;
   const r=await fetch('/api/admin/stats',{headers:auth()});
   if(r.ok) updateStats(await r.json());
   const active=document.querySelector('.tab.active')?.dataset?.tab;
@@ -949,11 +960,17 @@ async function loadTournaments(status){
   const body=$('trns-body');
   body.innerHTML='<tr><td colspan="5" class="loading-note">Yuklanmoqda…</td></tr>';
   try{
-    const r=await fetch('/api/admin/tournaments'+(status?'?status='+status:''),{headers:auth()});
+    const url=isAdmin
+      ?'/api/admin/tournaments'+(status?'?status='+status:'')
+      :'/api/tournaments'+(status?'?status='+status:'');
+    const r=await fetch(url,{headers:auth()});
     trnList=r.ok?await r.json():[];
-    if(!trnList.length){body.innerHTML='<tr><td colspan="5" class="empty-note">Turnirlar topilmadi</td></tr>';return;}
+    if(!trnList.length){
+      body.innerHTML='<tr><td colspan="5" class="empty-note">Turnirlar topilmadi</td></tr>';
+      return;
+    }
     body.innerHTML=trnList.map(t=>{
-      const pb=t.pending>0?`<span class="pending-badge">${t.pending}</span>`:'';
+      const pb=isAdmin&&t.pending>0?`<span class="pending-badge">${t.pending}</span>`:'';
       return`<tr class="clickable" onclick="openTrnDetail(${t.id})">
         <td style="color:var(--text3)">${t.id}</td>
         <td><div class="name-cell">${esc(t.name)}</div><div class="sub-cell">${esc(t.branch_name)}</div></td>
