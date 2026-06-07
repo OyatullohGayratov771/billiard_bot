@@ -1007,13 +1007,13 @@ async function openTrnDetail(trnId){
     }
     setupDetailTabs(trn.status);
     updateDetailActions();
-    switchDetailTab(isAdmin?'bracket':'jadval');
+    switchDetailTab('bracket');
   } else {
     if(isAdmin) await loadTrnRegs(trnId);
     setupDetailTabs(trn.status);
     updateDetailActions();
     if(isAdmin) renderRegs();
-    else $('dp-body').innerHTML='<div class="empty-note">Setka hali yaratilmagan</div>';
+    else $('dp-body').innerHTML='<div class="empty-note">Setka hali yaratilmagan ⏳</div>';
   }
 }
 
@@ -1022,9 +1022,9 @@ function setupDetailTabs(status){
   const hasTables=hasBracket&&(currentTrn?.table_count>0||bracketMatches.some(m=>m.table_num>0));
   const tabs=$('dp-inner-tabs');
   let html='';
-  if(hasBracket&&isAdmin) html+=`<div class="dp-tab" data-dtab="bracket">Setka</div>`;
-  if(hasBracket)          html+=`<div class="dp-tab" data-dtab="jadval">📋 Jadval</div>`;
-  if(hasTables&&isAdmin)  html+=`<div class="dp-tab" data-dtab="tables">🎱 Stollar</div>`;
+  if(hasBracket)         html+=`<div class="dp-tab" data-dtab="bracket">Setka</div>`;
+  if(hasBracket)         html+=`<div class="dp-tab" data-dtab="jadval">📋 Jadval</div>`;
+  if(hasTables&&isAdmin) html+=`<div class="dp-tab" data-dtab="tables">🎱 Stollar</div>`;
   if(isAdmin) html+=`<div class="dp-tab" data-dtab="regs">Ro'yxat <span class="dp-cnt" id="rc-all"></span></div>`;
   tabs.innerHTML=html;
   document.querySelectorAll('.dp-tab').forEach(t=>{
@@ -1035,9 +1035,8 @@ function setupDetailTabs(status){
     });
   });
   // default tab selection
-  if(hasBracket&&isAdmin) currentDetailTab='bracket';
-  else if(hasBracket)     currentDetailTab='jadval';
-  else                    currentDetailTab='regs';
+  if(hasBracket)   currentDetailTab='bracket';
+  else             currentDetailTab=isAdmin?'regs':'info';
   document.querySelectorAll('.dp-tab').forEach(t=>{
     if(t.dataset.dtab===currentDetailTab) t.classList.add('active');
   });
@@ -1450,83 +1449,117 @@ function renderBracket(){
   if(!bracketMatches||!bracketMatches.length){
     body.innerHTML='<div class="empty-note">Setka yo\'q</div>';return;
   }
-  const isReadonly=currentTrn?.status==='finished';
+  const readonly=currentTrn?.status==='finished'||!isAdmin;
   const GF=2000,LBO=1000;
   const rounds={};
   bracketMatches.forEach(m=>{if(!rounds[m.round]) rounds[m.round]=[];rounds[m.round].push(m);});
   const rnums=Object.keys(rounds).map(Number).sort((a,b)=>a-b);
   const allDone=bracketMatches.every(m=>m.status==='done'||m.status==='bye'||m.status==='void');
-  body.innerHTML=rnums.map(rn=>{
-    let label;
-    if(rn===GF) label='🏆 Grand Final';
-    else if(rn>=LBO+1) label='Yutqazuvchilar · Raund '+(rn-LBO);
-    else label='Raund '+rn;
-    return`<div class="bracket-section">
-      <div class="br-section-label">${label}</div>
-      ${rounds[rn].map(m=>matchCard(m,isReadonly)).join('')}
-    </div>`;
-  }).join('')+(allDone&&isReadonly?'<div style="text-align:center;padding:20px 0;color:var(--gold);font-weight:800;font-size:.85rem">🏆 Turnir yakunlandi</div>':'');
+
+  let html='<div class="sc-wrap">';
+  for(const rn of rnums){
+    let lbl;
+    if(rn===GF) lbl='🏆 Grand Final';
+    else if(rn>=LBO+1) lbl='Yutqazuvchilar · Raund '+(rn-LBO);
+    else lbl='Raund '+rn;
+    html+=`<div class="sc-round-lbl">${lbl}</div><div class="sc-grid">`;
+    html+=rounds[rn].map(m=>matchCard(m,readonly)).join('');
+    html+='</div>';
+  }
+  if(allDone) html+='<div style="text-align:center;padding:16px 0;color:var(--gold);font-weight:800;font-size:.85rem">🏆 Turnir yakunlandi</div>';
+  html+='</div>';
+  body.innerHTML=html;
 }
 
-function matchCard(m,readonly){
+function matchCard(m, readonly){
   const st=m.status;
-  const p1=m.player1_name||'TBD';
-  const p2=m.player2_name||'TBD';
-  const w1=m.winner_slot===1;
-  const w2=m.winner_slot===2;
+  const p1=m.player1_name||'—';
+  const p2=m.player2_name||'—';
+  const w1=m.winner_slot===1, w2=m.winner_slot===2;
+  const done=st==='done', live=st==='in_progress', ready=st==='ready';
 
-  if(st==='void') return`<div class="match-card mc-pending"><div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot pending"></div></div><div style="color:var(--text3);font-size:.7rem">Kutilmoqda</div></div>`;
+  if(st==='void') return`<div class="sc-card" style="opacity:.25">
+    <div class="sc-head"><span class="sc-mnum">#${m.match_num}</span></div>
+    <div class="sc-player"><span class="sc-pname" style="color:var(--text3);font-style:italic">Kutilmoqda</span><span class="sc-score">—</span></div>
+    <div class="sc-player"><span class="sc-pname" style="color:var(--text3);font-style:italic">Kutilmoqda</span><span class="sc-score">—</span></div>
+  </div>`;
+
   if(st==='bye'){
-    const bn=p1!=='TBD'?p1:p2;
-    return`<div class="match-card mc-bye"><div class="mc-header"><span class="mc-num">M${m.match_num}</span><div class="mc-status-dot bye"></div></div><div class="mc-player-row winner"><span class="mc-pname">${esc(bn)}</span><span class="mc-trophy">🏆</span></div><div class="mc-bye-text">Avtomatik o'tadi (BYE)</div></div>`;
+    const bn=p1!=='—'?p1:p2;
+    return`<div class="sc-card sc-done">
+      <div class="sc-head"><span class="sc-mnum">#${m.match_num}</span><span class="sc-time-b">BYE</span></div>
+      <div class="sc-player sc-win-row"><span class="sc-pname win">${esc(bn)}</span><span class="sc-score win">🏆</span></div>
+    </div>`;
   }
 
-  const canPick=!readonly&&st==='in_progress';
-  const canAssign=!readonly&&st==='ready'&&m.player1_tg_id&&m.player2_tg_id;
-  const dotClass=st==='done'?'done':st==='in_progress'?'ready':st==='ready'?'ready':'pending';
+  let cardCls='sc-card';
+  if(live) cardCls+=' sc-active';
+  else if(ready) cardCls+=' sc-ready';
+  else if(done) cardCls+=' sc-done';
 
-  // Header extras
-  let headerExtra='';
-  if((st==='ready'||st==='in_progress')&&m.table_num>0) headerExtra=`<span style="font-size:.54rem;color:var(--blue);background:rgba(52,152,219,.12);padding:2px 7px;border-radius:3px">🎱 ${m.table_num}-stol</span>`;
-  if(st==='in_progress'&&!m.table_num) headerExtra=`<span style="font-size:.54rem;color:var(--blue)">Jarayonda</span>`;
-  if(st==='done'&&m.table_num>0) headerExtra=`<span style="font-size:.54rem;color:var(--text3);background:rgba(255,255,255,.06);padding:2px 7px;border-radius:3px">🎱 ${m.table_num}-stol</span>`;
+  const tblTxt=m.table_num>0?`Stol ${m.table_num}`:'';
+  const timeTxt=fmtMatchDateTime(m.match_scheduled_at);
+  const sc1=done?(w1?'🏆':'❌'):live?'▶':'—';
+  const sc2=done?(w2?'🏆':'❌'):live?'▶':'—';
 
-  // Footer for ready matches: table assignment or start
+  const canPick=!readonly&&live;
+  const canAssign=!readonly&&ready&&m.player1_tg_id&&m.player2_tg_id;
+
+  const p1row=`<div class="sc-player ${w1?'sc-win-row':done&&!w1?'sc-lose-row':''}">
+    <span class="sc-pname ${w1?'win':''}">${esc(p1)}</span>
+    ${canPick&&m.player1_tg_id
+      ?`<button class="mc-win-btn" onclick="setWinner(${m.id},1)">🏆</button>`
+      :`<span class="sc-score ${w1?'win':''}">${sc1}</span>`}
+  </div>`;
+
+  const p2row=`<div class="sc-player ${w2?'sc-win-row':done&&!w2?'sc-lose-row':''}">
+    <span class="sc-pname ${w2?'win':''}">${esc(p2)}</span>
+    ${canPick&&m.player2_tg_id
+      ?`<button class="mc-win-btn" onclick="setWinner(${m.id},2)">🏆</button>`
+      :`<span class="sc-score ${w2?'win':''}">${sc2}</span>`}
+  </div>`;
+
   let footer='';
   if(canAssign){
     if(m.table_num>0){
-      footer=`<div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap">
-        <button class="mc-start-btn" onclick="quickStart(${m.id})">▶ Boshlash</button>
-        <button onclick="reNotify(${m.id},${m.table_num})" style="background:rgba(240,192,48,.08);border:1px solid rgba(240,192,48,.3);color:var(--gold);padding:4px 9px;border-radius:3px;font-size:.6rem;font-weight:700;cursor:pointer">📬 Qayta xabar</button>
+      footer=`<div style="padding:6px 11px 8px;display:flex;gap:5px">
+        <button class="mc-start-btn" onclick="quickStart(${m.id})" style="flex:1;font-size:.65rem">▶ Boshlash</button>
+        <button onclick="reNotify(${m.id},${m.table_num})" title="Qayta xabar"
+          style="background:rgba(240,192,48,.08);border:1px solid rgba(240,192,48,.3);color:var(--gold);padding:4px 8px;border-radius:4px;font-size:.6rem;cursor:pointer">📬</button>
       </div>`;
     } else {
-      footer=`<div id="sf-${m.id}" style="margin-top:7px">
-        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
-          <span style="font-size:.6rem;color:var(--text3);white-space:nowrap">🎱 Stol:</span>
-          <input type="number" id="ti-${m.id}" class="mc-table-inp" min="1" max="50" placeholder="№"
-                 onkeydown="if(event.key==='Enter')assignTable(${m.id})">
-          <button onclick="assignTable(${m.id})" style="background:rgba(240,192,48,.1);border:1px solid rgba(240,192,48,.4);color:var(--gold);padding:4px 10px;border-radius:3px;font-size:.6rem;font-weight:700;cursor:pointer;white-space:nowrap">📬 Belgilash & Xabar</button>
-        </div>
+      footer=`<div style="padding:6px 11px 8px;display:flex;gap:4px;align-items:center">
+        <input type="number" id="ti-${m.id}" class="mc-table-inp" min="1" max="50" placeholder="Stol №"
+               onkeydown="if(event.key==='Enter')assignTable(${m.id})" style="flex:1">
+        <button onclick="assignTable(${m.id})"
+          style="background:rgba(240,192,48,.1);border:1px solid rgba(240,192,48,.4);color:var(--gold);padding:4px 10px;border-radius:4px;font-size:.6rem;font-weight:700;cursor:pointer;white-space:nowrap">📬 Xabar</button>
       </div>`;
     }
   }
 
-  return`<div class="match-card${st==='done'?' mc-done':st==='in_progress'||st==='ready'?' mc-ready':' mc-pending'}">
-    <div class="mc-header">
-      <span class="mc-num">M${m.match_num}</span>
-      <div style="display:flex;gap:5px;align-items:center">${headerExtra}<div class="mc-status-dot ${dotClass}"></div></div>
+  let timeEdit='';
+  if(!readonly&&!done){
+    const iid=`sti-br-${m.id}`;
+    const cur=isoForInput(m.match_scheduled_at);
+    timeEdit=`<div style="display:flex;align-items:center;gap:4px;padding:4px 11px 8px;border-top:1px solid rgba(255,255,255,.05)">
+      <span style="font-size:.6rem;color:var(--text3)">🕐</span>
+      <input type="datetime-local" id="${iid}" value="${cur}"
+        style="flex:1;background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:2px 6px;border-radius:4px;font-size:.6rem;outline:none;font-family:inherit">
+      <button onclick="setMatchSchedule(${m.id},'${iid}')"
+        style="background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3);color:var(--gold);padding:2px 8px;border-radius:4px;font-size:.58rem;font-weight:700;cursor:pointer">💾</button>
+    </div>`;
+  }
+
+  return`<div class="${cardCls}">
+    <div class="sc-head">
+      <span class="sc-mnum">#${m.match_num}</span>
+      ${tblTxt?`<span class="sc-tbl-b">${tblTxt}</span>`:''}
+      <span class="sc-time-b">${timeTxt||'—'}</span>
     </div>
-    <div class="mc-player-row ${w1?'winner':w2?'loser':''}">
-      <span class="mc-trophy">${w1?'🏆':w2&&st==='done'?'❌':'　'}</span>
-      <span class="mc-pname">${esc(p1)}</span>
-      ${canPick&&m.player1_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},1)">🏆 G'olib</button>`:''}
-    </div>
-    <div class="mc-player-row ${w2?'winner':w1?'loser':''}">
-      <span class="mc-trophy">${w2?'🏆':w1&&st==='done'?'❌':'　'}</span>
-      <span class="mc-pname">${esc(p2)}</span>
-      ${canPick&&m.player2_tg_id?`<button class="mc-win-btn" onclick="setWinner(${m.id},2)">🏆 G'olib</button>`:''}
-    </div>
+    ${p1row}
+    ${p2row}
     ${footer}
+    ${timeEdit}
   </div>`;
 }
 

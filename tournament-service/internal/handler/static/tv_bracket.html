@@ -40,46 +40,18 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
 /* ── BRACKET (SE / WB / LB) ── */
 .bracket{display:flex;align-items:stretch;padding:8px 28px 0;gap:0;overflow-x:auto}
 
-.round-col{display:flex;flex-direction:column;align-items:center;min-width:215px}
+.round-col{display:flex;flex-direction:column;align-items:center;min-width:230px}
 .round-label{font-size:.63rem;text-transform:uppercase;letter-spacing:2px;color:#404080;margin-bottom:10px;text-align:center;padding:3px 10px;border-radius:4px;background:rgba(64,64,128,.15)}
 
 .matches-col{display:flex;flex-direction:column;width:100%;flex:1}
-.match-slot{display:flex;align-items:center;flex:1;min-height:68px}
+.match-slot{display:flex;align-items:center;flex:1;min-height:68px;width:100%}
+.match-slot .sc-card{width:100%;min-width:210px}
 
 /* connector */
 .conn{display:flex;flex-direction:column;justify-content:center;width:32px;flex-shrink:0;align-self:stretch}
 .conn-line{border-top:1px solid #1e1e40;width:100%}
 
-/* ── MATCH CARD ── */
-.card{
-  width:200px;
-  border-radius:10px;overflow:hidden;
-  border:1px solid #1a1a38;
-  background:linear-gradient(160deg,#0d0d22,#0a0a1a);
-  transition:box-shadow .3s,border-color .3s;
-  backdrop-filter:blur(4px);
-}
-.card.live{
-  border-color:#d4a012;
-  box-shadow:0 0 20px rgba(212,160,18,.3),0 0 4px rgba(212,160,18,.1) inset;
-  animation:glow 2.2s ease-in-out infinite;
-}
-.card.done{border-color:#1a2820;background:linear-gradient(160deg,#0c1410,#080e0c)}
 @keyframes glow{0%,100%{box-shadow:0 0 20px rgba(212,160,18,.3)}50%{box-shadow:0 0 36px rgba(212,160,18,.55)}}
-
-.player{padding:9px 12px;font-size:.85rem;font-weight:500;display:flex;align-items:center;gap:8px;transition:background .2s}
-.player+.player{border-top:1px solid rgba(255,255,255,.06)}
-.player.win{background:rgba(212,160,18,.15);color:#f0c030;font-weight:700}
-.player.lose{color:#2e2e56;font-weight:400}
-.ico{width:16px;text-align:center;font-size:.72rem;flex-shrink:0;opacity:.9}
-.pname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:155px}
-
-.bye{
-  width:200px;padding:11px 14px;border-radius:10px;
-  border:1px dashed #1a1a38;background:#07070f;
-  color:#303058;font-size:.8rem;font-style:italic;
-}
-.void-el{width:200px;height:62px}
 
 /* ── WINNER COLUMN ── */
 .winner-col{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:150px;flex:1;gap:8px;padding:20px}
@@ -633,9 +605,10 @@ function mkRoundCol(rmatches, label, round) {
   col.appendChild(lbl);
   const mc = document.createElement('div');
   mc.className = 'matches-col';
-  // exponential gap for SE alignment
-  const baseGap = 10;
-  mc.style.gap = (Math.pow(2, round - 1) * baseGap) + 'px';
+  // exponential gap for SE alignment (sc-card height ~80px, base gap scaled)
+  const baseGap = 12;
+  const effectiveRound = round > 1000 ? round - 1000 : round;
+  mc.style.gap = (Math.pow(2, effectiveRound - 1) * baseGap) + 'px';
   for (const m of (rmatches||[])) {
     const slot = document.createElement('div');
     slot.className = 'match-slot';
@@ -664,27 +637,58 @@ function mkWinner(name) {
 }
 
 function buildCard(m) {
-  if (m.status === 'void') {
-    const d = document.createElement('div');
-    d.className = 'card';
-    d.style.opacity = '0.3';
-    d.innerHTML = mkPlayer('Kutilmoqda', false, false, false) + mkPlayer('Kutilmoqda', false, false, false);
-    return d;
-  }
-  if (m.status === 'bye') {
-    const d = document.createElement('div'); d.className='bye';
-    d.textContent = esc(m.player1_name||'—') + ' → keyingi bosqich';
-    return d;
-  }
-  const live = m.status === 'ready';
-  const done = m.status === 'done';
-  const div = document.createElement('div');
-  div.className = 'card' + (live?' live':'') + (done?' done':'');
+  const done  = m.status === 'done';
+  const live  = m.status === 'ready';
   const p1win = done && m.winner_slot === 1;
   const p2win = done && m.winner_slot === 2;
-  div.innerHTML = mkPlayer(m.player1_name, live, p1win, done&&!p1win) +
-                  mkPlayer(m.player2_name, live, p2win, done&&!p2win);
-  return div;
+  const tblTxt  = m.table_num > 0 ? 'Stol ' + m.table_num : '';
+  const timeTxt = m.match_scheduled_at ? fmtMatchDateTime(m.match_scheduled_at) : '';
+
+  if (m.status === 'void') {
+    const d = document.createElement('div');
+    d.className = 'sc-card'; d.style.opacity = '0.25';
+    d.innerHTML =
+      '<div class="sc-head"><span class="sc-mnum">#' + m.match_num + '</span></div>' +
+      '<div class="sc-player"><span class="sc-pname" style="color:#252550;font-style:italic">Kutilmoqda</span><span class="sc-score">—</span></div>' +
+      '<div class="sc-player"><span class="sc-pname" style="color:#252550;font-style:italic">Kutilmoqda</span><span class="sc-score">—</span></div>';
+    return d;
+  }
+
+  if (m.status === 'bye') {
+    const bn = m.player1_name || m.player2_name || '—';
+    const d = document.createElement('div');
+    d.className = 'sc-card sc-done';
+    d.innerHTML =
+      '<div class="sc-head"><span class="sc-mnum">#' + m.match_num + '</span><span class="sc-time-b">BYE</span></div>' +
+      '<div class="sc-player sc-win-row"><span class="sc-pname win">' + esc(bn) + '</span><span class="sc-score win">🏆</span></div>';
+    return d;
+  }
+
+  let cardCls = 'sc-card';
+  if (live)       cardCls += ' sc-active';
+  else if (done)  cardCls += ' sc-done';
+  else            cardCls += ' sc-ready';
+
+  const sc1 = done ? (p1win ? '🏆' : '❌') : live ? '🎱' : '—';
+  const sc2 = done ? (p2win ? '🏆' : '❌') : live ? '🎱' : '—';
+
+  const d = document.createElement('div');
+  d.className = cardCls;
+  d.innerHTML =
+    '<div class="sc-head">' +
+      '<span class="sc-mnum">#' + m.match_num + '</span>' +
+      (tblTxt ? '<span class="sc-tbl-b">' + tblTxt + '</span>' : '') +
+      '<span class="sc-time-b">' + (timeTxt || '—') + '</span>' +
+    '</div>' +
+    '<div class="sc-player ' + (p1win ? 'sc-win-row' : done && !p1win ? 'sc-lose-row' : '') + '">' +
+      '<span class="sc-pname' + (p1win ? ' win' : '') + '">' + esc(m.player1_name || '—') + '</span>' +
+      '<span class="sc-score' + (p1win ? ' win' : '') + '">' + sc1 + '</span>' +
+    '</div>' +
+    '<div class="sc-player ' + (p2win ? 'sc-win-row' : done && !p2win ? 'sc-lose-row' : '') + '">' +
+      '<span class="sc-pname' + (p2win ? ' win' : '') + '">' + esc(m.player2_name || '—') + '</span>' +
+      '<span class="sc-score' + (p2win ? ' win' : '') + '">' + sc2 + '</span>' +
+    '</div>';
+  return d;
 }
 
 function mkPlayer(name, live, win, lose) {
