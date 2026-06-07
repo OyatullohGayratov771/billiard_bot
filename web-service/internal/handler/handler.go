@@ -85,9 +85,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/role", h.withRole(h.adminSetRole, "superadmin"))
 	mux.HandleFunc("PUT /api/admin/users/{tgid}/active", h.withRole(h.adminSetActive, "superadmin"))
 
-	// Public tournament endpoints (all authenticated users)
-	mux.HandleFunc("GET /api/tournaments", h.withAuth(h.publicTournaments))
-	mux.HandleFunc("GET /api/tournaments/{id}/bracket", h.withAuth(h.publicTrnBracket))
+	// Public tournament endpoints (no auth required — public data)
+	mux.HandleFunc("GET /api/tournaments", h.publicTournaments)
+	mux.HandleFunc("GET /api/tournaments/{id}/bracket", h.publicTrnBracket)
 
 	// Tournament registration proxy (auth via JWT, proxies to tournament-service)
 	mux.HandleFunc("POST /api/me/tournaments/{id}/register", h.withAuth(h.meTournamentRegister))
