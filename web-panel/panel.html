@@ -1467,13 +1467,41 @@ function renderBracket(){
   if(!bracketMatches||!bracketMatches.length){
     body.innerHTML='<div class="empty-note">Setka yo\'q</div>';return;
   }
-  const readonly=currentTrn?.status==='finished'||!isAdmin;
-  const GF=2000,LBO=1000;
   if(currentTrn?.type==='round_robin'){renderSchedule();return;}
+  // Admin: oddiy grid (natija kiritish uchun qulay)
+  // Client: gorizontal bracket (chiroyli vizual ko'rinish)
+  if(isAdmin) _renderAdminBracket(body);
+  else        _renderClientBracket(body);
+}
 
+// ── ADMIN BRACKET: oddiy round-grid (natija kiritish) ──
+function _renderAdminBracket(body){
+  const readonly=currentTrn?.status==='finished';
+  const GF=2000,LBO=1000;
   const byRound={};
   bracketMatches.forEach(m=>{if(!byRound[m.round])byRound[m.round]=[];byRound[m.round].push(m);});
+  const rnums=Object.keys(byRound).map(Number).sort((a,b)=>a-b);
+  let html='<div class="sc-wrap">';
+  for(const rn of rnums){
+    let lbl;
+    if(rn===GF) lbl='🏆 Grand Final';
+    else if(rn>=LBO+1) lbl='Yutqazuvchilar · '+(rn-LBO)+'-bosqich';
+    else lbl=rn+'-bosqich';
+    html+=`<div class="sc-round-lbl">${lbl}</div><div class="sc-grid">`;
+    html+=byRound[rn].map(m=>matchCard(m,readonly)).join('');
+    html+='</div>';
+  }
+  if(bracketMatches.every(m=>['done','bye','void'].includes(m.status)))
+    html+='<div class="brkt-fin">🏆 Turnir yakunlandi</div>';
+  html+='</div>';
+  body.innerHTML=html;
+}
 
+// ── CLIENT BRACKET: gorizontal vizual bracket ──
+function _renderClientBracket(body){
+  const GF=2000,LBO=1000;
+  const byRound={};
+  bracketMatches.forEach(m=>{if(!byRound[m.round])byRound[m.round]=[];byRound[m.round].push(m);});
   const wbR={},lbR={},gfMs=[];
   for(const [k,v] of Object.entries(byRound)){
     const r=+k;
@@ -1487,16 +1515,19 @@ function renderBracket(){
   const outer=document.createElement('div');outer.className='brkt-outer';
 
   if(isDE){outer.appendChild(_brktLbl('🏆 Winners Bracket',''));}
-  outer.appendChild(_brktSection(wbR,readonly,isDE?'WB':'',0));
+  outer.appendChild(_brktSection(wbR,isDE?'WB':'',0));
 
   if(isDE&&Object.keys(lbR).length){
     outer.appendChild(_brktLbl('⬇ Losers Bracket','lb'));
-    outer.appendChild(_brktSection(lbR,readonly,'LB',LBO));
+    outer.appendChild(_brktSection(lbR,'LB',LBO));
   }
   if(gfMs.length){
     outer.appendChild(_brktLbl('🎯 Grand Final','gf'));
     const gfw=document.createElement('div');gfw.className='brkt-gf';
-    gfMs.forEach(m=>{const d=document.createElement('div');d.style.cssText='width:210px;flex-shrink:0';d.innerHTML=matchCard(m,readonly);gfw.appendChild(d.firstElementChild||d);});
+    gfMs.forEach(m=>{
+      const d=document.createElement('div');d.style.cssText='width:220px;flex-shrink:0';
+      d.innerHTML=_clientMatchCard(m);gfw.appendChild(d.firstElementChild||d);
+    });
     outer.appendChild(gfw);
   }
   if(bracketMatches.every(m=>['done','bye','void'].includes(m.status))){
@@ -1511,11 +1542,12 @@ function _brktLbl(text,cls){
   d.textContent=text;return d;
 }
 
-function _brktSection(roundsObj,readonly,prefix,offset){
+// Client bracket section — gorizontal, SVG connector chiziqlar
+function _brktSection(roundsObj, prefix, offset){
   const rnums=Object.keys(roundsObj).map(Number).sort((a,b)=>a-b);
   if(!rnums.length)return document.createElement('div');
   const maxR=rnums[rnums.length-1];
-  const CW=210,CONN=32;
+  const CW=220, CONN=36;
 
   const wrap=document.createElement('div');wrap.className='brkt-section';
 
@@ -1541,7 +1573,7 @@ function _brktSection(roundsObj,readonly,prefix,offset){
     const col=document.createElement('div');col.className='brkt-match-col';col.style.width=CW+'px';
     ms.forEach(m=>{
       const slot=document.createElement('div');slot.className='brkt-slot';
-      slot.innerHTML=matchCard(m,readonly);
+      slot.innerHTML=_clientMatchCard(m);
       col.appendChild(slot);
     });
     mrow.appendChild(col);
@@ -1564,6 +1596,54 @@ function _brktSection(roundsObj,readonly,prefix,offset){
   });
   wrap.appendChild(mrow);
   return wrap;
+}
+
+// Client match card — stol, vaqt ko'rsatiladi, tugmalar yo'q
+function _clientMatchCard(m){
+  const st=m.status;
+  const p1=m.player1_name||'—', p2=m.player2_name||'—';
+  const w1=m.winner_slot===1, w2=m.winner_slot===2;
+  const done=st==='done', live=st==='in_progress', ready=st==='ready';
+
+  if(st==='void')return`<div class="sc-card" style="opacity:.2">
+    <div class="sc-head"><span class="sc-mnum">#${m.match_num}</span><span class="sc-time-b">—</span></div>
+    <div class="sc-player"><span class="sc-pname" style="font-style:italic;color:var(--text3)">Kutilmoqda</span><span class="sc-score">—</span></div>
+    <div class="sc-player"><span class="sc-pname" style="font-style:italic;color:var(--text3)">Kutilmoqda</span><span class="sc-score">—</span></div>
+  </div>`;
+
+  if(st==='bye'){
+    const bn=p1!=='—'?p1:p2;
+    return`<div class="sc-card sc-done">
+      <div class="sc-head"><span class="sc-mnum">#${m.match_num}</span><span class="sc-time-b">BYE</span></div>
+      <div class="sc-player sc-win-row"><span class="sc-pname win">${esc(bn)}</span><span class="sc-score win">🏆</span></div>
+    </div>`;
+  }
+
+  let cardCls='sc-card';
+  if(live)cardCls+=' sc-active';
+  else if(ready)cardCls+=' sc-ready';
+  else if(done)cardCls+=' sc-done';
+
+  const tblTxt=m.table_num>0?`Stol ${m.table_num}`:'';
+  const timeTxt=fmtMatchDateTime(m.match_scheduled_at);
+  const sc1=done?(w1?'🏆':'❌'):live?'▶':'—';
+  const sc2=done?(w2?'🏆':'❌'):live?'▶':'—';
+
+  return`<div class="${cardCls}">
+    <div class="sc-head">
+      <span class="sc-mnum">#${m.match_num}</span>
+      ${tblTxt?`<span class="sc-tbl-b">${tblTxt}</span>`:''}
+      <span class="sc-time-b">${timeTxt||'—'}</span>
+    </div>
+    <div class="sc-player ${w1?'sc-win-row':done&&!w1?'sc-lose-row':''}">
+      <span class="sc-pname ${w1?'win':''}">${esc(p1)}</span>
+      <span class="sc-score ${w1?'win':''}">${sc1}</span>
+    </div>
+    <div class="sc-player ${w2?'sc-win-row':done&&!w2?'sc-lose-row':''}">
+      <span class="sc-pname ${w2?'win':''}">${esc(p2)}</span>
+      <span class="sc-score ${w2?'win':''}">${sc2}</span>
+    </div>
+  </div>`;
 }
 
 function matchCard(m, readonly){
