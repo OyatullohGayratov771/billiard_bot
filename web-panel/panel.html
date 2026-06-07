@@ -966,13 +966,15 @@ async function loadTournaments(status){
       return;
     }
     body.innerHTML=trnList.map(t=>{
+      // Normalize field names: admin endpoint → 'registered', tournament-service → 'approved_count'
+      const reg = t.registered ?? t.approved_count ?? 0;
       const pb=isAdmin&&t.pending>0?`<span class="pending-badge">${t.pending}</span>`:'';
       return`<tr class="clickable" onclick="openTrnDetail(${t.id})">
         <td style="color:var(--text3)">${t.id}</td>
         <td><div class="name-cell">${esc(t.name)}</div><div class="sub-cell">${esc(t.branch_name)}</div></td>
         <td>${fmtDate(t.scheduled_at)}</td>
         <td><span class="sp sp-${t.status}">${TRN_STATUS[t.status]||t.status}</span></td>
-        <td>${t.registered}${pb} / ${t.max_players}</td>
+        <td>${reg}${pb} / ${t.max_players}</td>
       </tr>`;
     }).join('');
   }catch(e){body.innerHTML='<tr><td colspan="5" class="empty-note">Xatolik</td></tr>';}
@@ -984,6 +986,8 @@ async function openTrnDetail(trnId){
   if(!trn) return;
   panelMode='tournament';
   currentTrn={...trn};
+  // Normalize registered field for both admin and public endpoints
+  if(currentTrn.registered===undefined) currentTrn.registered=currentTrn.approved_count??0;
   currentClip=null;
   currentRegTab='all';
   allRegs=[];bracketMatches=[];
@@ -998,9 +1002,10 @@ async function openTrnDetail(trnId){
   const hasProg=trn.status==='registration'||trn.status==='in_progress';
   $('dp-prog-wrap').style.display=hasProg?'':'none';
   if(hasProg){
-    $('dp-pl').textContent=trn.registered+' tasdiqlangan';
+    const reg=trn.registered??trn.approved_count??0;
+    $('dp-pl').textContent=reg+' tasdiqlangan';
     $('dp-pr').textContent=trn.max_players+' max';
-    const pct=trn.max_players>0?Math.round(trn.registered/trn.max_players*100):0;
+    const pct=trn.max_players>0?Math.round(reg/trn.max_players*100):0;
     $('dp-pf').style.width=Math.min(100,pct)+'%';
   }
 
