@@ -193,32 +193,27 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
 .queue-p{color:#5050a0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .queue-vs{color:#282850;font-size:.68rem}
 
-/* ── SCHEDULE VIEW ── */
-.sched-wrap{padding:16px 24px 60px;display:flex;flex-direction:column;gap:18px}
-.sched-hdr{font-size:.58rem;text-transform:uppercase;letter-spacing:2.5px;color:#4040a0;margin-bottom:8px;padding:0 2px;font-weight:700}
-.sched-hdr.wb{color:#c0a000}
-.sched-hdr.lb{color:#5080c0}
-.sched-hdr.gf{color:#c04080}
-.sched-list{display:flex;flex-direction:column;gap:5px}
-.sched-row{
-  display:grid;grid-template-columns:36px 1fr 28px 1fr auto;
-  align-items:center;gap:10px;
-  padding:10px 14px;border-radius:8px;
-  border:1px solid #12122a;background:linear-gradient(90deg,#0d0d22,#0a0a1a);
-  font-size:.84rem;
-}
-.sched-row.sr-ready{border-color:rgba(52,120,219,.35);background:rgba(30,60,120,.12)}
-.sched-row.sr-active{border-color:rgba(212,160,18,.35);background:rgba(212,160,18,.07);animation:glow 2.2s ease-in-out infinite}
-.sched-row.sr-done{opacity:.55}
-.sched-mn{font-size:.58rem;color:#303060;font-weight:700}
-.sched-p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
-.sched-p.win{color:#f0c030;font-weight:700}
-.sched-p.lose{color:#252550}
-.sched-p.tbd{color:#252550;font-style:italic}
-.sched-vs{font-size:.65rem;color:#252550;text-align:center}
-.sched-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.sched-tbl{font-size:.6rem;color:#3080c0;background:rgba(48,128,192,.12);padding:2px 8px;border-radius:4px}
-.sched-ico{font-size:.75rem}
+/* ── SCHEDULE CARD VIEW ── */
+.sched-wrap{padding:16px 22px 60px;display:flex;flex-direction:column;gap:0}
+.sched-round-lbl{font-size:.56rem;text-transform:uppercase;letter-spacing:2.5px;color:#3a3a70;font-weight:700;margin:14px 2px 7px}
+.sched-round-lbl:first-child{margin-top:0}
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:6px}
+.sc-card{border-radius:10px;overflow:hidden;border:1px solid #15153a;background:linear-gradient(160deg,#0d0d22,#0a0a1a)}
+.sc-card.sc-ready{border-color:rgba(212,160,18,.35)}
+.sc-card.sc-active{border-color:rgba(212,160,18,.55);background:rgba(212,160,18,.06);animation:glow 2.2s ease-in-out infinite}
+.sc-card.sc-done{opacity:.6}
+.sc-head{display:flex;align-items:center;gap:8px;padding:7px 13px;border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02)}
+.sc-mnum{font-size:.72rem;font-weight:800;color:#f0c030;min-width:24px}
+.sc-tbl-b{font-size:.67rem;font-weight:700;color:#8090c0}
+.sc-time-b{font-size:.64rem;color:#505080;margin-left:auto;white-space:nowrap}
+.sc-player{display:flex;align-items:center;gap:10px;padding:10px 13px;font-size:.88rem}
+.sc-player+.sc-player{border-top:1px solid rgba(255,255,255,.05)}
+.sc-player.sc-win-row{background:rgba(212,160,18,.1)}
+.sc-player.sc-lose-row{opacity:.4}
+.sc-pname{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c0c0e0}
+.sc-pname.win{color:#f0c030}
+.sc-score{font-size:.8rem;color:#303060;min-width:22px;text-align:center;font-weight:700}
+.sc-score.win{color:#f0c030}
 
 /* ── MOBILE ── */
 @media(max-width:700px){
@@ -232,7 +227,7 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
   .rr-wrap{padding:12px 14px 40px}
   .tbl-grid{grid-template-columns:1fr;padding:12px 12px 60px}
   .sched-wrap{padding:10px 12px 60px}
-  .sched-row{grid-template-columns:28px 1fr 22px 1fr auto;gap:6px;padding:8px 10px}
+  .sc-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -721,24 +716,28 @@ function typeLabel(t) {
 }
 
 /* ══════════════════════════════════════════
-   SCHEDULE VIEW
+   SCHEDULE VIEW (card layout)
 ══════════════════════════════════════════ */
+function fmtMatchDateTime(iso) {
+  if (!iso) return '';
+  const uz = new Date(new Date(iso).getTime() + 5*3600000);
+  const p = n => String(n).padStart(2,'0');
+  const yy = String(uz.getUTCFullYear()).slice(2);
+  return p(uz.getUTCDate())+'.'+p(uz.getUTCMonth()+1)+'.'+yy+' '+p(uz.getUTCHours())+':'+p(uz.getUTCMinutes());
+}
+
 function renderScheduleView(container, t, matches) {
   const LBO = 1000, GF = 2000;
 
-  // Collect all displayable matches (skip bye/void with no players)
-  const visible = matches.filter(m => {
-    if (m.status === 'bye') return false;
-    if (m.status === 'void' && !m.player1_name && !m.player2_name) return false;
-    return true;
-  });
+  const visible = matches.filter(m =>
+    m.status !== 'bye' && !(m.status === 'void' && !m.player1_name && !m.player2_name)
+  );
 
   if (!visible.length) {
     container.innerHTML = '<div class="empty"><div class="big">📋</div><div>Jadval yo\'q</div></div>';
     return;
   }
 
-  // Group by round
   const rounds = {};
   for (const m of visible) {
     if (!rounds[m.round]) rounds[m.round] = [];
@@ -752,65 +751,59 @@ function renderScheduleView(container, t, matches) {
   for (const rn of roundNums) {
     const rmatches = rounds[rn].slice().sort((a,b) => a.match_num - b.match_num);
 
-    let label, hdrCls = '';
-    if (rn === GF)      { label = '🏆 Grand Final';              hdrCls = 'gf'; }
-    else if (rn >= LBO+1){ label = 'Yutqazuvchilar · R'+(rn-LBO); hdrCls = 'lb'; }
-    else                 { label = 'Raund ' + rn;                 hdrCls = 'wb'; }
+    let label;
+    if (rn === GF)       label = '🏆 Grand Final';
+    else if (rn >= LBO+1) label = 'Yutqazuvchilar · R'+(rn-LBO);
+    else                  label = 'Raund ' + rn;
 
-    const sec = document.createElement('div');
-    const hdr = document.createElement('div');
-    hdr.className = 'sched-hdr ' + hdrCls;
-    hdr.textContent = label;
-    sec.appendChild(hdr);
+    const roundLbl = document.createElement('div');
+    roundLbl.className = 'sched-round-lbl';
+    roundLbl.textContent = label;
+    wrap.appendChild(roundLbl);
 
-    const list = document.createElement('div');
-    list.className = 'sched-list';
+    const grid = document.createElement('div');
+    grid.className = 'sc-grid';
 
     for (const m of rmatches) {
       const done  = m.status === 'done';
       const live  = m.status === 'in_progress';
       const ready = m.status === 'ready';
-      const tbd   = m.status === 'void' || m.status === 'pending';
       const w1 = done && m.winner_slot === 1;
       const w2 = done && m.winner_slot === 2;
+      const p1 = m.player1_name || '—';
+      const p2 = m.player2_name || '—';
 
-      const p1 = m.player1_name || '?';
-      const p2 = m.player2_name || '?';
-      const p1tbd = !m.player1_name;
-      const p2tbd = !m.player2_name;
+      let cardCls = 'sc-card';
+      if (live)       cardCls += ' sc-active';
+      else if (ready) cardCls += ' sc-ready';
+      else if (done)  cardCls += ' sc-done';
 
-      let rowCls = 'sched-row';
-      if (live)        rowCls += ' sr-active';
-      else if (ready)  rowCls += ' sr-ready';
-      else if (done)   rowCls += ' sr-done';
+      const tblTxt  = m.table_num > 0 ? 'Stol ' + m.table_num : '';
+      const timeTxt = fmtMatchDateTime(m.match_scheduled_at);
+      const sc1 = done ? (w1 ? '🏆' : '❌') : live ? '▶' : '—';
+      const sc2 = done ? (w2 ? '🏆' : '❌') : live ? '▶' : '—';
 
-      let ico = '⏳', icoClr = '#303060';
-      if (live)        { ico = '▶';  icoClr = '#f0c030'; }
-      else if (ready)  { ico = '🎱'; icoClr = '#3080c0'; }
-      else if (done)   { ico = '✅'; icoClr = '#30c060'; }
+      const card = document.createElement('div');
+      card.className = cardCls;
+      card.innerHTML =
+        '<div class="sc-head">' +
+          '<span class="sc-mnum">#' + m.match_num + '</span>' +
+          (tblTxt ? '<span class="sc-tbl-b">' + tblTxt + '</span>' : '') +
+          '<span class="sc-time-b">' + (timeTxt || '—') + '</span>' +
+        '</div>' +
+        '<div class="sc-player ' + (w1 ? 'sc-win-row' : done && !w1 ? 'sc-lose-row' : '') + '">' +
+          '<span class="sc-pname' + (w1 ? ' win' : '') + '">' + esc(p1) + '</span>' +
+          '<span class="sc-score' + (w1 ? ' win' : '') + '">' + sc1 + '</span>' +
+        '</div>' +
+        '<div class="sc-player ' + (w2 ? 'sc-win-row' : done && !w2 ? 'sc-lose-row' : '') + '">' +
+          '<span class="sc-pname' + (w2 ? ' win' : '') + '">' + esc(p2) + '</span>' +
+          '<span class="sc-score' + (w2 ? ' win' : '') + '">' + sc2 + '</span>' +
+        '</div>';
 
-      const tblBadge = m.table_num > 0
-        ? '<span class="sched-tbl">🎱 ' + m.table_num + '-stol</span>'
-        : '';
-
-      const timeBadge = m.match_scheduled_at
-        ? '<span style="font-size:.6rem;color:#c0a000;background:rgba(192,160,0,.1);padding:2px 8px;border-radius:4px;white-space:nowrap">🕐 ' + fmtTime(m.match_scheduled_at) + '</span>'
-        : '';
-
-      const row = document.createElement('div');
-      row.className = rowCls;
-      row.innerHTML =
-        '<span class="sched-mn">M' + m.match_num + '</span>' +
-        '<span class="sched-p' + (w1?' win':done&&!w1?' lose':p1tbd?' tbd':'') + '">' + (w1?'🏆 ':'') + esc(p1) + '</span>' +
-        '<span class="sched-vs">vs</span>' +
-        '<span class="sched-p' + (w2?' win':done&&!w2?' lose':p2tbd?' tbd':'') + '">' + (w2?'🏆 ':'') + esc(p2) + '</span>' +
-        '<div class="sched-right">' + tblBadge + timeBadge + '<span class="sched-ico" style="color:' + icoClr + '">' + ico + '</span></div>';
-
-      list.appendChild(row);
+      grid.appendChild(card);
     }
 
-    sec.appendChild(list);
-    wrap.appendChild(sec);
+    wrap.appendChild(grid);
   }
 
   container.appendChild(wrap);

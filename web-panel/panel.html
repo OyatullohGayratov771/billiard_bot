@@ -252,21 +252,26 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .tbl-match-sp.wait{background:rgba(255,255,255,.05);color:var(--text3)}
 .tbl-empty{padding:20px;text-align:center;color:var(--text3);font-size:.65rem}
 
-/* Schedule / Jadval */
-.sched-section{margin-bottom:14px}
-.sched-section-label{font-size:.55rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--text3);margin-bottom:7px;padding:0 2px}
-.sched-row{display:grid;grid-template-columns:32px 1fr 24px 1fr auto;align-items:center;gap:8px;padding:9px 12px;background:var(--card);border:1px solid var(--border2);border-radius:4px;font-size:.8rem;margin-bottom:4px}
-.sched-row.sr-ready{border-color:rgba(52,152,219,.3);background:rgba(52,152,219,.04)}
-.sched-row.sr-active{border-color:rgba(212,175,55,.3);background:rgba(212,175,55,.04)}
-.sched-row.sr-done{opacity:.6}
-.sched-mn{font-size:.56rem;color:var(--text3);font-weight:700}
-.sched-p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sched-p.win{color:var(--gold);font-weight:700}
-.sched-p.lose{color:var(--text3)}
-.sched-vs{font-size:.6rem;color:var(--text3);text-align:center}
-.sched-right{display:flex;align-items:center;gap:5px;white-space:nowrap}
-.sched-tbl{font-size:.58rem;color:var(--blue);background:rgba(52,152,219,.1);padding:2px 7px;border-radius:3px}
-.sched-ico{font-size:.72rem}
+/* Schedule / Jadval — card layout */
+.sc-wrap{display:flex;flex-direction:column;gap:8px;padding:10px 16px 60px}
+.sc-round-lbl{font-size:.54rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--text3);margin:10px 2px 5px;font-weight:700}
+.sc-round-lbl:first-child{margin-top:0}
+.sc-card{border-radius:8px;overflow:hidden;border:1px solid var(--border2);background:var(--card)}
+.sc-card.sc-ready{border-color:rgba(212,175,55,.35)}
+.sc-card.sc-active{border-color:rgba(212,175,55,.5);background:rgba(212,175,55,.04)}
+.sc-card.sc-done{opacity:.7}
+.sc-head{display:flex;align-items:center;gap:8px;padding:6px 11px;border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02)}
+.sc-mnum{font-size:.7rem;font-weight:800;color:var(--gold);min-width:22px}
+.sc-tbl-b{font-size:.65rem;font-weight:700;color:var(--text2)}
+.sc-time-b{font-size:.63rem;color:var(--text3);margin-left:auto;white-space:nowrap}
+.sc-player{display:flex;align-items:center;gap:9px;padding:9px 11px;font-size:.84rem}
+.sc-player+.sc-player{border-top:1px solid rgba(255,255,255,.05)}
+.sc-player.sc-win-row{background:rgba(212,175,55,.08)}
+.sc-player.sc-lose-row{opacity:.45}
+.sc-pname{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-pname.win{color:var(--gold)}
+.sc-score{font-size:.78rem;color:var(--text3);min-width:18px;text-align:center;font-weight:700}
+.sc-score.win{color:var(--gold)}
 
 /* ─── MODAL ─── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:16px}
@@ -1314,30 +1319,34 @@ function renderTableView(){
 function fmtMatchTime(isoStr){
   if(!isoStr) return '';
   const d=new Date(isoStr);
-  // UTC+5
   const uz=new Date(d.getTime()+5*3600000);
   const pad=n=>String(n).padStart(2,'0');
   return `${pad(uz.getUTCHours())}:${pad(uz.getUTCMinutes())}`;
 }
-function fmtMatchDate(isoStr){
+function fmtMatchDateTime(isoStr){
   if(!isoStr) return '';
   const d=new Date(isoStr);
   const uz=new Date(d.getTime()+5*3600000);
   const pad=n=>String(n).padStart(2,'0');
-  return `${pad(uz.getUTCDate())}.${pad(uz.getUTCMonth()+1)} ${pad(uz.getUTCHours())}:${pad(uz.getUTCMinutes())}`;
+  const yy=String(uz.getUTCFullYear()).slice(2);
+  return `${pad(uz.getUTCDate())}.${pad(uz.getUTCMonth()+1)}.${yy} ${pad(uz.getUTCHours())}:${pad(uz.getUTCMinutes())}`;
+}
+function isoForInput(isoStr){
+  // Convert UTC ISO to UZT datetime-local string (YYYY-MM-DDTHH:MM)
+  if(!isoStr) return '';
+  const uz=new Date(new Date(isoStr).getTime()+5*3600000);
+  const pad=n=>String(n).padStart(2,'0');
+  return `${uz.getUTCFullYear()}-${pad(uz.getUTCMonth()+1)}-${pad(uz.getUTCDate())}T${pad(uz.getUTCHours())}:${pad(uz.getUTCMinutes())}`;
 }
 
 async function setMatchSchedule(matchId, inputId){
   const val=document.getElementById(inputId)?.value;
-  if(!val){return;}
-  // val is "HH:MM" from the time input — combine with tournament date
-  const trnDate=currentTrn?.scheduled_at;
-  if(!trnDate){showToast('Turnir sanasi yo\'q','err');return;}
-  const base=new Date(trnDate);
-  const [h,min]=val.split(':').map(Number);
-  // Build ISO string: same date as tournament, new time (UZT = UTC+5)
-  const utcMs=Date.UTC(base.getFullYear(),base.getMonth(),base.getDate(),h-5<0?h-5+24:h-5,min);
-  const iso=new Date(utcMs).toISOString();
+  if(!val) return;
+  // val = "YYYY-MM-DDTHH:MM" in UZT; convert to UTC
+  const [datePart,timePart]=val.split('T');
+  const [yr,mo,dy]=datePart.split('-').map(Number);
+  const [hh,mm]=timePart.split(':').map(Number);
+  const iso=new Date(Date.UTC(yr,mo-1,dy,hh-5,mm)).toISOString();
   try{
     const r=await fetch(`/api/admin/matches/${matchId}/schedule`,{
       method:'PUT',headers:{...auth(),'Content-Type':'application/json'},
@@ -1363,6 +1372,7 @@ function renderSchedule(){
     if(!rounds[m.round]) rounds[m.round]=[];
     rounds[m.round].push(m);
   });
+  // Include void/pending if has at least one player
   bracketMatches.forEach(m=>{
     if((m.status==='void'||m.status==='pending')&&(m.player1_name||m.player2_name)){
       if(!rounds[m.round]) rounds[m.round]=[];
@@ -1372,66 +1382,67 @@ function renderSchedule(){
   const rnums=Object.keys(rounds).map(Number).sort((a,b)=>a-b);
   if(!rnums.length){body.innerHTML='<div class="empty-note">O\'yinlar yo\'q</div>';return;}
 
-  body.innerHTML=rnums.map(rn=>{
+  let html='<div class="sc-wrap">';
+
+  for(const rn of rnums){
     let lbl;
     if(rn===GF) lbl='🏆 Grand Final';
     else if(rn>=LBO+1) lbl='Yutqazuvchilar · Raund '+(rn-LBO);
     else lbl='Raund '+rn;
+    html+=`<div class="sc-round-lbl">${lbl}</div>`;
 
-    const rows=rounds[rn].map(m=>{
+    for(const m of rounds[rn]){
       const st=m.status;
       const p1=m.player1_name||'—';
       const p2=m.player2_name||'—';
-      const w1=m.winner_slot===1;
-      const w2=m.winner_slot===2;
-      const done=st==='done';
-      const live=st==='in_progress';
-      const ready=st==='ready';
+      const w1=m.winner_slot===1, w2=m.winner_slot===2;
+      const done=st==='done', live=st==='in_progress', ready=st==='ready';
 
-      let rowCls='sched-row';
-      if(live) rowCls+=' sr-active';
-      else if(ready) rowCls+=' sr-ready';
-      else if(done) rowCls+=' sr-done';
+      let cardCls='sc-card';
+      if(live) cardCls+=' sc-active';
+      else if(ready) cardCls+=' sc-ready';
+      else if(done) cardCls+=' sc-done';
 
-      let ico='⏳',icoColor='var(--text3)';
-      if(live){ico='▶';icoColor='var(--gold)';}
-      else if(ready){ico='🎱';icoColor='var(--blue)';}
-      else if(done){ico='✅';icoColor='var(--green)';}
+      const tblTxt=m.table_num>0?`Stol ${m.table_num}`:'';
+      const timeTxt=fmtMatchDateTime(m.match_scheduled_at);
+      const scoreP1=done?(w1?'🏆':'❌'):live?'▶':'—';
+      const scoreP2=done?(w2?'🏆':'❌'):live?'▶':'—';
 
-      const tblBadge=m.table_num>0?`<span class="sched-tbl">🎱 ${m.table_num}-stol</span>`:'';
-
-      // Time badge
-      const matchTime=fmtMatchTime(m.match_scheduled_at);
-      const timeBadge=matchTime?`<span style="font-size:.58rem;color:var(--gold);background:rgba(212,175,55,.1);padding:2px 7px;border-radius:3px;white-space:nowrap">🕐 ${matchTime}</span>`:'';
-
-      // Admin time edit (only for non-done matches)
-      let timeEdit='';
+      // Admin time editor
+      let adminEdit='';
       if(isAdmin&&!done){
-        const inputId=`sti-${m.id}`;
-        const curTime=matchTime||'';
-        timeEdit=`<div style="display:flex;align-items:center;gap:4px;margin-top:5px">
-          <input type="time" id="${inputId}" value="${curTime}" style="background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:3px 6px;border-radius:3px;font-size:.65rem;outline:none;font-family:inherit;width:88px">
-          <button onclick="setMatchSchedule(${m.id},'${inputId}')" style="background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.3);color:var(--gold);padding:3px 8px;border-radius:3px;font-size:.6rem;font-weight:700;cursor:pointer;white-space:nowrap">💾</button>
+        const iid=`sti-${m.id}`;
+        const cur=isoForInput(m.match_scheduled_at);
+        adminEdit=`<div style="display:flex;align-items:center;gap:5px;padding:5px 11px 8px">
+          <span style="font-size:.6rem;color:var(--text3)">🕐</span>
+          <input type="datetime-local" id="${iid}" value="${cur}"
+            style="flex:1;background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:3px 7px;border-radius:4px;font-size:.65rem;outline:none;font-family:inherit">
+          <button onclick="setMatchSchedule(${m.id},'${iid}')"
+            style="background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3);color:var(--gold);padding:3px 10px;border-radius:4px;font-size:.6rem;font-weight:700;cursor:pointer">💾</button>
         </div>`;
       }
 
-      return `<div style="margin-bottom:4px">
-        <div class="${rowCls}">
-          <span class="sched-mn">M${m.match_num}</span>
-          <span class="sched-p ${w1?'win':done&&!w1?'lose':''}">${w1?'🏆 ':''}${esc(p1)}</span>
-          <span class="sched-vs">vs</span>
-          <span class="sched-p ${w2?'win':done&&!w2?'lose':''}">${w2?'🏆 ':''}${esc(p2)}</span>
-          <div class="sched-right">${tblBadge}${timeBadge}<span class="sched-ico" style="color:${icoColor}">${ico}</span></div>
+      html+=`<div class="${cardCls}">
+        <div class="sc-head">
+          <span class="sc-mnum">#${m.match_num}</span>
+          ${tblTxt?`<span class="sc-tbl-b">${tblTxt}</span>`:''}
+          ${timeTxt?`<span class="sc-time-b">${timeTxt}</span>`:'<span class="sc-time-b" style="opacity:.4">—</span>'}
         </div>
-        ${timeEdit}
+        <div class="sc-player ${w1?'sc-win-row':done&&!w1?'sc-lose-row':''}">
+          <span class="sc-pname ${w1?'win':''}">${esc(p1)}</span>
+          <span class="sc-score ${w1?'win':''}">${scoreP1}</span>
+        </div>
+        <div class="sc-player ${w2?'sc-win-row':done&&!w2?'sc-lose-row':''}">
+          <span class="sc-pname ${w2?'win':''}">${esc(p2)}</span>
+          <span class="sc-score ${w2?'win':''}">${scoreP2}</span>
+        </div>
+        ${adminEdit}
       </div>`;
-    }).join('');
+    }
+  }
 
-    return `<div class="sched-section">
-      <div class="sched-section-label">${lbl}</div>
-      ${rows}
-    </div>`;
-  }).join('');
+  html+='</div>';
+  body.innerHTML=html;
 }
 
 function renderBracket(){
