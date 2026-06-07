@@ -262,8 +262,8 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .sc-card.sc-done{opacity:.7}
 .sc-head{display:flex;align-items:center;gap:8px;padding:6px 11px;border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02)}
 .sc-mnum{font-size:.7rem;font-weight:800;color:var(--gold);min-width:22px}
-.sc-tbl-b{font-size:.65rem;font-weight:700;color:var(--text2)}
-.sc-time-b{font-size:.63rem;color:var(--text3);margin-left:auto;white-space:nowrap}
+.sc-tbl-b{font-size:.65rem;font-weight:800;color:var(--blue);background:rgba(52,152,219,.1);padding:1px 7px;border-radius:3px}
+.sc-time-b{font-size:.63rem;color:var(--gold);font-weight:700;margin-left:auto;white-space:nowrap}
 .sc-player{display:flex;align-items:center;gap:9px;padding:9px 11px;font-size:.84rem}
 .sc-player+.sc-player{border-top:1px solid rgba(255,255,255,.05)}
 .sc-player.sc-win-row{background:rgba(212,175,55,.08)}
@@ -545,7 +545,7 @@ const show = id => { ['state-loading','state-error','state-main'].forEach(s=>$(s
 // Constants
 const STATUS_UZ = {pending:'Kutilmoqda',paid:'To\'langan',processing:'Jarayonda',done:'Tayyor',failed:'Rad etildi',refunded:'Qaytarildi'};
 const TRN_STATUS = {registration:'Ro\'yxat',in_progress:'Jarayonda',finished:'Yakunlandi',cancelled:'Bekor'};
-const TRN_TYPE = {single_elimination:'Single Elim',double_elimination:'Double Elim',round_robin:'Round Robin'};
+const TRN_TYPE = {single_elimination:'SE · Single Elimination',double_elimination:'DE · Double Elimination',round_robin:'Round Robin'};
 const REG_STATUS = {pending:'Kutilmoqda',approved:'Tasdiqlangan',rejected:'Rad etilgan'};
 const ROLES = ['client','operator','admin','superadmin'];
 const ROLE_UZ = {client:'Mijoz',operator:'Operator',admin:'Admin',superadmin:'Superadmin'};
@@ -1403,8 +1403,8 @@ function renderSchedule(){
   for(const rn of rnums){
     let lbl;
     if(rn===GF) lbl='🏆 Grand Final';
-    else if(rn>=LBO+1) lbl='Yutqazuvchilar · Raund '+(rn-LBO);
-    else lbl='Raund '+rn;
+    else if(rn>=LBO+1) lbl='Yutqazuvchilar · '+(rn-LBO)+'-bosqich';
+    else lbl=rn+'-bosqich';
     html+=`<div class="sc-round-lbl">${lbl}</div>`;
 
     for(const m of rounds[rn]){
@@ -1477,8 +1477,8 @@ function renderBracket(){
   for(const rn of rnums){
     let lbl;
     if(rn===GF) lbl='🏆 Grand Final';
-    else if(rn>=LBO+1) lbl='Yutqazuvchilar · Raund '+(rn-LBO);
-    else lbl='Raund '+rn;
+    else if(rn>=LBO+1) lbl='Yutqazuvchilar · '+(rn-LBO)+'-bosqich';
+    else lbl=rn+'-bosqich';
     html+=`<div class="sc-round-lbl">${lbl}</div><div class="sc-grid">`;
     html+=rounds[rn].map(m=>matchCard(m,readonly)).join('');
     html+='</div>';

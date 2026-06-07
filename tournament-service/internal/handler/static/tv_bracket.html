@@ -176,8 +176,8 @@ body{background:#06060e;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
 .sc-card.sc-done{opacity:.6}
 .sc-head{display:flex;align-items:center;gap:8px;padding:7px 13px;border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02)}
 .sc-mnum{font-size:.72rem;font-weight:800;color:#f0c030;min-width:24px}
-.sc-tbl-b{font-size:.67rem;font-weight:700;color:#8090c0}
-.sc-time-b{font-size:.64rem;color:#505080;margin-left:auto;white-space:nowrap}
+.sc-tbl-b{font-size:.68rem;font-weight:800;color:#a0b0e0;background:rgba(100,130,220,.12);padding:1px 7px;border-radius:3px}
+.sc-time-b{font-size:.65rem;color:#d4a012;font-weight:700;margin-left:auto;white-space:nowrap}
 .sc-player{display:flex;align-items:center;gap:10px;padding:10px 13px;font-size:.88rem}
 .sc-player+.sc-player{border-top:1px solid rgba(255,255,255,.05)}
 .sc-player.sc-win-row{background:rgba(212,160,18,.1)}
@@ -366,6 +366,8 @@ function renderSE(container, t, matches) {
     }
   }
 
+  const sec = mkSection('🏆 Bracket', 'wb');
+
   const br = document.createElement('div');
   br.className = 'bracket';
 
@@ -379,7 +381,8 @@ function renderSE(container, t, matches) {
     br.appendChild(mkWinner(winner));
   }
 
-  container.appendChild(br);
+  sec.appendChild(br);
+  container.appendChild(sec);
 }
 
 /* ══════════════════════════════════════════
