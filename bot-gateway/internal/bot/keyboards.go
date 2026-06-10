@@ -2,8 +2,10 @@ package bot
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
+	"bot-gateway/internal/config"
 	"bot-gateway/internal/models"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -13,25 +15,42 @@ import (
 
 func mainMenuKeyboard(user *models.User) replyKeyboard {
 	var rows [][]replyBtn
+
+	// Web App tugmasi — mini-app (me.html) to'g'ridan ochiladi. Faqat HTTPS URL bilan.
+	base := strings.TrimRight(config.AppConfig.TVBaseURL, "/")
+	hasWebApp := strings.HasPrefix(base, "https://")
+
 	switch user.Role {
 	case models.RoleSuperadmin:
 		rows = [][]replyBtn{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
 			{btn("👥 Xodimlar"), btn("⚙️ Sozlamalar")},
 		}
+		if hasWebApp {
+			rows = append(rows, []replyBtn{webAppBtn("📊 Boshqaruv paneli", base+"/panel")})
+		}
 	case models.RoleAdmin:
 		rows = [][]replyBtn{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
+		}
+		if hasWebApp {
+			rows = append(rows, []replyBtn{webAppBtn("📊 Boshqaruv paneli", base+"/panel")})
 		}
 	case models.RoleOperator:
 		rows = [][]replyBtn{
 			{btn("🎬 Kliplar")},
 		}
-	default: // client
-		rows = [][]replyBtn{
-			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
-			{btn("👤 Akkaunt")},
+		if hasWebApp {
+			rows = append(rows, []replyBtn{webAppBtn("📊 Boshqaruv paneli", base+"/panel")})
 		}
+	default: // client
+		if hasWebApp {
+			rows = append(rows, []replyBtn{webAppBtn("📱 Ilovani ochish", base+"/me")})
+		}
+		rows = append(rows,
+			[]replyBtn{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
+			[]replyBtn{btn("👤 Akkaunt")},
+		)
 	}
 
 	return replyKeyboard{Keyboard: rows, ResizeKeyboard: true}

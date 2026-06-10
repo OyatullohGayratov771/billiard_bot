@@ -35,7 +35,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .content::-webkit-scrollbar{display:none}
 .tp{display:none}
-.tp.on{display:block}
+.tp.on{display:block;animation:tabIn .32s cubic-bezier(.22,.61,.36,1)}
+@keyframes tabIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
 /* ─── HOME TAB ─── */
 .home-hdr{padding:20px 16px 16px;background:linear-gradient(180deg,rgba(212,175,55,.06) 0%,transparent 100%);border-bottom:1px solid var(--border2)}
@@ -206,10 +207,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 /* ─── BOTTOM NAV ─── */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));background:rgba(5,5,5,.97);border-top:1px solid var(--border2);display:flex;z-index:200;padding-bottom:var(--safe-b);backdrop-filter:blur(20px)}
-.bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--text3);transition:.2s;border:none;background:none;font-family:inherit;position:relative}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--text3);transition:color .2s;border:none;background:none;font-family:inherit;position:relative}
 .bn:hover{color:var(--text2)}
 .bn.on{color:var(--gold)}
-.bn-ic{font-size:1.3rem;line-height:1}
+.bn::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%) scaleX(0);width:26px;height:2.5px;border-radius:0 0 3px 3px;background:linear-gradient(90deg,var(--gold),var(--gold-l));transition:transform .25s cubic-bezier(.22,.61,.36,1)}
+.bn.on::before{transform:translateX(-50%) scaleX(1)}
+.bn.on .bn-ic{transform:translateY(-1px) scale(1.08)}
+.bn-ic{font-size:1.3rem;line-height:1;transition:transform .2s}
 .bn-lb{font-size:.5rem;letter-spacing:.8px;text-transform:uppercase;font-weight:700}
 .bn-dot{position:absolute;top:8px;right:calc(50% - 16px);width:7px;height:7px;background:var(--red);border-radius:50%;display:none;border:1.5px solid var(--bg)}
 .bn-dot.on{display:block}

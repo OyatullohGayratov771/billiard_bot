@@ -123,7 +123,9 @@ func (h *Handler) verifyJWT(token string) (*Claims, bool) {
 	body := p[0] + "." + p[1]
 	mac := hmac.New(sha256.New, []byte(h.secret))
 	mac.Write([]byte(body))
-	if b64u(mac.Sum(nil)) != p[2] {
+	expected := mac.Sum(nil)
+	got, err := base64.RawURLEncoding.DecodeString(p[2])
+	if err != nil || !hmac.Equal(expected, got) {
 		return nil, false
 	}
 	raw, err := base64.RawURLEncoding.DecodeString(p[1])
@@ -176,12 +178,13 @@ func (h *Handler) verifyInitData(initData string) (tgWebUser, error) {
 	mac1.Write([]byte(h.botToken))
 	secretKey := mac1.Sum(nil)
 
-	// sig = hex(HMAC-SHA256(key=secretKey, data=dataCheck))
+	// sig = HMAC-SHA256(key=secretKey, data=dataCheck)
 	mac2 := hmac.New(sha256.New, secretKey)
 	mac2.Write([]byte(dataCheck))
-	sig := hex.EncodeToString(mac2.Sum(nil))
+	expectedSig := mac2.Sum(nil)
 
-	if sig != hash {
+	gotSig, err := hex.DecodeString(hash)
+	if err != nil || !hmac.Equal(expectedSig, gotSig) {
 		return tgWebUser{}, errors.New("hash mismatch")
 	}
 
@@ -1305,10 +1308,18 @@ func (h *Handler) meTournamentRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body, _ := json.Marshal(map[string]any{"user_tg_id": claims.TgID, "user_name": name})
-	resp, err := http.Post(
+	regReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost,
 		h.trnSvcURL+"/tournaments/"+strconv.FormatInt(trnID, 10)+"/register",
-		"application/json", bytes.NewReader(body),
-	)
+		bytes.NewReader(body))
+	if err != nil {
+		writeErr(w, 500, "proxy error")
+		return
+	}
+	regReq.Header.Set("Content-Type", "application/json")
+	if h.internalToken != "" {
+		regReq.Header.Set("X-Internal-Token", h.internalToken)
+	}
+	resp, err := http.DefaultClient.Do(regReq)
 	if err != nil {
 		writeErr(w, 502, "tournament service unavailable")
 		return

@@ -213,7 +213,8 @@ func (c *TournamentClient) getInternal(path string, out any, internal bool) erro
 }
 
 func (c *TournamentClient) post(path string, body []byte, out any) error {
-	return c.postInternal(path, body, out, false)
+	// bot-gateway ishonchli internal servis — barcha POST (mutating) chaqiruvlar token bilan ketadi
+	return c.postInternal(path, body, out, true)
 }
 
 func (c *TournamentClient) postInternal(path string, body []byte, out any, internal bool) error {
@@ -241,6 +242,9 @@ func (c *TournamentClient) postInternal(path string, body []byte, out any, inter
 func (c *TournamentClient) put(path string, body []byte, out any) error {
 	req, _ := http.NewRequest(http.MethodPut, c.baseURL+path, bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	if c.internalToken != "" {
+		req.Header.Set("X-Internal-Token", c.internalToken)
+	}
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return err
@@ -257,6 +261,9 @@ func (c *TournamentClient) put(path string, body []byte, out any) error {
 func (c *TournamentClient) putNoResponse(path string, body []byte) error {
 	req, _ := http.NewRequest(http.MethodPut, c.baseURL+path, bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	if c.internalToken != "" {
+		req.Header.Set("X-Internal-Token", c.internalToken)
+	}
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return err

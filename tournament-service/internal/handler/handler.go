@@ -81,6 +81,9 @@ func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) createTournament(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	var req struct {
 		Name        string `json:"name"`
 		BranchID    int64  `json:"branch_id"`
@@ -137,6 +140,9 @@ func (h *Handler) getTournament(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) updateTournament(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		writeError(w, 400, "invalid id")
@@ -165,6 +171,9 @@ func (h *Handler) updateTournament(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) cancelTournament(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		writeError(w, 400, "invalid id")
@@ -196,6 +205,9 @@ func (h *Handler) deleteTournament(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		writeError(w, 400, "invalid id")
@@ -219,6 +231,9 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) registerManual(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		writeError(w, 400, "invalid id")
@@ -255,6 +270,9 @@ func (h *Handler) listRegistrations(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) approveReg(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	tID, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	rID, err := strconv.ParseInt(r.PathValue("reg_id"), 10, 64)
 	if err != nil {
@@ -270,6 +288,9 @@ func (h *Handler) approveReg(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) rejectReg(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	tID, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	rID, err := strconv.ParseInt(r.PathValue("reg_id"), 10, 64)
 	if err != nil {
@@ -285,6 +306,9 @@ func (h *Handler) rejectReg(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) generateBracket(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		writeError(w, 400, "invalid id")
@@ -300,6 +324,9 @@ func (h *Handler) generateBracket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) shuffleBracket(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		writeError(w, 400, "invalid id")
@@ -315,6 +342,9 @@ func (h *Handler) shuffleBracket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) setMatchTable(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		writeError(w, 400, "invalid id")
@@ -343,6 +373,9 @@ func (h *Handler) setMatchTable(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) setMatchSchedule(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		writeError(w, 400, "invalid id")
@@ -372,6 +405,9 @@ func (h *Handler) setMatchSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) startMatch(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		writeError(w, 400, "invalid id")
@@ -410,6 +446,9 @@ func (h *Handler) getBracket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) setResult(w http.ResponseWriter, r *http.Request) {
+	if !h.checkInternal(w, r) {
+		return
+	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		writeError(w, 400, "invalid id")
