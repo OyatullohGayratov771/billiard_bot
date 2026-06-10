@@ -248,15 +248,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .bracket{display:flex;align-items:stretch;padding:0 16px 4px;gap:0;overflow-x:auto;scrollbar-width:thin;scrollbar-color:rgba(100,100,180,.1) transparent}
 .bracket::-webkit-scrollbar{height:4px}
 .bracket::-webkit-scrollbar-thumb{background:rgba(100,100,180,.1);border-radius:2px}
-.round-col{display:flex;flex-direction:column;align-items:center;min-width:180px}
+.round-col{display:flex;flex-direction:column;align-items:center;min-width:196px}
 .round-lbl{font-size:.56rem;text-transform:uppercase;letter-spacing:1.5px;color:#30304a;margin-bottom:8px;padding:2px 8px;background:rgba(255,255,255,.02);border-radius:4px;white-space:nowrap}
 .matches-col{display:flex;flex-direction:column;width:100%;flex:1}
 .match-slot{display:flex;align-items:center;flex:1;min-height:60px}
 .conn{display:flex;flex-direction:column;justify-content:center;width:24px;flex-shrink:0;align-self:stretch}
 .conn-line{border-top:1px solid rgba(100,100,180,.1);width:100%}
-.brk-card{width:168px;border-radius:8px;overflow:hidden;border:1px solid rgba(100,100,180,.1);background:linear-gradient(160deg,#0c0c20,#080818)}
+.brk-card{width:182px;border-radius:8px;overflow:hidden;border:1px solid rgba(100,100,180,.1);background:linear-gradient(160deg,#0c0c20,#080818)}
 .brk-card.live{border-color:rgba(212,175,55,.5);box-shadow:0 0 16px rgba(212,175,55,.2)}
 .brk-card.done{border-color:rgba(48,192,96,.15);background:linear-gradient(160deg,#080f0a,#050d07)}
+.brk-head{display:flex;align-items:center;gap:5px;padding:5px 9px;border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02)}
+.bh-num{font-size:.56rem;font-weight:800;color:#6060a0;flex-shrink:0}
+.bh-tbl{font-size:.56rem;font-weight:700;color:#7090d0;background:rgba(80,120,210,.14);padding:1px 6px;border-radius:3px;white-space:nowrap}
+.bh-time{font-size:.58rem;font-weight:700;color:var(--gold);margin-left:auto;white-space:nowrap}
 .bplayer{padding:8px 10px;font-size:.78rem;display:flex;align-items:center;gap:6px;color:#e0e0f0}
 .bplayer+.bplayer{border-top:1px solid rgba(255,255,255,.05)}
 .bplayer.win{background:rgba(212,175,55,.12);color:var(--gold);font-weight:700}
@@ -264,8 +268,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .bp-ico{width:14px;text-align:center;font-size:.65rem;flex-shrink:0}
 .bp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .bp-score{font-size:.7rem;font-weight:700;color:#6060a0;flex-shrink:0;min-width:14px;text-align:right}
-.bye-card{width:168px;padding:10px 12px;border-radius:8px;border:1px dashed rgba(100,100,180,.1);background:#06060e;color:#30304a;font-size:.72rem;font-style:italic}
-.void-card{width:168px;height:54px}
+.bye-card{width:182px;padding:10px 12px;border-radius:8px;border:1px dashed rgba(100,100,180,.1);background:#06060e;color:#30304a;font-size:.72rem;font-style:italic}
+.void-card{width:182px;height:54px}
 .winner-col{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:120px;gap:6px;padding:16px}
 .w-trophy{font-size:2.8rem;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 10px rgba(212,175,55,.4))}
 .w-name{font-size:.95rem;font-weight:800;color:var(--gold);text-align:center}
@@ -1305,18 +1309,23 @@ function brkRR(c,t,ms) {
   const mSec=brkEl('div'); brkSecHdr(mSec,"⚽ O'yinlar",'wb');
   const mList=brkEl('div','rr-matches');
   ms.forEach((m,i)=>{
-    const done=m.status==='done', p1w=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player1_tg_id, p2w=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player2_tg_id;
+    const done=m.status==='done', p1w=done&&m.winner_slot===1, p2w=done&&m.winner_slot===2;
     const card=brkEl('div','rr-card'+(m.status==='ready'?' live':done?' done':''));
     card.innerHTML=`<span class="rr-num">${i+1}.</span><span class="rr-p${p1w?' win':done&&!p1w?' lose':''}">${esc(m.player1_name||'—')}</span><span class="rr-vs">vs</span><span class="rr-p${p2w?' win':done&&!p2w?' lose':''}">${esc(m.player2_name||'—')}</span><span class="rr-st">${m.status==='ready'?'🎱':done?'✅':m.status==='pending'?'⏳':''}</span>`;
     mList.appendChild(card);
   });
   mSec.appendChild(mList); wrap.appendChild(mSec);
+  // Standings — ism bo'yicha kalit (BigInt aniqlik muammosidan qochish)
   const wins={}, played={}, players={};
   for(const m of ms){
-    if(m.player1_tg_id&&m.player1_name) players[m.player1_tg_id]=m.player1_name;
-    if(m.player2_tg_id&&m.player2_name) players[m.player2_tg_id]=m.player2_name;
-    if(m.status==='done'&&m.winner_tg_id) wins[m.winner_tg_id]=(wins[m.winner_tg_id]||0)+1;
-    if(m.status==='done')[m.player1_tg_id,m.player2_tg_id].forEach(id=>{if(id)played[id]=(played[id]||0)+1;});
+    if(m.player1_name) players[m.player1_name]=m.player1_name;
+    if(m.player2_name) players[m.player2_name]=m.player2_name;
+    if(m.status==='done'){
+      const wn=m.winner_slot===1?m.player1_name:m.winner_slot===2?m.player2_name:null;
+      if(wn) wins[wn]=(wins[wn]||0)+1;
+      if(m.player1_name)played[m.player1_name]=(played[m.player1_name]||0)+1;
+      if(m.player2_name)played[m.player2_name]=(played[m.player2_name]||0)+1;
+    }
   }
   const sorted=Object.entries(players).sort((a,b)=>(wins[b[0]]||0)-(wins[a[0]]||0));
   if(sorted.length){
@@ -1352,11 +1361,29 @@ function brkRoundCol(msList,label){
   }
   col.appendChild(mc);return col;
 }
+function brkTime(iso){
+  if(!iso) return '';
+  const uz=new Date(new Date(iso).getTime()+5*3600000);
+  const p=n=>String(n).padStart(2,'0');
+  return p(uz.getUTCDate())+'.'+p(uz.getUTCMonth()+1)+' '+p(uz.getUTCHours())+':'+p(uz.getUTCMinutes());
+}
 function brkCard(m){
   const done=m.status==='done', live=m.status==='in_progress'||m.status==='ready';
   const card=brkEl('div','brk-card'+(live?' live':done?' done':''));
-  const p1w=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player1_tg_id;
-  const p2w=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player2_tg_id;
+  // winner_slot orqali (BigInt aniqlik muammosidan qochish uchun)
+  const p1w=done&&m.winner_slot===1;
+  const p2w=done&&m.winner_slot===2;
+
+  // Header: match raqami + stol + vaqt
+  const head=brkEl('div','brk-head');
+  const num=brkEl('span','bh-num');num.textContent='#'+m.match_num;
+  head.appendChild(num);
+  if(m.table_num>0){const tb=brkEl('span','bh-tbl');tb.textContent=m.table_num+'-stol';head.appendChild(tb);}
+  const tm=brkTime(m.match_scheduled_at);
+  if(tm){const tt=brkEl('span','bh-time');tt.textContent='🕐 '+tm;head.appendChild(tt);}
+  else if(m.table_num<=0){const tt=brkEl('span','bh-time');tt.style.color='#30304a';tt.textContent='—';head.appendChild(tt);}
+  card.appendChild(head);
+
   function mkP(name,isWin,score){
     const p=brkEl('div','bplayer'+(isWin?' win':done&&!isWin?' lose':''));
     const ico=brkEl('span','bp-ico');ico.textContent=isWin?'🏆':live?'🎱':'';
