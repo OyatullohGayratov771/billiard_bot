@@ -548,13 +548,14 @@ function buildCard(m) {
   else if(m.table_num<=0){const tt=el('span','ch-time'); tt.style.color='var(--text3)'; tt.textContent='—'; head.appendChild(tt);}
   card.appendChild(head);
 
+  const hasScore=done&&((m.player1_score||0)>0||(m.player2_score||0)>0);
   function mkPlayer(name, isWin, score) {
     const p = el('div','player'+(isWin?' win':done&&!isWin?' lose':''));
-    const ico=el('span','p-ico'); ico.textContent=isWin?'🏆':live?'🎱':'';
+    const ico=el('span','p-ico'); ico.textContent=isWin?'🏆':live?'🎱':done?'❌':'';
     const nm =el('span','p-name'); nm.textContent=name||'—';
     p.appendChild(ico); p.appendChild(nm);
-    if (done && score != null) {
-      const sc=el('span','p-score'); sc.textContent=score; p.appendChild(sc);
+    if (hasScore) {
+      const sc=el('span','p-score'); sc.textContent=score||0; p.appendChild(sc);
     }
     return p;
   }

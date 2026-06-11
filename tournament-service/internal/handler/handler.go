@@ -455,8 +455,10 @@ func (h *Handler) setResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		WinnerSlot int   `json:"winner_slot"`  // 1 or 2
-		WinnerTgID int64 `json:"winner_tg_id"` // legacy, ignored if winner_slot set
+		WinnerSlot   int   `json:"winner_slot"`   // 1 or 2
+		WinnerTgID   int64 `json:"winner_tg_id"`  // legacy, ignored if winner_slot set
+		Player1Score *int  `json:"player1_score"` // optional
+		Player2Score *int  `json:"player2_score"` // optional
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, 400, "invalid request")
@@ -485,7 +487,12 @@ func (h *Handler) setResult(w http.ResponseWriter, r *http.Request) {
 	} else {
 		winnerTgID = req.WinnerTgID
 	}
-	winnerNextID, loserNextID, assignedMatchID, assignedTableNum, finished, trnID, err := h.svc.SetResult(id, winnerTgID)
+	// Scores optional: -1 sentinel means "not provided"
+	p1Score, p2Score := -1, -1
+	if req.Player1Score != nil && req.Player2Score != nil {
+		p1Score, p2Score = *req.Player1Score, *req.Player2Score
+	}
+	winnerNextID, loserNextID, assignedMatchID, assignedTableNum, finished, trnID, err := h.svc.SetResult(id, winnerTgID, p1Score, p2Score)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return

@@ -368,6 +368,15 @@ func (r *Repo) SetMatchWinner(id int64, winnerTgID int64) error {
 	return err
 }
 
+// SetMatchResult records winner together with the match score.
+func (r *Repo) SetMatchResult(id int64, winnerTgID int64, p1Score, p2Score int) error {
+	_, err := r.db.Exec(
+		`UPDATE tournament_matches SET winner_tg_id=$1, player1_score=$2, player2_score=$3, status='done' WHERE id=$4`,
+		winnerTgID, p1Score, p2Score, id,
+	)
+	return err
+}
+
 func (r *Repo) FillMatchSlot(id int64, slot int, playerTgID int64) error {
 	if slot == 1 {
 		_, err := r.db.Exec(`UPDATE tournament_matches SET player1_tg_id=$1 WHERE id=$2`, playerTgID, id)

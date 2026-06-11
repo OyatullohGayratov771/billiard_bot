@@ -672,8 +672,9 @@ function buildCard(m) {
   else if (done)  cardCls += ' sc-done';
   else            cardCls += ' sc-ready';
 
-  const sc1 = done ? (p1win ? '🏆' : '❌') : live ? '🎱' : '—';
-  const sc2 = done ? (p2win ? '🏆' : '❌') : live ? '🎱' : '—';
+  const hasScore = done && ((m.player1_score||0) > 0 || (m.player2_score||0) > 0);
+  const sc1 = hasScore ? (m.player1_score||0) : done ? (p1win ? '🏆' : '❌') : live ? '🎱' : '—';
+  const sc2 = hasScore ? (m.player2_score||0) : done ? (p2win ? '🏆' : '❌') : live ? '🎱' : '—';
 
   const d = document.createElement('div');
   d.className = cardCls;
@@ -684,11 +685,11 @@ function buildCard(m) {
       '<span class="sc-time-b">' + (timeTxt || '—') + '</span>' +
     '</div>' +
     '<div class="sc-player ' + (p1win ? 'sc-win-row' : done && !p1win ? 'sc-lose-row' : '') + '">' +
-      '<span class="sc-pname' + (p1win ? ' win' : '') + '">' + esc(m.player1_name || '—') + '</span>' +
+      '<span class="sc-pname' + (p1win ? ' win' : '') + '">' + (hasScore&&p1win?'🏆 ':'') + esc(m.player1_name || '—') + '</span>' +
       '<span class="sc-score' + (p1win ? ' win' : '') + '">' + sc1 + '</span>' +
     '</div>' +
     '<div class="sc-player ' + (p2win ? 'sc-win-row' : done && !p2win ? 'sc-lose-row' : '') + '">' +
-      '<span class="sc-pname' + (p2win ? ' win' : '') + '">' + esc(m.player2_name || '—') + '</span>' +
+      '<span class="sc-pname' + (p2win ? ' win' : '') + '">' + (hasScore&&p2win?'🏆 ':'') + esc(m.player2_name || '—') + '</span>' +
       '<span class="sc-score' + (p2win ? ' win' : '') + '">' + sc2 + '</span>' +
     '</div>';
   return d;

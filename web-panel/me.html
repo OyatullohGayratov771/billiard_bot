@@ -1384,12 +1384,13 @@ function brkCard(m){
   else if(m.table_num<=0){const tt=brkEl('span','bh-time');tt.style.color='#30304a';tt.textContent='—';head.appendChild(tt);}
   card.appendChild(head);
 
+  const hasScore=done&&((m.player1_score||0)>0||(m.player2_score||0)>0);
   function mkP(name,isWin,score){
     const p=brkEl('div','bplayer'+(isWin?' win':done&&!isWin?' lose':''));
-    const ico=brkEl('span','bp-ico');ico.textContent=isWin?'🏆':live?'🎱':'';
+    const ico=brkEl('span','bp-ico');ico.textContent=isWin?'🏆':live?'🎱':done?'❌':'';
     const nm=brkEl('span','bp-name');nm.textContent=name||'—';
     p.appendChild(ico);p.appendChild(nm);
-    if(done&&score!=null){const sc=brkEl('span','bp-score');sc.textContent=score;p.appendChild(sc);}
+    if(hasScore){const sc=brkEl('span','bp-score');sc.textContent=score||0;p.appendChild(sc);}
     return p;
   }
   card.appendChild(mkP(m.player1_name,p1w,m.player1_score));

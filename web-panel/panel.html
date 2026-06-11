@@ -219,6 +219,8 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .mc-win-btn{background:transparent;border:1px solid rgba(212,175,55,.3);border-radius:3px;padding:3px 8px;cursor:pointer;font-size:.68rem;color:var(--gold);transition:.2s;white-space:nowrap;font-weight:800}
 .mc-win-btn:hover{background:rgba(212,175,55,.12)}
 .mc-win-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
+.mc-sc-inp{width:34px;background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:2px 0;border-radius:4px;font-size:.72rem;text-align:center;outline:none;font-family:inherit;font-weight:700}
+.mc-sc-inp:focus{border-color:rgba(212,175,55,.45)}
 .mc-start-btn{background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.3);border-radius:3px;padding:4px 10px;cursor:pointer;font-size:.62rem;font-weight:700;color:var(--green);transition:.2s;width:100%}
 .mc-start-btn:hover{background:rgba(46,204,113,.15)}
 .mc-start-form{display:flex;gap:5px;align-items:center;margin-top:6px}
@@ -1627,8 +1629,9 @@ function _clientMatchCard(m){
 
   const tblTxt=m.table_num>0?`Stol ${m.table_num}`:'';
   const timeTxt=fmtMatchDateTime(m.match_scheduled_at);
-  const sc1=done?(w1?'🏆':'❌'):live?'▶':'—';
-  const sc2=done?(w2?'🏆':'❌'):live?'▶':'—';
+  const hasScore=done&&((m.player1_score||0)>0||(m.player2_score||0)>0);
+  const sc1=hasScore?(m.player1_score||0):done?(w1?'🏆':'❌'):live?'▶':'—';
+  const sc2=hasScore?(m.player2_score||0):done?(w2?'🏆':'❌'):live?'▶':'—';
 
   return`<div class="${cardCls}">
     <div class="sc-head">
@@ -1637,11 +1640,11 @@ function _clientMatchCard(m){
       <span class="sc-time-b">${timeTxt||'—'}</span>
     </div>
     <div class="sc-player ${w1?'sc-win-row':done&&!w1?'sc-lose-row':''}">
-      <span class="sc-pname ${w1?'win':''}">${esc(p1)}</span>
+      <span class="sc-pname ${w1?'win':''}">${esc(p1)}${hasScore&&w1?' 🏆':''}</span>
       <span class="sc-score ${w1?'win':''}">${sc1}</span>
     </div>
     <div class="sc-player ${w2?'sc-win-row':done&&!w2?'sc-lose-row':''}">
-      <span class="sc-pname ${w2?'win':''}">${esc(p2)}</span>
+      <span class="sc-pname ${w2?'win':''}">${esc(p2)}${hasScore&&w2?' 🏆':''}</span>
       <span class="sc-score ${w2?'win':''}">${sc2}</span>
     </div>
   </div>`;
@@ -1681,18 +1684,23 @@ function matchCard(m, readonly){
   const canPick=!readonly&&live;
   const canAssign=!readonly&&ready&&m.player1_tg_id&&m.player2_tg_id;
 
+  // done holatda: agar hisob kiritilgan bo'lsa raqamni, aks holda 🏆/❌ ni ko'rsatamiz
+  const hasScore=done&&(m.player1_score>0||m.player2_score>0);
+  const d1=hasScore?m.player1_score:sc1;
+  const d2=hasScore?m.player2_score:sc2;
+
   const p1row=`<div class="sc-player ${w1?'sc-win-row':done&&!w1?'sc-lose-row':''}">
     <span class="sc-pname ${w1?'win':''}">${esc(p1)}</span>
     ${canPick&&m.player1_tg_id
-      ?`<button class="mc-win-btn" onclick="setWinner(${m.id},1)">🏆</button>`
-      :`<span class="sc-score ${w1?'win':''}">${sc1}</span>`}
+      ?`<input type="number" id="sc1-${m.id}" class="mc-sc-inp" min="0" max="999" placeholder="0"><button class="mc-win-btn" onclick="setWinner(${m.id},1)" title="1-o'yinchi g'olib">🏆</button>`
+      :`<span class="sc-score ${w1?'win':''}">${d1}</span>`}
   </div>`;
 
   const p2row=`<div class="sc-player ${w2?'sc-win-row':done&&!w2?'sc-lose-row':''}">
     <span class="sc-pname ${w2?'win':''}">${esc(p2)}</span>
     ${canPick&&m.player2_tg_id
-      ?`<button class="mc-win-btn" onclick="setWinner(${m.id},2)">🏆</button>`
-      :`<span class="sc-score ${w2?'win':''}">${sc2}</span>`}
+      ?`<input type="number" id="sc2-${m.id}" class="mc-sc-inp" min="0" max="999" placeholder="0"><button class="mc-win-btn" onclick="setWinner(${m.id},2)" title="2-o'yinchi g'olib">🏆</button>`
+      :`<span class="sc-score ${w2?'win':''}">${d2}</span>`}
   </div>`;
 
   let footer='';
@@ -1740,11 +1748,21 @@ function matchCard(m, readonly){
 }
 
 async function setWinner(matchId,slot){
+  // Optional scores
+  const s1el=document.getElementById('sc1-'+matchId);
+  const s2el=document.getElementById('sc2-'+matchId);
+  const body={winner_slot:slot};
+  if(s1el&&s2el&&s1el.value!==''&&s2el.value!==''){
+    const s1=parseInt(s1el.value)||0, s2=parseInt(s2el.value)||0;
+    if(s1===s2){showToast('Hisob teng bo\'lishi mumkin emas','err');return;}
+    if((slot===1&&s1<s2)||(slot===2&&s2<s1)){showToast('G\'olibning hisobi yuqori bo\'lishi kerak','err');return;}
+    body.player1_score=s1; body.player2_score=s2;
+  }
   document.querySelectorAll('.mc-win-btn').forEach(b=>b.disabled=true);
   try{
     const r=await fetch(`/api/admin/matches/${matchId}/result`,{
       method:'PUT',headers:{...auth(),'Content-Type':'application/json'},
-      body:JSON.stringify({winner_slot:slot})
+      body:JSON.stringify(body)
     });
     const d=await r.json();
     if(r.ok){

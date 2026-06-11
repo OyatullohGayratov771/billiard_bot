@@ -679,10 +679,11 @@ func (s *Service) GetMatch(matchID int64) (*models.Match, error) {
 
 // ===================== MATCH RESULT =====================
 
-// SetResult records winner, advances players.
+// SetResult records winner (and optional score), advances players.
+// p1Score/p2Score < 0 means "not provided" — only the winner is recorded.
 // Returns (winnerNextID, loserNextID, finished, trnID, assignedMatchID, assignedTableNum, err).
 // assignedMatchID > 0 means a newly ready match was auto-assigned a freed table.
-func (s *Service) SetResult(matchID, winnerTgID int64) (winnerNextID, loserNextID, assignedMatchID int64, assignedTableNum int, finished bool, trnID int64, err error) {
+func (s *Service) SetResult(matchID, winnerTgID int64, p1Score, p2Score int) (winnerNextID, loserNextID, assignedMatchID int64, assignedTableNum int, finished bool, trnID int64, err error) {
 	m, err := s.repo.GetMatch(matchID)
 	if err != nil {
 		return 0, 0, 0, 0, false, 0, errors.New("o'yin topilmadi")
@@ -696,8 +697,21 @@ func (s *Service) SetResult(matchID, winnerTgID int64) (winnerNextID, loserNextI
 		return 0, 0, 0, 0, false, 0, errors.New("bu o'yinchi ushbu o'yinda yo'q")
 	}
 
-	if err := s.repo.SetMatchWinner(matchID, winnerTgID); err != nil {
-		return 0, 0, 0, 0, false, 0, err
+	// If scores provided, validate the winner has the higher score.
+	if p1Score >= 0 && p2Score >= 0 {
+		if p1Score == p2Score {
+			return 0, 0, 0, 0, false, 0, errors.New("durang bo'lishi mumkin emas — hisob teng")
+		}
+		if (isP1 && p1Score < p2Score) || (isP2 && p2Score < p1Score) {
+			return 0, 0, 0, 0, false, 0, errors.New("g'olibning hisobi yuqori bo'lishi kerak")
+		}
+		if err := s.repo.SetMatchResult(matchID, winnerTgID, p1Score, p2Score); err != nil {
+			return 0, 0, 0, 0, false, 0, err
+		}
+	} else {
+		if err := s.repo.SetMatchWinner(matchID, winnerTgID); err != nil {
+			return 0, 0, 0, 0, false, 0, err
+		}
 	}
 
 	t, err := s.repo.GetTournament(m.TournamentID)
