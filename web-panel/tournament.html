@@ -67,17 +67,21 @@ a{text-decoration:none;color:inherit}
 .bracket::-webkit-scrollbar{height:4px}
 .bracket::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
-.round-col{display:flex;flex-direction:column;align-items:center;min-width:180px}
+.round-col{display:flex;flex-direction:column;align-items:center;min-width:196px}
 .round-lbl{font-size:.56rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:8px;padding:2px 8px;background:rgba(255,255,255,.02);border-radius:4px;white-space:nowrap}
 .matches-col{display:flex;flex-direction:column;width:100%;flex:1}
-.match-slot{display:flex;align-items:center;flex:1;min-height:60px}
+.match-slot{display:flex;align-items:center;flex:1;min-height:104px;padding:8px 0}
 .conn{display:flex;flex-direction:column;justify-content:center;width:24px;flex-shrink:0;align-self:stretch}
 .conn-line{border-top:1px solid var(--border2);width:100%}
 
 /* ── MATCH CARD ── */
-.card{width:168px;border-radius:8px;overflow:hidden;border:1px solid var(--border2);background:linear-gradient(160deg,#0c0c20,#080818)}
+.card{width:182px;border-radius:8px;overflow:hidden;border:1px solid var(--border2);background:linear-gradient(160deg,#0c0c20,#080818);box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .card.live{border-color:rgba(212,175,55,.5);box-shadow:0 0 16px rgba(212,175,55,.2)}
 .card.done{border-color:rgba(48,192,96,.15);background:linear-gradient(160deg,#080f0a,#050d07)}
+.card-head{display:flex;align-items:center;gap:5px;padding:5px 9px;border-bottom:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02)}
+.ch-num{font-size:.56rem;font-weight:800;color:#6060a0;flex-shrink:0}
+.ch-tbl{font-size:.56rem;font-weight:700;color:#7090d0;background:rgba(80,120,210,.14);padding:1px 6px;border-radius:3px;white-space:nowrap}
+.ch-time{font-size:.58rem;font-weight:700;color:var(--gold);margin-left:auto;white-space:nowrap}
 .player{padding:8px 10px;font-size:.78rem;display:flex;align-items:center;gap:6px}
 .player+.player{border-top:1px solid rgba(255,255,255,.05)}
 .player.win{background:rgba(212,175,55,.12);color:var(--gold);font-weight:700}
@@ -85,8 +89,8 @@ a{text-decoration:none;color:inherit}
 .p-ico{width:14px;text-align:center;font-size:.65rem;flex-shrink:0}
 .p-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .p-score{font-size:.7rem;font-weight:700;color:var(--text2);flex-shrink:0;min-width:14px;text-align:right}
-.bye-card{width:168px;padding:10px 12px;border-radius:8px;border:1px dashed var(--border2);background:var(--bg);color:var(--text3);font-size:.72rem;font-style:italic}
-.void-card{width:168px;height:54px}
+.bye-card{width:182px;padding:10px 12px;border-radius:8px;border:1px dashed var(--border2);background:var(--bg);color:var(--text3);font-size:.72rem;font-style:italic}
+.void-card{width:182px;height:54px}
 
 /* ── WINNER ── */
 .winner-col{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:120px;gap:6px;padding:16px}
@@ -433,8 +437,8 @@ function renderRR(c, t, ms) {
   const mList = el('div','rr-matches');
   ms.forEach((m, i) => {
     const done=m.status==='done';
-    const p1w=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player1_tg_id;
-    const p2w=done&&m.winner_tg_id!=null&&m.winner_tg_id===m.player2_tg_id;
+    const p1w=done&&m.winner_slot===1;
+    const p2w=done&&m.winner_slot===2;
     const card=el('div','rr-card'+(m.status==='ready'?' live':done?' done':''));
     card.innerHTML=`<span class="rr-num">${i+1}.</span>
       <span class="rr-p${p1w?' win':done&&!p1w?' lose':''}">${esc(m.player1_name||'—')}</span>
@@ -446,14 +450,16 @@ function renderRR(c, t, ms) {
   mSec.appendChild(mList);
   wrap.appendChild(mSec);
 
-  // standings
+  // standings — ism bo'yicha kalit (BigInt aniqlik muammosidan qochish)
   const wins={}, played={}, players={};
   for(const m of ms) {
-    if(m.player1_tg_id&&m.player1_name) players[m.player1_tg_id]=m.player1_name;
-    if(m.player2_tg_id&&m.player2_name) players[m.player2_tg_id]=m.player2_name;
-    if(m.status==='done'&&m.winner_tg_id) wins[m.winner_tg_id]=(wins[m.winner_tg_id]||0)+1;
+    if(m.player1_name) players[m.player1_name]=m.player1_name;
+    if(m.player2_name) players[m.player2_name]=m.player2_name;
     if(m.status==='done') {
-      [m.player1_tg_id,m.player2_tg_id].forEach(id=>{ if(id) played[id]=(played[id]||0)+1; });
+      const wn=m.winner_slot===1?m.player1_name:m.winner_slot===2?m.player2_name:null;
+      if(wn) wins[wn]=(wins[wn]||0)+1;
+      if(m.player1_name)played[m.player1_name]=(played[m.player1_name]||0)+1;
+      if(m.player2_name)played[m.player2_name]=(played[m.player2_name]||0)+1;
     }
   }
   const sorted=Object.entries(players).sort((a,b)=>(wins[b[0]]||0)-(wins[a[0]]||0));
@@ -519,12 +525,28 @@ function mkRoundCol(msList, label, round) {
   col.appendChild(mc);
   return col;
 }
+function brkTime(iso){
+  if(!iso) return '';
+  const uz=new Date(new Date(iso).getTime()+5*3600000);
+  const p=n=>String(n).padStart(2,'0');
+  return p(uz.getUTCDate())+'.'+p(uz.getUTCMonth()+1)+' '+p(uz.getUTCHours())+':'+p(uz.getUTCMinutes());
+}
 function buildCard(m) {
   const done = m.status==='done';
   const live = m.status==='in_progress'||m.status==='ready';
   const card = el('div','card'+(live?' live':done?' done':''));
-  const p1w  = done && m.winner_tg_id!=null && m.winner_tg_id===m.player1_tg_id;
-  const p2w  = done && m.winner_tg_id!=null && m.winner_tg_id===m.player2_tg_id;
+  // winner_slot orqali (BigInt aniqlik muammosidan qochish uchun)
+  const p1w  = done && m.winner_slot===1;
+  const p2w  = done && m.winner_slot===2;
+
+  // Header: match raqami + stol + vaqt
+  const head=el('div','card-head');
+  const num=el('span','ch-num'); num.textContent='#'+m.match_num; head.appendChild(num);
+  if(m.table_num>0){const tb=el('span','ch-tbl'); tb.textContent=m.table_num+'-stol'; head.appendChild(tb);}
+  const tm=brkTime(m.match_scheduled_at);
+  if(tm){const tt=el('span','ch-time'); tt.textContent='🕐 '+tm; head.appendChild(tt);}
+  else if(m.table_num<=0){const tt=el('span','ch-time'); tt.style.color='var(--text3)'; tt.textContent='—'; head.appendChild(tt);}
+  card.appendChild(head);
 
   function mkPlayer(name, isWin, score) {
     const p = el('div','player'+(isWin?' win':done&&!isWin?' lose':''));
