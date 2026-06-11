@@ -397,6 +397,9 @@ func (h *Handler) cbAdminGenBracket(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		return
 	}
 
+	// Ishtirokchilarga "setka yaratildi, raqibingiz X" xabarini yuborish
+	h.notifyBracketCreated(bot, trnID, matches)
+
 	text := fmt.Sprintf("✅ Bracket yaratildi! <b>%d</b> o'yin.\n", len(matches))
 	text += formatBracket(matches)
 
@@ -416,6 +419,56 @@ func (h *Handler) cbAdminGenBracket(bot *tgbotapi.BotAPI, chatID int64, msgID in
 		editMessage(bot, chatID, msgID, text, &kb)
 	} else {
 		sendWithKeyboard(bot, chatID, text, kb)
+	}
+}
+
+// notifyBracketCreated — setka yaratilganda 1-bosqich o'yinchilariga raqibi (+ stol) haqida xabar yuboradi.
+func (h *Handler) notifyBracketCreated(bot *tgbotapi.BotAPI, trnID int64, matches []*models.TournamentMatch) {
+	t, _ := h.tournamentSvc.GetTournament(trnID)
+	trnName := fmt.Sprintf("#%d", trnID)
+	if t != nil {
+		trnName = t.Name
+	}
+
+	// 1-bosqich (eng kichik WB round) ni topamiz
+	minRound := 0
+	for _, m := range matches {
+		if m.Round > 0 && m.Round < models.MatchLBRoundOffset {
+			if minRound == 0 || m.Round < minRound {
+				minRound = m.Round
+			}
+		}
+	}
+	if minRound == 0 {
+		return
+	}
+
+	notify := func(tgID int64, oppName string, tableNum int) {
+		if tgID <= 0 {
+			return
+		}
+		tableStr := ""
+		if tableNum > 0 {
+			tableStr = fmt.Sprintf("\n🎱 Stol: <b>%d-stol</b>", tableNum)
+		}
+		if oppName == "" {
+			oppName = "Noma'lum"
+		}
+		send(bot, tgID, fmt.Sprintf(
+			"⚡ <b>%s</b> turniri setkasi yaratildi!\n\nSizning birinchi o'yiningiz:\n🆚 Raqib: <b>%s</b>%s\n\nOmad! 🍀",
+			trnName, oppName, tableStr))
+	}
+
+	for _, m := range matches {
+		if m.Round != minRound || m.Status != models.MatchStatusReady {
+			continue
+		}
+		if m.Player1TgID != nil {
+			notify(*m.Player1TgID, m.Player2Name, m.TableNum)
+		}
+		if m.Player2TgID != nil {
+			notify(*m.Player2TgID, m.Player1Name, m.TableNum)
+		}
 	}
 }
 
@@ -560,37 +613,112 @@ func (h *Handler) cbAdminTrnWinner(bot *tgbotapi.BotAPI, chatID int64, msgID int
 		return
 	}
 
+	t, _ := h.tournamentSvc.GetTournament(trnID)
+	trnName := fmt.Sprintf("#%d", trnID)
+	trnType := ""
+	if t != nil {
+		trnName = t.Name
+		trnType = t.Type
+	}
+	allMatches, _ := h.tournamentSvc.GetBracket(trnID)
+
+	// Tugagan o'yindan g'olib/mag'lub ism va tg_id larini aniqlash
+	var winName, loseName string
+	var loserTgID int64
+	for _, m := range allMatches {
+		if m.ID != matchID {
+			continue
+		}
+		p1tg, p2tg := int64(0), int64(0)
+		if m.Player1TgID != nil {
+			p1tg = *m.Player1TgID
+		}
+		if m.Player2TgID != nil {
+			p2tg = *m.Player2TgID
+		}
+		if p1tg == winnerTgID {
+			winName, loseName, loserTgID = m.Player1Name, m.Player2Name, p2tg
+		} else {
+			winName, loseName, loserTgID = m.Player2Name, m.Player1Name, p1tg
+		}
+		break
+	}
+	if winName == "" {
+		winName = "raqib"
+	}
+	if loseName == "" {
+		loseName = "raqib"
+	}
+
+	// Keyingi o'yinda berilgan o'yinchining raqibi (agar ma'lum bo'lsa)
+	nextOpp := func(nmID, myTg int64) string {
+		for _, m := range allMatches {
+			if m.ID != nmID {
+				continue
+			}
+			if m.Player1TgID != nil && *m.Player1TgID == myTg && m.Player2TgID != nil {
+				return m.Player2Name
+			}
+			if m.Player2TgID != nil && *m.Player2TgID == myTg && m.Player1TgID != nil {
+				return m.Player1Name
+			}
+		}
+		return ""
+	}
+
+	// G'olibga xabar
 	if winnerTgID > 0 {
-		send(bot, winnerTgID, "🏆 <b>Tabriklaymiz! Siz g'olib bo'ldingiz!</b>\n\nKeyingi bosqichga o'tdingiz.")
+		var tail string
+		if finished {
+			tail = "\n\n👑 <b>Siz TURNIR CHEMPIONISIZ!</b> 🎉🏆"
+		} else if winnerNextID > 0 {
+			if opp := nextOpp(winnerNextID, winnerTgID); opp != "" {
+				tail = fmt.Sprintf("\n\n⏭ Keyingi o'yin: <b>%s</b> bilan. Tayyorlaning!", opp)
+			} else {
+				tail = "\n\n⏭ Keyingi bosqichga o'tdingiz! Raqibingiz aniqlanmoqda…"
+			}
+		}
+		send(bot, winnerTgID, fmt.Sprintf(
+			"🏆 <b>Tabriklaymiz!</b>\n\n<b>%s</b> turnirida <b>%s</b> ustidan g'alaba qozondingiz.%s",
+			trnName, loseName, tail))
+	}
+
+	// Mag'lubga xabar
+	if loserTgID > 0 {
+		if trnType == models.TournamentTypeDoubleElim && loserNextID > 0 {
+			send(bot, loserTgID, fmt.Sprintf(
+				"😔 <b>%s</b> turnirida <b>%s</b> ga yutqazdingiz.\n\n💪 Hali imkoniyat bor — <b>yutqazuvchilar setkasida</b> davom etasiz!",
+				trnName, winName))
+		} else {
+			send(bot, loserTgID, fmt.Sprintf(
+				"😔 <b>%s</b> turnirida <b>%s</b> ga yutqazdingiz.\n\nO'yiningiz uchun rahmat! Keyingi turnirlarda ko'rishamiz. 🎱",
+				trnName, winName))
+		}
 	}
 
 	if finished {
-		t, _ := h.tournamentSvc.GetTournament(trnID)
-		trnName := fmt.Sprintf("#%d", trnID)
-		if t != nil {
-			trnName = t.Name
-		}
 		send(bot, chatID, fmt.Sprintf("🏆 <b>%s yakunlandi! G'olib aniqlandi.</b>", trnName))
 	} else {
-		allMatches, _ := h.tournamentSvc.GetBracket(trnID)
-		notifyMatch := func(nmID int64, label string) {
+		// Keyingi o'yin tayyor bo'lsa — kutayotgan raqibga xabar (yangi g'olibdan boshqasiga)
+		notifyWaiting := func(nmID, justAdvancedTg int64) {
 			for _, m := range allMatches {
-				if m.ID == nmID && m.Status == models.MatchStatusReady && m.Player1TgID != nil && m.Player2TgID != nil {
-					if *m.Player1TgID > 0 {
-						send(bot, *m.Player1TgID, fmt.Sprintf("⚔️ <b>%s tayyor!</b>\n\nRaqibingiz: <b>%s</b>", label, m.Player2Name))
-					}
-					if *m.Player2TgID > 0 {
-						send(bot, *m.Player2TgID, fmt.Sprintf("⚔️ <b>%s tayyor!</b>\n\nRaqibingiz: <b>%s</b>", label, m.Player1Name))
-					}
-					break
+				if m.ID != nmID || m.Status != models.MatchStatusReady || m.Player1TgID == nil || m.Player2TgID == nil {
+					continue
 				}
+				if *m.Player1TgID != justAdvancedTg && *m.Player1TgID > 0 {
+					send(bot, *m.Player1TgID, fmt.Sprintf("🎯 <b>%s</b> turnirida raqibingiz aniqlandi: <b>%s</b>. Tayyorlaning!", trnName, m.Player2Name))
+				}
+				if *m.Player2TgID != justAdvancedTg && *m.Player2TgID > 0 {
+					send(bot, *m.Player2TgID, fmt.Sprintf("🎯 <b>%s</b> turnirida raqibingiz aniqlandi: <b>%s</b>. Tayyorlaning!", trnName, m.Player1Name))
+				}
+				break
 			}
 		}
 		if winnerNextID > 0 {
-			notifyMatch(winnerNextID, "Keyingi o'yiningiz")
+			notifyWaiting(winnerNextID, winnerTgID)
 		}
 		if loserNextID > 0 {
-			notifyMatch(loserNextID, "Losers bracket o'yiningiz")
+			notifyWaiting(loserNextID, loserTgID)
 		}
 	}
 

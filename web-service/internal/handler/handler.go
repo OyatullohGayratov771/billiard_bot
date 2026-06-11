@@ -937,16 +937,161 @@ func (h *Handler) adminMatchResult(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode != 200 {
 		return
 	}
-	// If a table was auto-reassigned to a new match, notify those players
+	matchID, _ := strconv.ParseInt(id, 10, 64)
 	go func() {
 		var res struct {
+			NextMatchID      int64 `json:"next_match_id"`
+			LoserNextMatchID int64 `json:"loser_next_match_id"`
+			Finished         bool  `json:"finished"`
 			AssignedMatchID  int64 `json:"assigned_match_id"`
 			AssignedTableNum int   `json:"assigned_table_num"`
 		}
-		if json.Unmarshal(respBody, &res) == nil && res.AssignedMatchID > 0 {
+		if json.Unmarshal(respBody, &res) != nil {
+			return
+		}
+		// 1) G'olib va mag'lubga natija xabari (+ keyingi raqib)
+		h.sendResultNotifications(matchID, res.NextMatchID, res.Finished)
+		// 2) Bo'shagan stol keyingi o'yinga berilsa — o'sha o'yinchilarga xabar
+		if res.AssignedMatchID > 0 {
 			h.sendMatchTableNotifications(res.AssignedMatchID, res.AssignedTableNum)
 		}
 	}()
+}
+
+// sendResultNotifications — o'yin tugaganda g'olib va mag'lubga xabar yuboradi.
+func (h *Handler) sendResultNotifications(matchID, nextMatchID int64, finished bool) {
+	var p1TgID, p2TgID, winnerTgID, loserNextID *int64
+	var p1Name, p2Name, trnName, trnType string
+	var p1Score, p2Score int
+	err := h.db.QueryRow(`
+		SELECT m.player1_tg_id, m.player2_tg_id, m.winner_tg_id, m.loser_next_match_id,
+		       COALESCE(r1.user_name, u1.first_name, ''), COALESCE(r2.user_name, u2.first_name, ''),
+		       t.name, COALESCE(t.type,'single_elimination'),
+		       COALESCE(m.player1_score,0), COALESCE(m.player2_score,0)
+		FROM tournament_matches m
+		JOIN tournaments t ON t.id=m.tournament_id
+		LEFT JOIN tournament_registrations r1 ON r1.tournament_id=m.tournament_id AND r1.user_tg_id=m.player1_tg_id
+		LEFT JOIN tournament_registrations r2 ON r2.tournament_id=m.tournament_id AND r2.user_tg_id=m.player2_tg_id
+		LEFT JOIN users u1 ON u1.telegram_id=m.player1_tg_id
+		LEFT JOIN users u2 ON u2.telegram_id=m.player2_tg_id
+		WHERE m.id=$1`, matchID).Scan(
+		&p1TgID, &p2TgID, &winnerTgID, &loserNextID,
+		&p1Name, &p2Name, &trnName, &trnType, &p1Score, &p2Score)
+	if err != nil || winnerTgID == nil {
+		return
+	}
+
+	// G'olib/mag'lubni aniqlash
+	var winTg, loseTg *int64
+	var winName, loseName string
+	var winScore, loseScore int
+	if p1TgID != nil && *p1TgID == *winnerTgID {
+		winTg, loseTg = p1TgID, p2TgID
+		winName, loseName = p1Name, p2Name
+		winScore, loseScore = p1Score, p2Score
+	} else {
+		winTg, loseTg = p2TgID, p1TgID
+		winName, loseName = p2Name, p1Name
+		winScore, loseScore = p2Score, p1Score
+	}
+
+	scoreStr := ""
+	if p1Score > 0 || p2Score > 0 {
+		scoreStr = fmt.Sprintf(" <b>%d:%d</b>", winScore, loseScore)
+	}
+	if loseName == "" {
+		loseName = "raqib"
+	}
+	if winName == "" {
+		winName = "raqib"
+	}
+
+	// G'olibga xabar
+	if winTg != nil && *winTg > 0 {
+		var tail string
+		if finished {
+			tail = "\n\n👑 <b>Siz TURNIR CHEMPIONISIZ!</b> 🎉🏆"
+		} else if nextMatchID > 0 {
+			if opp := h.nextOpponentName(nextMatchID, *winTg); opp != "" {
+				tail = fmt.Sprintf("\n\n⏭ Keyingi o'yin: <b>%s</b> bilan. Tayyorlaning!", opp)
+			} else {
+				tail = "\n\n⏭ Keyingi bosqichga o'tdingiz! Raqibingiz aniqlanmoqda…"
+			}
+		}
+		msg := fmt.Sprintf("🏆 <b>Tabriklaymiz!</b>\n\n<b>%s</b> turnirida <b>%s</b> ustidan g'alaba qozondingiz%s.%s",
+			trnName, loseName, scoreStr, tail)
+		h.sendTelegramMessage(*winTg, msg, nil)
+	}
+
+	// Mag'lubga xabar
+	if loseTg != nil && *loseTg > 0 {
+		var msg string
+		if trnType == "double_elimination" && loserNextID != nil && *loserNextID > 0 {
+			msg = fmt.Sprintf("😔 <b>%s</b> turnirida <b>%s</b> ga yutqazdingiz%s.\n\n💪 Hali imkoniyat bor — <b>yutqazuvchilar setkasida</b> davom etasiz!",
+				trnName, winName, scoreStr)
+		} else {
+			msg = fmt.Sprintf("😔 <b>%s</b> turnirida <b>%s</b> ga yutqazdingiz%s.\n\nO'yiningiz uchun rahmat! Keyingi turnirlarda ko'rishamiz. 🎱",
+				trnName, winName, scoreStr)
+		}
+		h.sendTelegramMessage(*loseTg, msg, nil)
+	}
+
+	// Keyingi o'yin tayyor bo'lsa — kutayotgan raqibga ham xabar
+	if !finished && nextMatchID > 0 {
+		h.notifyWaitingOpponent(nextMatchID, *winnerTgID, winName, trnName)
+	}
+}
+
+// nextOpponentName — keyingi o'yinda myTgID ning raqibi ismini qaytaradi (agar ma'lum bo'lsa).
+func (h *Handler) nextOpponentName(nextMatchID, myTgID int64) string {
+	var p1TgID, p2TgID *int64
+	var p1Name, p2Name string
+	err := h.db.QueryRow(`
+		SELECT m.player1_tg_id, m.player2_tg_id,
+		       COALESCE(r1.user_name, u1.first_name, ''), COALESCE(r2.user_name, u2.first_name, '')
+		FROM tournament_matches m
+		LEFT JOIN tournament_registrations r1 ON r1.tournament_id=m.tournament_id AND r1.user_tg_id=m.player1_tg_id
+		LEFT JOIN tournament_registrations r2 ON r2.tournament_id=m.tournament_id AND r2.user_tg_id=m.player2_tg_id
+		LEFT JOIN users u1 ON u1.telegram_id=m.player1_tg_id
+		LEFT JOIN users u2 ON u2.telegram_id=m.player2_tg_id
+		WHERE m.id=$1`, nextMatchID).Scan(&p1TgID, &p2TgID, &p1Name, &p2Name)
+	if err != nil {
+		return ""
+	}
+	if p1TgID != nil && *p1TgID == myTgID {
+		if p2TgID != nil {
+			return p2Name
+		}
+	} else if p2TgID != nil && *p2TgID == myTgID {
+		if p1TgID != nil {
+			return p1Name
+		}
+	}
+	return ""
+}
+
+// notifyWaitingOpponent — keyingi o'yin ikkala o'yinchi bilan to'lganida, kutayotgan
+// (yangi kelgan g'olibdan boshqa) o'yinchiga raqibi aniqlanganini bildiradi.
+func (h *Handler) notifyWaitingOpponent(nextMatchID, winnerTgID int64, winnerName, trnName string) {
+	var p1TgID, p2TgID *int64
+	var status string
+	err := h.db.QueryRow(
+		`SELECT player1_tg_id, player2_tg_id, status FROM tournament_matches WHERE id=$1`,
+		nextMatchID).Scan(&p1TgID, &p2TgID, &status)
+	if err != nil || status != "ready" {
+		return // ikkala o'yinchi hali to'lmagan
+	}
+	var waitTg *int64
+	if p1TgID != nil && *p1TgID != winnerTgID {
+		waitTg = p1TgID
+	} else if p2TgID != nil && *p2TgID != winnerTgID {
+		waitTg = p2TgID
+	}
+	if waitTg != nil && *waitTg > 0 {
+		msg := fmt.Sprintf("🎯 <b>%s</b> turnirida raqibingiz aniqlandi: <b>%s</b>.\n\nTayyorlaning! O'yin vaqti va stoli haqida xabar beriladi.",
+			trnName, winnerName)
+		h.sendTelegramMessage(*waitTg, msg, nil)
+	}
 }
 
 func (h *Handler) adminRegisterManual(w http.ResponseWriter, r *http.Request) {
