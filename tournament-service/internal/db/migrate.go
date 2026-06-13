@@ -19,10 +19,12 @@ func New(dsn string) (*sql.DB, error) {
 	db.SetMaxIdleConns(3)
 	log.Println("✅ tournament-service: PostgreSQL ulandi")
 
-	if err := alterMigrate(db); err != nil {
+	// migrate (CREATE TABLE IF NOT EXISTS) must run BEFORE alterMigrate
+	// (ALTER TABLE) — otherwise a fresh database has no tables to alter.
+	if err := migrate(db); err != nil {
 		return nil, err
 	}
-	if err := migrate(db); err != nil {
+	if err := alterMigrate(db); err != nil {
 		return nil, err
 	}
 	return db, nil

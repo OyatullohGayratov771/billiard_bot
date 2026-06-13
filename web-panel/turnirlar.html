@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --gold:#D4AF37;--gold-l:#F0D878;
+  --gold:#D4AF37;--gold-l:#F0D878;--gold2:#B8941F;--gold-glow:rgba(212,175,55,.32);
   --bg:#0A0A0A;--card:#131313;--card2:#1A1A1A;
   --border:rgba(212,175,55,.15);--border2:rgba(212,175,55,.07);
   --text:#F2F2F2;--text2:#888;--text3:#444;
@@ -16,16 +16,34 @@
 html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif}
 a{text-decoration:none;color:inherit}
 
-.nav{position:sticky;top:0;z-index:50;background:rgba(5,5,5,.97);border-bottom:1px solid var(--border2);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:54px}
-.nav-logo{font-size:.82rem;font-weight:900;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
-.nav-live{display:flex;align-items:center;gap:6px;font-size:.62rem;color:var(--text3)}
+/* ── UNIFIED SITE NAV (matches index.html) ── */
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:58px;background:rgba(8,8,8,.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2)}
+.nav-logo img{height:38px;width:auto;filter:drop-shadow(0 0 10px var(--gold-glow))}
+.nav-links{display:flex;gap:30px;font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3)}
+.nav-links a{transition:.2s;position:relative}
+.nav-links a:hover,.nav-links a.active{color:var(--gold)}
+.nav-links a.active::after{content:'';position:absolute;left:0;right:0;bottom:-19px;height:2px;background:var(--gold);border-radius:2px}
+.nav-cta{background:var(--gold);color:#000;padding:8px 18px;border-radius:2px;font-size:.66rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;transition:.2s;white-space:nowrap}
+.nav-cta:hover{background:var(--gold-l);box-shadow:0 0 20px var(--gold-glow)}
+.nav-burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none}
+.nav-burger span{display:block;width:22px;height:2px;background:var(--text2);border-radius:2px;transition:.3s}
+.nav-burger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.nav-burger.open span:nth-child(2){opacity:0}
+.nav-burger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.nav-mobile{display:none;position:sticky;top:58px;z-index:99;background:rgba(8,8,8,.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);flex-direction:column;padding:12px 24px 20px;gap:2px}
+.nav-mobile.open{display:flex}
+.nav-mobile a{padding:12px 8px;font-size:.78rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid rgba(255,255,255,.04);transition:.2s}
+.nav-mobile a.active{color:var(--gold)}
+.nav-mobile a:last-child{border-bottom:none;color:var(--gold);margin-top:6px}
+@media(max-width:700px){.nav-links,.nav-cta{display:none}.nav-burger{display:flex}}
+
+.hero{padding:26px 20px 0;max-width:640px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.hero h1{font-size:1.5rem;font-weight:900;letter-spacing:-.5px}
+.hero p{font-size:.75rem;color:var(--text2);margin-top:5px}
+.nav-live{display:flex;align-items:center;gap:6px;font-size:.6rem;color:var(--text3);background:var(--card);border:1px solid var(--border2);padding:5px 11px;border-radius:20px;white-space:nowrap;flex-shrink:0}
 .live-dot{width:6px;height:6px;border-radius:50%;background:#333}
 .live-dot.on{background:var(--green);animation:pulse 1.4s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-
-.hero{padding:24px 20px 0;max-width:640px;margin:0 auto}
-.hero h1{font-size:1.5rem;font-weight:900;letter-spacing:-.5px}
-.hero p{font-size:.75rem;color:var(--text2);margin-top:5px}
 
 .filters{padding:14px 20px 0;max-width:640px;margin:0 auto;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
 .filters::-webkit-scrollbar{display:none}
@@ -35,8 +53,8 @@ a{text-decoration:none;color:inherit}
 
 .list{padding:14px 20px 60px;max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
 
-.tc{background:var(--card);border:1px solid var(--border2);border-radius:10px;overflow:hidden;cursor:pointer;transition:.2s;display:block}
-.tc:hover{border-color:rgba(212,175,55,.3);transform:translateY(-1px)}
+.tc{background:linear-gradient(160deg,var(--card),#101010);border:1px solid var(--border2);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;display:block;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.tc:hover{border-color:rgba(212,175,55,.32);transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.55),0 0 0 1px rgba(212,175,55,.08)}
 .tc:active{transform:none}
 .tc-top{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .tc-name{font-size:.92rem;font-weight:800;flex:1;line-height:1.3;color:var(--text)}
@@ -64,17 +82,34 @@ a{text-decoration:none;color:inherit}
 </head>
 <body>
 
-<nav class="nav">
-  <a class="nav-logo" href="/">👑 Billiard King</a>
+<nav>
+  <a href="/" class="nav-logo"><img src="/logo.jpg" alt="Billiard King"></a>
+  <div class="nav-links">
+    <a href="/turnirlar" class="active">Turnirlar</a>
+    <a href="/shop">Do'kon</a>
+    <a href="/jamiyat">Jamiyat</a>
+    <a href="/reyting">Reyting</a>
+  </div>
+  <a href="https://t.me/BilliardKingBot" class="nav-cta" target="_blank">Bot → Ulash</a>
+  <button class="nav-burger" id="burger"><span></span><span></span><span></span></button>
+</nav>
+<div class="nav-mobile" id="nav-mobile">
+  <a href="/turnirlar" class="active">🏆 Turnirlar</a>
+  <a href="/shop">🛒 Do'kon</a>
+  <a href="/jamiyat">👥 Jamiyat</a>
+  <a href="/reyting">🎯 Reyting</a>
+  <a href="https://t.me/BilliardKingBot" target="_blank">✈️ Botga Ulash</a>
+</div>
+
+<div class="hero">
+  <div>
+    <h1>🏆 Turnirlar</h1>
+    <p>Barcha musobaqalar — ro'yxat, jarayon va natijalar</p>
+  </div>
   <div class="nav-live">
     <div class="live-dot" id="ldot"></div>
     <span id="lstatus">Ulanmoqda</span>
   </div>
-</nav>
-
-<div class="hero">
-  <h1>🏆 Turnirlar</h1>
-  <p>Barcha musobaqalar — ro'yxat, jarayon va natijalar</p>
 </div>
 
 <div class="filters">
@@ -165,6 +200,11 @@ document.querySelectorAll('.chip').forEach(c => {
     render();
   });
 });
+
+// Mobile nav burger
+const bg = document.getElementById('burger'), nm = document.getElementById('nav-mobile');
+bg.addEventListener('click', () => { bg.classList.toggle('open'); nm.classList.toggle('open'); });
+nm.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { bg.classList.remove('open'); nm.classList.remove('open'); }));
 
 // SSE
 let sse, retry = 2000;
