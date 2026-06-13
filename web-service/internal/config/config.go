@@ -16,6 +16,7 @@ type Config struct {
 	TournamentSvcURL string
 	ClipSvcURL       string
 	InternalToken    string
+	UploadsDir       string
 }
 
 var AppConfig Config
@@ -31,6 +32,7 @@ func LoadConfig() {
 		TournamentSvcURL: getEnv("TOURNAMENT_SVC_URL", "http://tournament-service:8084"),
 		ClipSvcURL:       getEnv("CLIP_SVC_URL", "http://clip-service:8083"),
 		InternalToken:    getEnv("INTERNAL_TOKEN", ""),
+		UploadsDir:       getEnv("UPLOADS_DIR", "/app/uploads"),
 	}
 	log.Println("✅ web-service config yuklandi")
 }

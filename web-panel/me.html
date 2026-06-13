@@ -80,6 +80,22 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .view-all{display:flex;align-items:center;justify-content:center;gap:5px;margin:4px 16px 16px;padding:10px;background:none;border:1px dashed var(--border2);border-radius:8px;color:var(--text3);font-size:.64rem;font-weight:700;letter-spacing:1px;cursor:pointer;text-transform:uppercase;transition:.2s;width:calc(100% - 32px)}
 .view-all:hover{color:var(--gold);border-color:rgba(212,175,55,.25)}
 
+/* ─── SHOP ─── */
+.shop-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 16px 24px}
+.sp-card{background:var(--card);border:1px solid var(--border2);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:.15s}
+.sp-card:active{transform:scale(.98)}
+.sp-media{height:120px;display:flex;align-items:center;justify-content:center;font-size:3rem;background:var(--card2);border-bottom:1px solid var(--border2)}
+.sp-media img{width:100%;height:100%;object-fit:cover}
+.sp-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:3px;flex:1}
+.sp-cat{font-size:.5rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:700}
+.sp-name{font-size:.82rem;font-weight:800;line-height:1.25}
+.sp-desc{font-size:.62rem;color:var(--text2);line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.sp-foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:6px;padding-top:6px}
+.sp-price{font-size:.84rem;font-weight:800;color:var(--gold)}
+.sp-buy{font-size:.56rem;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#000;background:var(--gold);padding:4px 9px;border-radius:6px}
+.shop-empty{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--text3);font-size:.82rem;line-height:2}
+@media(max-width:360px){.shop-list{grid-template-columns:1fr}}
+
 /* ─── TOURNAMENT SECTION HEADERS ─── */
 .t-sec{padding:18px 16px 8px;display:flex;align-items:center;gap:8px}
 .t-sec-ico{font-size:.95rem;line-height:1}
@@ -417,6 +433,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </div>
     </div><!-- tp-trns -->
 
+    <!-- ════ SHOP ════ -->
+    <div class="tp tab-pad" id="tp-shop">
+      <div class="t-sec"><span class="t-sec-ico">🛒</span><span class="t-sec-lbl">Do'kon</span></div>
+      <div id="shop-content" class="shop-list">
+        <div class="skel" style="height:96px;margin:0 16px 8px"></div>
+        <div class="skel" style="height:96px;margin:0 16px 8px"></div>
+        <div class="skel" style="height:96px;margin:0 16px 8px"></div>
+      </div>
+    </div><!-- tp-shop -->
+
     <!-- ════ PROFILE ════ -->
     <div class="tp tab-pad" id="tp-profile">
 
@@ -518,6 +544,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="bn-ic">🏆</div>
       <span class="bn-dot" id="bn-dot-trns"></span>
       <div class="bn-lb">Turnirlar</div>
+    </button>
+    <button class="bn" data-tab="shop">
+      <div class="bn-ic">🛒</div>
+      <div class="bn-lb">Do'kon</div>
     </button>
     <button class="bn" data-tab="profile">
       <div class="bn-ic">👤</div>
@@ -1053,11 +1083,45 @@ function switchTab(name) {
   document.querySelector(`.bn[data-tab="${name}"]`)?.classList.add('on');
   // Scroll to top on tab switch
   document.querySelector('.content')?.scrollTo(0, 0);
+  if (name === 'shop') loadShop();
 }
 
 document.querySelectorAll('.bn').forEach(b => {
   b.addEventListener('click', () => switchTab(b.dataset.tab));
 });
+
+// ─── SHOP ───
+let shopLoaded = false;
+async function loadShop(force) {
+  if (shopLoaded && !force) return;
+  const c = $('shop-content');
+  try {
+    const r = await fetch('/api/products');
+    const items = r.ok ? (await r.json() || []) : [];
+    shopLoaded = true;
+    if (!items.length) {
+      c.innerHTML = '<div class="shop-empty">🛒<br>Hozircha mahsulotlar yo\'q</div>';
+      return;
+    }
+    const fmt = p => p > 0 ? Number(p).toLocaleString('ru-RU').replace(/,/g, ' ') + " so'm" : 'Kelishilgan';
+    c.innerHTML = items.map(p => {
+      const media = p.image_url
+        ? `<div class="sp-media"><img src="${esc(p.image_url)}" alt="" loading="lazy"></div>`
+        : `<div class="sp-media">${esc(p.emoji || '🎱')}</div>`;
+      return `<a class="sp-card" href="https://t.me/BilliardKingBot" target="_blank">
+        ${media}
+        <div class="sp-body">
+          ${p.category ? `<div class="sp-cat">${esc(p.category)}</div>` : ''}
+          <div class="sp-name">${esc(p.name)}</div>
+          ${p.description ? `<div class="sp-desc">${esc(p.description)}</div>` : ''}
+          <div class="sp-foot"><span class="sp-price">${fmt(p.price)}</span><span class="sp-buy">Buyurtma</span></div>
+        </div>
+      </a>`;
+    }).join('');
+  } catch (_) {
+    c.innerHTML = '<div class="shop-empty">❌<br>Yuklab bo\'lmadi</div>';
+  }
+}
 
 function logout() {
   localStorage.removeItem('bk_jwt');

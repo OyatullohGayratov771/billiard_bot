@@ -175,8 +175,11 @@ services:
       CLIP_SVC_URL: "http://clip-service:8083"
       TOURNAMENT_SVC_URL: "http://tournament-service:8084"
       INTERNAL_TOKEN: "${INTERNAL_TOKEN}"
+      UPLOADS_DIR: "/app/uploads"
     expose:
       - "8085"
+    volumes:
+      - uploads_data:/app/uploads
     security_opt:
       - no-new-privileges:true
     logging:
@@ -254,3 +257,4 @@ services:
 volumes:
   pgdata:
   clips_data:
+  uploads_data:

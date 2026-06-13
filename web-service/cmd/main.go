@@ -19,7 +19,7 @@ func main() {
 	}
 	defer database.Close()
 
-	h := handler.New(database, cfg.JWTSecret, cfg.BaseURL, cfg.BotToken, cfg.TournamentSvcURL, cfg.ClipSvcURL, cfg.InternalToken)
+	h := handler.New(database, cfg.JWTSecret, cfg.BaseURL, cfg.BotToken, cfg.TournamentSvcURL, cfg.ClipSvcURL, cfg.InternalToken, cfg.UploadsDir)
 	mux := http.NewServeMux()
 	h.RegisterRoutes(mux)
 

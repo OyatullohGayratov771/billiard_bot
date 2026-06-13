@@ -292,6 +292,13 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .prod-card{position:relative}
 .stk-on{background:rgba(46,204,113,.12);color:var(--green);border:1px solid rgba(46,204,113,.3)}
 .stk-off{background:rgba(231,76,60,.1);color:var(--red);border:1px solid rgba(231,76,60,.3)}
+.img-pick{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.img-prev{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid var(--border2);flex-shrink:0}
+.img-prev img{width:100%;height:100%;object-fit:cover}
+.img-x{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.img-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:7px;background:var(--card2);border:1px dashed rgba(212,175,55,.4);color:var(--gold);font-size:.7rem;font-weight:700;cursor:pointer;transition:.15s}
+.img-btn:hover{background:rgba(212,175,55,.08);border-color:var(--gold)}
+.img-btn.busy{opacity:.6;pointer-events:none}
 
 /* ─── MODAL ─── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:16px}
@@ -601,8 +608,18 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
         <input type="text" id="p-desc" class="form-input" placeholder="Masalan: Carbon fiber shaft · 19oz">
       </div>
       <div class="form-group">
-        <label class="form-label">Rasm URL <span style="color:var(--text3);font-weight:400">(ixtiyoriy — bo'lsa emoji o'rniga)</span></label>
-        <input type="text" id="p-img" class="form-input" placeholder="https://…">
+        <label class="form-label">Rasm <span style="color:var(--text3);font-weight:400">(telefon yoki kompyuterdan — ixtiyoriy)</span></label>
+        <input type="hidden" id="p-img">
+        <div id="p-img-box" class="img-pick">
+          <div id="p-img-preview" class="img-prev" style="display:none">
+            <img id="p-img-thumb" alt="">
+            <button type="button" class="img-x" onclick="clearProductImage()">✕</button>
+          </div>
+          <label class="img-btn" id="p-img-label">
+            <input type="file" id="p-img-file" accept="image/*" onchange="onProductImagePick(this)" hidden>
+            📷 Rasm tanlash
+          </label>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
@@ -2211,8 +2228,30 @@ function renderProducts(){
     </div>`;
   }).join('');
 }
+let productImageFile=null;
+function setProductPreview(url){
+  if(url){$('p-img-thumb').src=url;$('p-img-preview').style.display='';$('p-img-label').textContent='🔄 Boshqa rasm';}
+  else{$('p-img-preview').style.display='none';$('p-img-thumb').src='';$('p-img-label').textContent='📷 Rasm tanlash';}
+}
+function onProductImagePick(input){
+  const f=input.files&&input.files[0];
+  if(!f)return;
+  if(f.size>12*1024*1024){showToast('Rasm 12MB dan kichik bo\'lsin','err');input.value='';return;}
+  productImageFile=f;
+  const rd=new FileReader();
+  rd.onload=e=>setProductPreview(e.target.result); // local preview
+  rd.readAsDataURL(f);
+}
+function clearProductImage(){
+  productImageFile=null;
+  $('p-img').value='';
+  $('p-img-file').value='';
+  setProductPreview('');
+}
 function openProductModal(id){
   editProductId=id||null;
+  productImageFile=null;
+  $('p-img-file').value='';
   const p=id?products.find(x=>x.id===id):null;
   $('prod-modal-title').textContent=p?'Mahsulotni tahrirlash':'Yangi mahsulot';
   $('p-name').value=p?p.name:'';
@@ -2222,6 +2261,7 @@ function openProductModal(id){
   $('p-sort').value=p?p.sort_order:0;
   $('p-desc').value=p?p.description:'';
   $('p-img').value=p?p.image_url:'';
+  setProductPreview(p&&p.image_url?p.image_url:'');
   $('p-stock').checked=p?p.in_stock:true;
   $('prod-modal-overlay').classList.add('show');
   setTimeout(()=>$('p-name').focus(),100);
@@ -2230,24 +2270,37 @@ function closeProductModal(){$('prod-modal-overlay').classList.remove('show');}
 async function submitProduct(){
   const name=$('p-name').value.trim();
   if(!name){showToast('Nomini kiriting','err');$('p-name').focus();return;}
-  const body={
-    name,
-    category:$('p-cat').value.trim(),
-    emoji:$('p-emoji').value.trim()||'🎱',
-    price:parseInt($('p-price').value)||0,
-    sort_order:parseInt($('p-sort').value)||0,
-    description:$('p-desc').value.trim(),
-    image_url:$('p-img').value.trim(),
-    in_stock:$('p-stock').checked
-  };
   const btn=$('prod-modal-submit');btn.disabled=true;
+  const lbl=$('p-img-label');
   try{
+    // 1) Agar yangi rasm tanlangan bo'lsa — avval yuklaymiz
+    let imageURL=$('p-img').value.trim();
+    if(productImageFile){
+      lbl.classList.add('busy');lbl.textContent='⏳ Yuklanmoqda…';
+      const fd=new FormData();fd.append('image',productImageFile);
+      const ur=await fetch('/api/admin/products/image',{method:'POST',headers:auth(),body:fd});
+      const ud=await ur.json();
+      lbl.classList.remove('busy');
+      if(!ur.ok){showToast(ud.error||'Rasm yuklanmadi','err');btn.disabled=false;return;}
+      imageURL=ud.url;
+    }
+    // 2) Mahsulotni saqlaymiz
+    const body={
+      name,
+      category:$('p-cat').value.trim(),
+      emoji:$('p-emoji').value.trim()||'🎱',
+      price:parseInt($('p-price').value)||0,
+      sort_order:parseInt($('p-sort').value)||0,
+      description:$('p-desc').value.trim(),
+      image_url:imageURL,
+      in_stock:$('p-stock').checked
+    };
     const url=editProductId?`/api/admin/products/${editProductId}`:'/api/admin/products';
     const r=await fetch(url,{method:editProductId?'PUT':'POST',headers:{...auth(),'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json();
     if(r.ok){showToast(editProductId?'✅ Yangilandi':'✅ Qo\'shildi');closeProductModal();loadProducts();}
     else{showToast(d.error||'Xatolik','err');btn.disabled=false;}
-  }catch(e){showToast('Tarmoq xatosi','err');btn.disabled=false;}
+  }catch(e){showToast('Tarmoq xatosi','err');btn.disabled=false;lbl.classList.remove('busy');}
 }
 async function deleteProduct(id){
   const p=products.find(x=>x.id===id);

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
@@ -14,6 +15,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,10 +31,15 @@ type Handler struct {
 	trnSvcURL     string
 	clipSvcURL    string
 	internalToken string
+	uploadsDir    string
 }
 
-func New(db *sql.DB, secret, baseURL, botToken, trnSvcURL, clipSvcURL, internalToken string) *Handler {
-	return &Handler{db: db, secret: secret, baseURL: baseURL, botToken: botToken, trnSvcURL: trnSvcURL, clipSvcURL: clipSvcURL, internalToken: internalToken}
+func New(db *sql.DB, secret, baseURL, botToken, trnSvcURL, clipSvcURL, internalToken, uploadsDir string) *Handler {
+	if uploadsDir == "" {
+		uploadsDir = "uploads"
+	}
+	_ = os.MkdirAll(uploadsDir, 0o755)
+	return &Handler{db: db, secret: secret, baseURL: baseURL, botToken: botToken, trnSvcURL: trnSvcURL, clipSvcURL: clipSvcURL, internalToken: internalToken, uploadsDir: uploadsDir}
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
@@ -91,8 +99,10 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 
 	// Shop — public list + admin CRUD
 	mux.HandleFunc("GET /api/products", h.publicProducts)
+	mux.HandleFunc("GET /uploads/{file}", h.serveUpload)
 	mux.HandleFunc("GET /api/admin/products", h.withRole(h.adminListProducts, "admin", "superadmin"))
 	mux.HandleFunc("POST /api/admin/products", h.withRole(h.adminCreateProduct, "admin", "superadmin"))
+	mux.HandleFunc("POST /api/admin/products/image", h.withRole(h.adminUploadProductImage, "admin", "superadmin"))
 	mux.HandleFunc("PUT /api/admin/products/{id}", h.withRole(h.adminUpdateProduct, "admin", "superadmin"))
 	mux.HandleFunc("DELETE /api/admin/products/{id}", h.withRole(h.adminDeleteProduct, "admin", "superadmin"))
 
@@ -1017,6 +1027,9 @@ func (h *Handler) adminUpdateProduct(w http.ResponseWriter, r *http.Request) {
 	if p.Emoji == "" {
 		p.Emoji = "🎱"
 	}
+	// If the image changed, remove the old local file afterwards.
+	var oldImage string
+	_ = h.db.QueryRow(`SELECT image_url FROM products WHERE id=$1`, id).Scan(&oldImage)
 	res, err := h.db.Exec(`
 		UPDATE products SET name=$1, description=$2, price=$3, category=$4,
 		       emoji=$5, image_url=$6, in_stock=$7, sort_order=$8 WHERE id=$9`,
@@ -1029,6 +1042,9 @@ func (h *Handler) adminUpdateProduct(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 404, "mahsulot topilmadi")
 		return
 	}
+	if oldImage != "" && oldImage != p.ImageURL {
+		h.deleteUploadFile(oldImage)
+	}
 	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
@@ -1038,11 +1054,87 @@ func (h *Handler) adminDeleteProduct(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 400, "invalid id")
 		return
 	}
+	// Capture the image to delete its file after the row is removed.
+	var imageURL string
+	_ = h.db.QueryRow(`SELECT image_url FROM products WHERE id=$1`, id).Scan(&imageURL)
 	if _, err := h.db.Exec(`DELETE FROM products WHERE id=$1`, id); err != nil {
 		writeErr(w, 500, err.Error())
 		return
 	}
+	h.deleteUploadFile(imageURL)
 	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+// deleteUploadFile removes a locally-stored upload (only paths under /uploads/).
+func (h *Handler) deleteUploadFile(imageURL string) {
+	if !strings.HasPrefix(imageURL, "/uploads/") {
+		return // external URL or empty — nothing to remove
+	}
+	name := filepath.Base(strings.TrimPrefix(imageURL, "/uploads/"))
+	if name == "" || name == "." || name == ".." {
+		return
+	}
+	_ = os.Remove(filepath.Join(h.uploadsDir, name))
+}
+
+var uploadExt = map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true, ".gif": true}
+
+// adminUploadProductImage accepts a multipart "image" file, stores it under the
+// uploads dir with a random name, and returns its public URL (/uploads/<name>).
+func (h *Handler) adminUploadProductImage(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(12 << 20); err != nil { // 12 MB
+		writeErr(w, 400, "fayl juda katta yoki noto'g'ri")
+		return
+	}
+	file, hdr, err := r.FormFile("image")
+	if err != nil {
+		writeErr(w, 400, "rasm fayli topilmadi")
+		return
+	}
+	defer file.Close()
+
+	ext := strings.ToLower(filepath.Ext(hdr.Filename))
+	if !uploadExt[ext] {
+		writeErr(w, 400, "faqat rasm (jpg, png, webp, gif)")
+		return
+	}
+	if hdr.Size > 12<<20 {
+		writeErr(w, 400, "rasm 12MB dan kichik bo'lsin")
+		return
+	}
+
+	rb := make([]byte, 16)
+	if _, err := rand.Read(rb); err != nil {
+		writeErr(w, 500, "internal error")
+		return
+	}
+	name := hex.EncodeToString(rb) + ext
+	dst, err := os.Create(filepath.Join(h.uploadsDir, name))
+	if err != nil {
+		writeErr(w, 500, "saqlab bo'lmadi")
+		return
+	}
+	defer dst.Close()
+	if _, err := io.Copy(dst, io.LimitReader(file, 12<<20)); err != nil {
+		writeErr(w, 500, "saqlab bo'lmadi")
+		return
+	}
+	writeJSON(w, 200, map[string]string{"url": "/uploads/" + name})
+}
+
+// serveUpload serves a stored upload by filename (no path traversal).
+func (h *Handler) serveUpload(w http.ResponseWriter, r *http.Request) {
+	name := filepath.Base(r.PathValue("file"))
+	if name == "" || name == "." || name == ".." || strings.ContainsAny(name, "/\\") {
+		http.NotFound(w, r)
+		return
+	}
+	if !uploadExt[strings.ToLower(filepath.Ext(name))] {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	http.ServeFile(w, r, filepath.Join(h.uploadsDir, name))
 }
 
 func (h *Handler) adminMatchResult(w http.ResponseWriter, r *http.Request) {
