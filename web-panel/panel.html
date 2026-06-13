@@ -272,6 +272,27 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .sc-score{font-size:.78rem;color:var(--text3);min-width:18px;text-align:center;font-weight:700}
 .sc-score.win{color:var(--gold)}
 
+/* ─── SHOP / PRODUCTS ─── */
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:4px 0 40px}
+.prod-card{background:var(--card);border:1px solid var(--border2);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s}
+.prod-card:hover{border-color:rgba(212,175,55,.3)}
+.prod-card.out{opacity:.55}
+.prod-media{height:120px;display:flex;align-items:center;justify-content:center;font-size:3.4rem;background:var(--card2);border-bottom:1px solid var(--border2)}
+.prod-media img{max-width:100%;max-height:120px;object-fit:contain}
+.prod-body{padding:11px 13px;flex:1;display:flex;flex-direction:column;gap:3px}
+.prod-cat{font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-weight:700}
+.prod-name{font-size:.86rem;font-weight:800;line-height:1.25}
+.prod-desc{font-size:.66rem;color:var(--text2);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prod-price{font-size:.84rem;font-weight:800;color:var(--gold);margin-top:2px}
+.prod-foot{display:flex;gap:6px;padding:9px 13px;border-top:1px solid var(--border2)}
+.prod-foot button{flex:1;padding:6px 0;border-radius:5px;font-size:.62rem;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:none;color:var(--text2);transition:.15s;font-family:inherit}
+.prod-foot button:hover{border-color:rgba(212,175,55,.4);color:var(--gold)}
+.prod-foot button.del:hover{border-color:rgba(231,76,60,.5);color:var(--red)}
+.prod-stock-tag{position:absolute;top:8px;right:8px;font-size:.5rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:10px}
+.prod-card{position:relative}
+.stk-on{background:rgba(46,204,113,.12);color:var(--green);border:1px solid rgba(46,204,113,.3)}
+.stk-off{background:rgba(231,76,60,.1);color:var(--red);border:1px solid rgba(231,76,60,.3)}
+
 /* ─── MODAL ─── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:16px}
 .modal-overlay.show{display:flex}
@@ -395,6 +416,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
     <div class="tabs">
       <div class="tab active admin-only" data-tab="clips">🎬 Kliplar<span class="tab-badge" id="tab-badge-clips"></span></div>
       <div class="tab" data-tab="tournaments">🏆 Turnirlar<span class="tab-badge" id="tab-badge-trns"></span></div>
+      <div class="tab admin-only" data-tab="shop">🛒 Do'kon</div>
       <div class="tab admin-only" data-tab="users">👥 Foydalanuvchilar</div>
     </div>
   </div>
@@ -459,6 +481,16 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
     </div>
     <div class="user-grid" id="user-grid"></div>
     <div class="pagination" id="user-pg"></div>
+  </div>
+
+  <!-- ═══ SHOP TAB ═══ -->
+  <div class="tab-pane admin-only" id="tab-shop">
+    <div class="filter-row">
+      <span style="font-size:.72rem;color:var(--text2);font-weight:700">Do'kon mahsulotlari</span>
+      <button class="filter-btn" onclick="loadProducts()" style="color:var(--text2)">↺ Yangilash</button>
+      <button class="filter-btn" onclick="openProductModal()" style="margin-left:auto;color:var(--gold);border-color:rgba(212,175,55,.35)">➕ Yangi mahsulot</button>
+    </div>
+    <div class="prod-grid" id="prod-grid"><div class="loading-note">Yuklanmoqda…</div></div>
   </div>
 </div>
 
@@ -528,6 +560,59 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:14px 32
     <div class="modal-foot">
       <button class="btn-cancel" onclick="closeModal()">Bekor</button>
       <button class="btn-submit" id="modal-submit" onclick="submitTrnForm()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PRODUCT MODAL ═══ -->
+<div class="modal-overlay" id="prod-modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="prod-modal-title">Yangi mahsulot</div>
+      <button class="modal-close-btn" onclick="closeProductModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Mahsulot nomi</label>
+        <input type="text" id="p-name" class="form-input" placeholder="Masalan: Pro Cue Series X">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Kategoriya</label>
+          <input type="text" id="p-cat" class="form-input" placeholder="Masalan: Kiy / Shar / Aksessuar">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Emoji <span style="color:var(--text3);font-weight:400">(rasmsiz)</span></label>
+          <input type="text" id="p-emoji" class="form-input" placeholder="🎱" maxlength="4">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Narx (so'm)</label>
+          <input type="number" id="p-price" class="form-input" min="0" value="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tartib <span style="color:var(--text3);font-weight:400">(kichik = yuqorida)</span></label>
+          <input type="number" id="p-sort" class="form-input" min="0" value="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tavsif</label>
+        <input type="text" id="p-desc" class="form-input" placeholder="Masalan: Carbon fiber shaft · 19oz">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rasm URL <span style="color:var(--text3);font-weight:400">(ixtiyoriy — bo'lsa emoji o'rniga)</span></label>
+        <input type="text" id="p-img" class="form-input" placeholder="https://…">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="p-stock" checked style="width:auto"> Sotuvda (saytda ko'rinadi)
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeProductModal()">Bekor</button>
+      <button class="btn-submit" id="prod-modal-submit" onclick="submitProduct()">Saqlash</button>
     </div>
   </div>
 </div>
@@ -2086,9 +2171,93 @@ document.querySelectorAll('.tab').forEach(tab=>{
     $('tab-'+tab.dataset.tab).classList.add('active');
     if(tab.dataset.tab==='tournaments') loadTournaments(currentTrnStatus);
     else if(tab.dataset.tab==='users') loadUsers(currentSearchQ,currentRoleFilter);
+    else if(tab.dataset.tab==='shop') loadProducts();
     else loadClips(currentClipStatus);
   });
 });
+
+// ─── SHOP / PRODUCTS (admin) ───
+let products=[], editProductId=null;
+async function loadProducts(){
+  const grid=$('prod-grid');
+  grid.innerHTML='<div class="loading-note">Yuklanmoqda…</div>';
+  try{
+    const r=await fetch('/api/admin/products',{headers:auth()});
+    products=r.ok?(await r.json()||[]):[];
+    renderProducts();
+  }catch(e){grid.innerHTML='<div class="empty-note">Yuklab bo\'lmadi</div>';}
+}
+function renderProducts(){
+  const grid=$('prod-grid');
+  if(!products.length){grid.innerHTML='<div class="empty-note">Mahsulot yo\'q. ➕ Yangi mahsulot qo\'shing.</div>';return;}
+  grid.innerHTML=products.map(p=>{
+    const media=p.image_url
+      ?`<div class="prod-media"><img src="${esc(p.image_url)}" alt=""></div>`
+      :`<div class="prod-media">${esc(p.emoji||'🎱')}</div>`;
+    const price=p.price>0?Number(p.price).toLocaleString('ru-RU').replace(/,/g,' ')+" so'm":'Kelishilgan';
+    return`<div class="prod-card${p.in_stock?'':' out'}">
+      <span class="prod-stock-tag ${p.in_stock?'stk-on':'stk-off'}">${p.in_stock?'Sotuvda':'Yashirin'}</span>
+      ${media}
+      <div class="prod-body">
+        ${p.category?`<div class="prod-cat">${esc(p.category)}</div>`:''}
+        <div class="prod-name">${esc(p.name)}</div>
+        ${p.description?`<div class="prod-desc">${esc(p.description)}</div>`:''}
+        <div class="prod-price">${price}</div>
+      </div>
+      <div class="prod-foot">
+        <button onclick="openProductModal(${p.id})">✏️ Tahrir</button>
+        <button class="del" onclick="deleteProduct(${p.id})">🗑 O'chirish</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openProductModal(id){
+  editProductId=id||null;
+  const p=id?products.find(x=>x.id===id):null;
+  $('prod-modal-title').textContent=p?'Mahsulotni tahrirlash':'Yangi mahsulot';
+  $('p-name').value=p?p.name:'';
+  $('p-cat').value=p?p.category:'';
+  $('p-emoji').value=p?p.emoji:'🎱';
+  $('p-price').value=p?p.price:0;
+  $('p-sort').value=p?p.sort_order:0;
+  $('p-desc').value=p?p.description:'';
+  $('p-img').value=p?p.image_url:'';
+  $('p-stock').checked=p?p.in_stock:true;
+  $('prod-modal-overlay').classList.add('show');
+  setTimeout(()=>$('p-name').focus(),100);
+}
+function closeProductModal(){$('prod-modal-overlay').classList.remove('show');}
+async function submitProduct(){
+  const name=$('p-name').value.trim();
+  if(!name){showToast('Nomini kiriting','err');$('p-name').focus();return;}
+  const body={
+    name,
+    category:$('p-cat').value.trim(),
+    emoji:$('p-emoji').value.trim()||'🎱',
+    price:parseInt($('p-price').value)||0,
+    sort_order:parseInt($('p-sort').value)||0,
+    description:$('p-desc').value.trim(),
+    image_url:$('p-img').value.trim(),
+    in_stock:$('p-stock').checked
+  };
+  const btn=$('prod-modal-submit');btn.disabled=true;
+  try{
+    const url=editProductId?`/api/admin/products/${editProductId}`:'/api/admin/products';
+    const r=await fetch(url,{method:editProductId?'PUT':'POST',headers:{...auth(),'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(r.ok){showToast(editProductId?'✅ Yangilandi':'✅ Qo\'shildi');closeProductModal();loadProducts();}
+    else{showToast(d.error||'Xatolik','err');btn.disabled=false;}
+  }catch(e){showToast('Tarmoq xatosi','err');btn.disabled=false;}
+}
+async function deleteProduct(id){
+  const p=products.find(x=>x.id===id);
+  if(!confirm(`"${p?p.name:'mahsulot'}" o'chirilsinmi?`))return;
+  try{
+    const r=await fetch(`/api/admin/products/${id}`,{method:'DELETE',headers:auth()});
+    if(r.ok){showToast('🗑 O\'chirildi');loadProducts();}
+    else{const d=await r.json();showToast(d.error||'Xatolik','err');}
+  }catch(e){showToast('Tarmoq xatosi','err');}
+}
 
 document.querySelectorAll('.filter-btn[data-status]').forEach(btn=>{
   btn.addEventListener('click',()=>{

@@ -89,6 +89,13 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/tournaments", h.publicTournaments)
 	mux.HandleFunc("GET /api/tournaments/{id}/bracket", h.publicTrnBracket)
 
+	// Shop — public list + admin CRUD
+	mux.HandleFunc("GET /api/products", h.publicProducts)
+	mux.HandleFunc("GET /api/admin/products", h.withRole(h.adminListProducts, "admin", "superadmin"))
+	mux.HandleFunc("POST /api/admin/products", h.withRole(h.adminCreateProduct, "admin", "superadmin"))
+	mux.HandleFunc("PUT /api/admin/products/{id}", h.withRole(h.adminUpdateProduct, "admin", "superadmin"))
+	mux.HandleFunc("DELETE /api/admin/products/{id}", h.withRole(h.adminDeleteProduct, "admin", "superadmin"))
+
 	// Tournament registration proxy (auth via JWT, proxies to tournament-service)
 	mux.HandleFunc("POST /api/me/tournaments/{id}/register", h.withAuth(h.meTournamentRegister))
 
@@ -911,6 +918,131 @@ func (h *Handler) publicTournaments(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, 200, list)
+}
+
+// ─── Shop / Products ───
+
+type productItem struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Price       int64  `json:"price"`
+	Category    string `json:"category"`
+	Emoji       string `json:"emoji"`
+	ImageURL    string `json:"image_url"`
+	InStock     bool   `json:"in_stock"`
+	SortOrder   int    `json:"sort_order"`
+}
+
+func scanProducts(rows *sql.Rows) []productItem {
+	list := []productItem{}
+	for rows.Next() {
+		var p productItem
+		if rows.Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.Category,
+			&p.Emoji, &p.ImageURL, &p.InStock, &p.SortOrder) == nil {
+			list = append(list, p)
+		}
+	}
+	return list
+}
+
+// publicProducts — faqat sotuvdagi mahsulotlar (autentifikatsiyasiz).
+func (h *Handler) publicProducts(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.db.Query(`
+		SELECT id, name, description, price, category, emoji, image_url, in_stock, sort_order
+		FROM products WHERE in_stock=true
+		ORDER BY sort_order ASC, created_at DESC`)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	defer rows.Close()
+	writeJSON(w, 200, scanProducts(rows))
+}
+
+// adminListProducts — barcha mahsulotlar (sotuvda bo'lmaganlar ham).
+func (h *Handler) adminListProducts(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.db.Query(`
+		SELECT id, name, description, price, category, emoji, image_url, in_stock, sort_order
+		FROM products ORDER BY sort_order ASC, created_at DESC`)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	defer rows.Close()
+	writeJSON(w, 200, scanProducts(rows))
+}
+
+func (h *Handler) adminCreateProduct(w http.ResponseWriter, r *http.Request) {
+	var p productItem
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		writeErr(w, 400, "invalid request")
+		return
+	}
+	if strings.TrimSpace(p.Name) == "" {
+		writeErr(w, 400, "nomi bo'sh bo'lmasin")
+		return
+	}
+	if p.Emoji == "" {
+		p.Emoji = "🎱"
+	}
+	var id int64
+	err := h.db.QueryRow(`
+		INSERT INTO products (name, description, price, category, emoji, image_url, in_stock, sort_order)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+		strings.TrimSpace(p.Name), p.Description, p.Price, p.Category, p.Emoji, p.ImageURL, p.InStock, p.SortOrder,
+	).Scan(&id)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]any{"id": id, "status": "ok"})
+}
+
+func (h *Handler) adminUpdateProduct(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	var p productItem
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		writeErr(w, 400, "invalid request")
+		return
+	}
+	if strings.TrimSpace(p.Name) == "" {
+		writeErr(w, 400, "nomi bo'sh bo'lmasin")
+		return
+	}
+	if p.Emoji == "" {
+		p.Emoji = "🎱"
+	}
+	res, err := h.db.Exec(`
+		UPDATE products SET name=$1, description=$2, price=$3, category=$4,
+		       emoji=$5, image_url=$6, in_stock=$7, sort_order=$8 WHERE id=$9`,
+		strings.TrimSpace(p.Name), p.Description, p.Price, p.Category, p.Emoji, p.ImageURL, p.InStock, p.SortOrder, id)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		writeErr(w, 404, "mahsulot topilmadi")
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) adminDeleteProduct(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	if _, err := h.db.Exec(`DELETE FROM products WHERE id=$1`, id); err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
 
 func (h *Handler) adminMatchResult(w http.ResponseWriter, r *http.Request) {

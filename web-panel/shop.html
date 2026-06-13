@@ -69,6 +69,10 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .item-price{font-size:.9rem;font-weight:700;color:var(--gold)}
 .item-arr{position:absolute;bottom:24px;right:22px;color:var(--text3);font-size:1rem;transition:.2s}
 .item:hover .item-arr{color:var(--gold);transform:translateX(4px)}
+.item-img img{max-width:100%;max-height:130px;object-fit:contain;border-radius:8px}
+.item.sk{min-height:280px;background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);background-size:200%;animation:sk 1.4s infinite}
+@keyframes sk{from{background-position:200% 0}to{background-position:-200% 0}}
+.shop-empty{grid-column:1/-1;padding:60px 20px;text-align:center;color:var(--text3);font-size:.9rem;line-height:2.2;background:var(--card)}
 
 .soon-banner{background:var(--card);border:1px solid var(--border);border-left:2px solid var(--gold);padding:20px 24px;margin-top:2px;display:flex;align-items:center;gap:14px;font-size:.82rem;color:var(--text2)}
 .soon-banner strong{color:var(--text)}
@@ -117,55 +121,8 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:20px 40
 <div class="products">
   <div class="wrap">
     <div class="sec-label">Mahsulotlar</div>
-    <div class="grid">
-      <div class="item">
-        <div class="item-tag">Bestseller</div>
-        <div class="item-img">🎱</div>
-        <div class="item-name">Pro Cue Series X</div>
-        <div class="item-sub">Carbon fiber shaft · 19oz · 2-piece</div>
-        <div class="item-price">320 000 so'm</div>
-        <div class="item-arr">→</div>
-      </div>
-      <div class="item">
-        <div class="item-tag">Yangi</div>
-        <div class="item-img">⚫</div>
-        <div class="item-name">Tournament Ball Set</div>
-        <div class="item-sub">Belgian phenolic · 57.2mm · 16-sharli</div>
-        <div class="item-price">180 000 so'm</div>
-        <div class="item-arr">→</div>
-      </div>
-      <div class="item">
-        <div class="item-tag">Ko'p sotilgan</div>
-        <div class="item-img">🟦</div>
-        <div class="item-name">Master Blue Chalk</div>
-        <div class="item-sub">Blue Diamond formula · 12-pack</div>
-        <div class="item-price">45 000 so'm</div>
-        <div class="item-arr">→</div>
-      </div>
-      <div class="item">
-        <div class="item-tag">Premium</div>
-        <div class="item-img">🎒</div>
-        <div class="item-name">Pro Cue Case</div>
-        <div class="item-sub">Aluminum shell · 2×2 · qulf bilan</div>
-        <div class="item-price">220 000 so'm</div>
-        <div class="item-arr">→</div>
-      </div>
-      <div class="item">
-        <div class="item-tag">Aksessuar</div>
-        <div class="item-img">🧤</div>
-        <div class="item-name">Billiard Glove</div>
-        <div class="item-sub">Lycra · S/M/L/XL · ko'p rangli</div>
-        <div class="item-price">18 000 so'm</div>
-        <div class="item-arr">→</div>
-      </div>
-      <div class="item">
-        <div class="item-tag">Stol</div>
-        <div class="item-img">🟩</div>
-        <div class="item-name">Table Brush Set</div>
-        <div class="item-sub">Kaşmir jun to'qima · 2 ta to'plam</div>
-        <div class="item-price">35 000 so'm</div>
-        <div class="item-arr">→</div>
-      </div>
+    <div class="grid" id="grid">
+      <div class="item sk"></div><div class="item sk"></div><div class="item sk"></div>
     </div>
     <div class="soon-banner">
       <span>🛒</span>
@@ -183,6 +140,37 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:20px 40
 const bg = document.getElementById('burger'), nm = document.getElementById('nav-mobile');
 bg.addEventListener('click', () => { bg.classList.toggle('open'); nm.classList.toggle('open'); });
 nm.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { bg.classList.remove('open'); nm.classList.remove('open'); }));
+
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmtPrice = p => p > 0 ? Number(p).toLocaleString('ru-RU').replace(/,/g,' ') + " so'm" : 'Kelishilgan';
+
+async function loadProducts() {
+  const grid = document.getElementById('grid');
+  try {
+    const r = await fetch('/api/products');
+    const items = r.ok ? (await r.json() || []) : [];
+    if (!items.length) {
+      grid.innerHTML = '<div class="shop-empty">🛒<br>Hozircha mahsulotlar yo\'q<br><span style="font-size:.72rem">Tez orada yangi mahsulotlar qo\'shiladi</span></div>';
+      return;
+    }
+    grid.innerHTML = items.map(p => {
+      const media = p.image_url
+        ? `<div class="item-img"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy"></div>`
+        : `<div class="item-img">${esc(p.emoji || '🎱')}</div>`;
+      return `<a class="item" href="https://t.me/BilliardKingBot" target="_blank">
+        ${p.category ? `<div class="item-tag">${esc(p.category)}</div>` : '<div class="item-tag">Mahsulot</div>'}
+        ${media}
+        <div class="item-name">${esc(p.name)}</div>
+        ${p.description ? `<div class="item-sub">${esc(p.description)}</div>` : '<div class="item-sub"></div>'}
+        <div class="item-price">${fmtPrice(p.price)}</div>
+        <div class="item-arr">→</div>
+      </a>`;
+    }).join('');
+  } catch(_) {
+    grid.innerHTML = '<div class="shop-empty">❌<br>Mahsulotlarni yuklab bo\'lmadi</div>';
+  }
+}
+loadProducts();
 </script>
 </body>
 </html>
