@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 
+	"bot-gateway/internal/client"
 	"bot-gateway/internal/models"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -15,6 +16,7 @@ type Handler struct {
 	tableSvc      TableService
 	clipSvc       ClipService
 	tournamentSvc TournamentService
+	productSvc    *client.ProductClient
 
 	states    *StateManager
 	userCache *UserCache
@@ -26,12 +28,14 @@ func NewHandler(
 	tableSvc TableService,
 	clipSvc ClipService,
 	tournamentSvc TournamentService,
+	productSvc *client.ProductClient,
 ) *Handler {
 	return &Handler{
 		userSvc:       userSvc,
 		tableSvc:      tableSvc,
 		clipSvc:       clipSvc,
 		tournamentSvc: tournamentSvc,
+		productSvc:    productSvc,
 		states:        NewStateManager(),
 		userCache:     newUserCache(),
 		limiter:       newRateLimiter(),
@@ -127,6 +131,8 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 		} else {
 			h.openClientSubmenu(bot, chatID, tgID, "🏆 Turnirlar", tournamentClientSubmenu())
 		}
+	case "🛒 Do'kon":
+		h.showProductMenu(bot, chatID, user)
 	case "👥 Xodimlar":
 		h.showStaffList(bot, chatID, user)
 	case "⚙️ Sozlamalar":
@@ -313,6 +319,17 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 	case "clip_menu_my":
 		deleteMessage(bot, chatID, msgID)
 		h.showMyClips(bot, chatID, tgID)
+
+	// ── DO'KON (admin) ──
+	case "prod_add":
+		h.cbProductAdd(bot, chatID, tgID, user)
+	case "prod_del":
+		h.cbProductDelAsk(bot, chatID, msgID, user, arg1)
+	case "prod_delok":
+		h.cbProductDelOK(bot, chatID, msgID, user, arg1)
+	case "prod_menu":
+		deleteMessage(bot, chatID, msgID)
+		h.showProductMenu(bot, chatID, user)
 
 	case "client_menu_close":
 		deleteMessage(bot, chatID, msgID)

@@ -298,6 +298,13 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 	tgID := msg.From.ID
 	chatID := msg.Chat.ID
 
+	// --- Do'kon: mahsulot qo'shish (admin) ---
+	switch state.State {
+	case StateProdName, StateProdCat, StateProdPrice, StateProdDesc, StateProdPhoto:
+		h.handleProductInput(bot, msg, user, state)
+		return
+	}
+
 	switch state.State {
 
 	// --- Profil: ism o'zgartirish ---

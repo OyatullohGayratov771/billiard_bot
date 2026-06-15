@@ -106,6 +106,12 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/admin/products/{id}", h.withRole(h.adminUpdateProduct, "admin", "superadmin"))
 	mux.HandleFunc("DELETE /api/admin/products/{id}", h.withRole(h.adminDeleteProduct, "admin", "superadmin"))
 
+	// Shop — internal endpoints for the bot (X-Internal-Token auth)
+	mux.HandleFunc("GET /internal/products", h.withInternal(h.adminListProducts))
+	mux.HandleFunc("POST /internal/products", h.withInternal(h.adminCreateProduct))
+	mux.HandleFunc("POST /internal/products/image", h.withInternal(h.adminUploadProductImage))
+	mux.HandleFunc("DELETE /internal/products/{id}", h.withInternal(h.adminDeleteProduct))
+
 	// Tournament registration proxy (auth via JWT, proxies to tournament-service)
 	mux.HandleFunc("POST /api/me/tournaments/{id}/register", h.withAuth(h.meTournamentRegister))
 
@@ -238,6 +244,17 @@ func (h *Handler) withAuth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		next(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, c)))
+	}
+}
+
+// withInternal gates an endpoint behind the shared service token (for bot-gateway).
+func (h *Handler) withInternal(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if h.internalToken == "" || r.Header.Get("X-Internal-Token") != h.internalToken {
+			writeErr(w, 401, "unauthorized")
+			return
+		}
+		next(w, r)
 	}
 }
 

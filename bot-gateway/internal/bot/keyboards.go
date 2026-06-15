@@ -17,11 +17,13 @@ func mainMenuKeyboard(user *models.User) replyKeyboard {
 	case models.RoleSuperadmin:
 		rows = [][]replyBtn{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
-			{btn("👥 Xodimlar"), btn("⚙️ Sozlamalar")},
+			{btn("🛒 Do'kon"), btn("👥 Xodimlar")},
+			{btn("⚙️ Sozlamalar")},
 		}
 	case models.RoleAdmin:
 		rows = [][]replyBtn{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
+			{btn("🛒 Do'kon")},
 		}
 	case models.RoleOperator:
 		rows = [][]replyBtn{

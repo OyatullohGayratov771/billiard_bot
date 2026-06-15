@@ -55,6 +55,13 @@ const (
 
 	// Profil tahrirlash
 	StateEditName = "profile:edit_name"
+
+	// Do'kon — mahsulot qo'shish (admin)
+	StateProdName  = "prod:name"
+	StateProdCat   = "prod:category"
+	StateProdPrice = "prod:price"
+	StateProdDesc  = "prod:description"
+	StateProdPhoto = "prod:photo"
 )
 
 // UserState — bitta foydalanuvchining joriy holati
