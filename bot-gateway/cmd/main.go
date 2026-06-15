@@ -33,7 +33,7 @@ func main() {
 	tableClient := client.NewTableClient(cfg.TableServiceURL, httpClient)
 	clipClient := client.NewClipClient(cfg.ClipServiceURL, httpClient)
 	tournamentClient := client.NewTournamentClient(cfg.TournamentServiceURL, httpClient, cfg.InternalToken)
-	productClient := client.NewProductClient(cfg.WebServiceURL, httpClient, cfg.InternalToken)
+	productClient := client.NewProductClient(cfg.ShopServiceURL, httpClient, cfg.InternalToken)
 
 	// Handler
 	handler := bot.NewHandler(userClient, tableClient, clipClient, tournamentClient, productClient)

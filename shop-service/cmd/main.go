@@ -4,9 +4,11 @@ import (
 	"log"
 	"net/http"
 
-	"web-service/internal/config"
-	"web-service/internal/db"
-	"web-service/internal/handler"
+	"shop-service/internal/config"
+	"shop-service/internal/db"
+	"shop-service/internal/handler"
+	"shop-service/internal/repository"
+	"shop-service/internal/service"
 )
 
 func main() {
@@ -19,12 +21,15 @@ func main() {
 	}
 	defer database.Close()
 
-	h := handler.New(database, cfg.JWTSecret, cfg.BaseURL, cfg.BotToken, cfg.TournamentSvcURL, cfg.ClipSvcURL, cfg.ShopSvcURL, cfg.InternalToken)
+	repo := repository.New(database)
+	svc := service.New(repo, cfg.UploadsDir)
+	h := handler.New(svc, cfg.InternalToken)
+
 	mux := http.NewServeMux()
 	h.RegisterRoutes(mux)
 
 	addr := ":" + cfg.Port
-	log.Printf("🚀 web-service %s portda ishga tushdi", addr)
+	log.Printf("🚀 shop-service %s portda ishga tushdi", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("❌ Server xatosi: %v", err)
 	}

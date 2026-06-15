@@ -41,7 +41,7 @@ func (c *ProductClient) auth(req *http.Request) {
 
 // List returns all products (in-stock and hidden).
 func (c *ProductClient) List() ([]*Product, error) {
-	req, _ := http.NewRequest(http.MethodGet, c.baseURL+"/internal/products", nil)
+	req, _ := http.NewRequest(http.MethodGet, c.baseURL+"/products/all", nil)
 	c.auth(req)
 	resp, err := c.http.Do(req)
 	if err != nil {
@@ -58,7 +58,7 @@ func (c *ProductClient) List() ([]*Product, error) {
 // Create inserts a product and returns its id.
 func (c *ProductClient) Create(p Product) (int64, error) {
 	body, _ := json.Marshal(p)
-	req, _ := http.NewRequest(http.MethodPost, c.baseURL+"/internal/products", bytes.NewReader(body))
+	req, _ := http.NewRequest(http.MethodPost, c.baseURL+"/products", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	c.auth(req)
 	resp, err := c.http.Do(req)
@@ -91,7 +91,7 @@ func (c *ProductClient) UploadImage(data []byte, filename string) (string, error
 	}
 	mw.Close()
 
-	req, _ := http.NewRequest(http.MethodPost, c.baseURL+"/internal/products/image", &buf)
+	req, _ := http.NewRequest(http.MethodPost, c.baseURL+"/products/image", &buf)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 	c.auth(req)
 	resp, err := c.http.Do(req)
@@ -113,7 +113,7 @@ func (c *ProductClient) UploadImage(data []byte, filename string) (string, error
 
 // Delete removes a product (and its image) by id.
 func (c *ProductClient) Delete(id int64) error {
-	req, _ := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/internal/products/%d", c.baseURL, id), nil)
+	req, _ := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/products/%d", c.baseURL, id), nil)
 	c.auth(req)
 	resp, err := c.http.Do(req)
 	if err != nil {

@@ -151,6 +151,40 @@ services:
       timeout: 3s
       retries: 10
 
+  shop-service:
+    build:
+      context: ./shop-service
+      dockerfile: Dockerfile
+    container_name: billiard_shop_service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_DSN: "host=postgres port=5432 user=${DB_USER:-postgres} password=${DB_PASSWORD:-postgres} dbname=${DB_NAME:-billiard_bot} sslmode=disable"
+      SHOP_SERVICE_PORT: "8086"
+      INTERNAL_TOKEN: "${INTERNAL_TOKEN}"
+      UPLOADS_DIR: "/app/uploads"
+      TZ: Asia/Tashkent
+    expose:
+      - "8086"
+    volumes:
+      - uploads_data:/app/uploads
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8086/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   web-service:
     build:
       context: ./web-service
@@ -164,6 +198,8 @@ services:
         condition: service_healthy
       tournament-service:
         condition: service_healthy
+      shop-service:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -174,12 +210,10 @@ services:
       TELEGRAM_TOKEN: "${TELEGRAM_TOKEN}"
       CLIP_SVC_URL: "http://clip-service:8083"
       TOURNAMENT_SVC_URL: "http://tournament-service:8084"
+      SHOP_SVC_URL: "http://shop-service:8086"
       INTERNAL_TOKEN: "${INTERNAL_TOKEN}"
-      UPLOADS_DIR: "/app/uploads"
     expose:
       - "8085"
-    volumes:
-      - uploads_data:/app/uploads
     security_opt:
       - no-new-privileges:true
     logging:
@@ -210,6 +244,8 @@ services:
         condition: service_healthy
       web-service:
         condition: service_healthy
+      shop-service:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -218,6 +254,7 @@ services:
       CLIP_SERVICE_URL: "http://clip-service:8083"
       TOURNAMENT_SERVICE_URL: "http://tournament-service:8084"
       WEB_SERVICE_URL: "http://web-service:8085"
+      SHOP_SERVICE_URL: "http://shop-service:8086"
       TV_BASE_URL: "${TV_BASE_URL:-}"
       INTERNAL_TOKEN: "${INTERNAL_TOKEN}"
       TZ: Asia/Tashkent
@@ -245,6 +282,8 @@ services:
       - ./web-panel:/var/www/panel:ro
     depends_on:
       tournament-service:
+        condition: service_healthy
+      shop-service:
         condition: service_healthy
     security_opt:
       - no-new-privileges:true
