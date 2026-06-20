@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -673,7 +674,7 @@ func (h *Handler) sendMatchTableNotifications(matchID int64, tableNum int) {
 		}
 		msg := fmt.Sprintf(
 			"⚡ <b>Navbatdagi o'yiningiz!</b>\n\n🏆 Turnir: <b>%s</b>\n🆚 Raqibingiz: <b>%s</b>\n🎱 Stol: <b>%d-stol</b>%s\n\nOmad! 🍀",
-			trnName, opponentName, tableNum, timeStr)
+			htmlEsc(trnName), htmlEsc(opponentName), tableNum, timeStr)
 		h.sendTelegramMessage(tgID, msg, nil)
 	}
 
@@ -857,9 +858,9 @@ func (h *Handler) genBracketAndNotify(w http.ResponseWriter, r *http.Request, tr
 				if info.tableNum > 0 {
 					tableStr = fmt.Sprintf("\n🎱 Stol: <b>%d-stol</b>", info.tableNum)
 				}
-				msg = fmt.Sprintf("⚡ <b>%s</b> turniri sеtkasi yaratildi!\n\nSizning birinchi o'yiningiz:\n🆚 Raqib: <b>%s</b>%s\n\nOmad! 🍀", trnName, opponent, tableStr)
+				msg = fmt.Sprintf("⚡ <b>%s</b> turniri sеtkasi yaratildi!\n\nSizning birinchi o'yiningiz:\n🆚 Raqib: <b>%s</b>%s\n\nOmad! 🍀", htmlEsc(trnName), htmlEsc(opponent), tableStr)
 			} else {
-				msg = fmt.Sprintf("⚡ <b>%s</b> turniri sеtkasi yaratildi!\n\nJadval va o'yin ma'lumotlari web saytda mavjud. Omad! 🍀", trnName)
+				msg = fmt.Sprintf("⚡ <b>%s</b> turniri sеtkasi yaratildi!\n\nJadval va o'yin ma'lumotlari web saytda mavjud. Omad! 🍀", htmlEsc(trnName))
 			}
 			go h.sendTelegramMessage(tgID, msg, nil)
 		}
@@ -1061,6 +1062,9 @@ func (h *Handler) sendResultNotifications(matchID, nextMatchID int64, finished b
 	if winName == "" {
 		winName = "raqib"
 	}
+	trnName = htmlEsc(trnName)
+	winName = htmlEsc(winName)
+	loseName = htmlEsc(loseName)
 
 	// G'olibga xabar
 	if winTg != nil && *winTg > 0 {
@@ -1068,7 +1072,7 @@ func (h *Handler) sendResultNotifications(matchID, nextMatchID int64, finished b
 		if finished {
 			tail = "\n\n👑 <b>Siz TURNIR CHEMPIONISIZ!</b> 🎉🏆"
 		} else if nextMatchID > 0 {
-			if opp := h.nextOpponentName(nextMatchID, *winTg); opp != "" {
+			if opp := htmlEsc(h.nextOpponentName(nextMatchID, *winTg)); opp != "" {
 				tail = fmt.Sprintf("\n\n⏭ Keyingi o'yin: <b>%s</b> bilan. Tayyorlaning!", opp)
 			} else {
 				tail = "\n\n⏭ Keyingi bosqichga o'tdingiz! Raqibingiz aniqlanmoqda…"
@@ -1145,7 +1149,7 @@ func (h *Handler) notifyWaitingOpponent(nextMatchID, winnerTgID int64, winnerNam
 	}
 	if waitTg != nil && *waitTg > 0 {
 		msg := fmt.Sprintf("🎯 <b>%s</b> turnirida raqibingiz aniqlandi: <b>%s</b>.\n\nTayyorlaning! O'yin vaqti va stoli haqida xabar beriladi.",
-			trnName, winnerName)
+			htmlEsc(trnName), htmlEsc(winnerName))
 		h.sendTelegramMessage(*waitTg, msg, nil)
 	}
 }
@@ -1228,7 +1232,7 @@ func (h *Handler) adminApproveTrnReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if clientTgID > 0 {
-		msg := fmt.Sprintf("✅ <b>%s</b> turnirida ro'yxatingiz tasdiqlandi!\n\nSiz ishtirokchisiz. Turnir boshlanishi haqida xabardor qilinasiz.", trnName)
+		msg := fmt.Sprintf("✅ <b>%s</b> turnirida ro'yxatingiz tasdiqlandi!\n\nSiz ishtirokchisiz. Turnir boshlanishi haqida xabardor qilinasiz.", htmlEsc(trnName))
 		go h.sendTelegramMessage(clientTgID, msg, nil)
 	}
 	writeJSON(w, 200, map[string]string{"status": "ok"})
@@ -1261,7 +1265,7 @@ func (h *Handler) adminRejectTrnReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if clientTgID > 0 {
-		msg := fmt.Sprintf("❌ <b>%s</b> turnirida ro'yxatingiz rad etildi.\n\nQo'shimcha ma'lumot uchun admin bilan bog'laning.", trnName)
+		msg := fmt.Sprintf("❌ <b>%s</b> turnirida ro'yxatingiz rad etildi.\n\nQo'shimcha ma'lumot uchun admin bilan bog'laning.", htmlEsc(trnName))
 		go h.sendTelegramMessage(clientTgID, msg, nil)
 	}
 	writeJSON(w, 200, map[string]string{"status": "ok"})
@@ -1592,22 +1596,47 @@ func (h *Handler) meTournamentRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) sendTelegramMessage(chatID int64, text string, replyMarkup []byte) {
-	payload, _ := json.Marshal(map[string]any{
-		"chat_id":      chatID,
-		"text":         text,
-		"parse_mode":   "HTML",
-		"reply_markup": json.RawMessage(replyMarkup),
-	})
+	if h.botToken == "" {
+		log.Printf("⚠️ notif: TELEGRAM_TOKEN bo'sh — xabar yuborilmadi (chat=%d)", chatID)
+		return
+	}
+	// Manually-added players have negative dummy tg_ids — Telegram can't reach them.
+	if chatID <= 0 {
+		return
+	}
+	payload := map[string]any{
+		"chat_id":    chatID,
+		"text":       text,
+		"parse_mode": "HTML",
+	}
+	if len(replyMarkup) > 0 {
+		payload["reply_markup"] = json.RawMessage(replyMarkup)
+	}
+	body, _ := json.Marshal(payload)
 	apiURL := "https://api.telegram.org/bot" + h.botToken + "/sendMessage"
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
-	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(payload))
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		log.Printf("❌ notif yuborilmadi (chat=%d): %v", chatID, err)
 		return
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		rb, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		log.Printf("❌ Telegram rad etdi (chat=%d, status=%d): %s", chatID, resp.StatusCode, string(rb))
+	}
+}
+
+// htmlEsc — Telegram HTML parse_mode uchun maxsus belgilarni himoyalaydi
+// (ism ichida <, >, & bo'lsa butun xabar rad etiladi).
+func htmlEsc(s string) string {
+	s = strings.ReplaceAll(s, "&", "&amp;")
+	s = strings.ReplaceAll(s, "<", "&lt;")
+	s = strings.ReplaceAll(s, ">", "&gt;")
+	return s
 }
 
 func (h *Handler) meUpdateProfile(w http.ResponseWriter, r *http.Request) {
