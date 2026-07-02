@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"bot-gateway/internal/bot"
@@ -57,7 +58,13 @@ func main() {
 		upd := update
 		sem <- struct{}{}
 		go func() {
-			defer func() { <-sem }()
+			// Bitta xato update butun botni o'ldirmasligi uchun panic'ni ushlaymiz.
+			defer func() {
+				<-sem
+				if r := recover(); r != nil {
+					log.Printf("⚠️ panic recovered (update handler): %v\n%s", r, debug.Stack())
+				}
+			}()
 			handler.Handle(tg, upd)
 		}()
 	}

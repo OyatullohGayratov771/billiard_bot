@@ -143,14 +143,6 @@ func getUserFromUpdate(update tgbotapi.Update) (int64, string, string, string) {
 }
 
 // send — xabar yuborish helper
-func send(bot *tgbotapi.BotAPI, chatID int64, text string) {
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = "HTML"
-	if _, err := bot.Send(msg); err != nil {
-		log.Printf("send error: %v", err)
-	}
-}
-
 const tgMaxText = 4096
 
 // stripHTML removes all HTML tags so truncated text is safe for plain-text mode.
@@ -170,24 +162,32 @@ func stripHTML(s string) string {
 	return string(out)
 }
 
-// sendWithKeyboard — klaviatura bilan xabar
-func sendWithKeyboard(bot *tgbotapi.BotAPI, chatID int64, text string, kb interface{}) {
-	var msgText, parseMode string
+// safeMsgText — Telegram 4096 belgi limitiga moslaydi. Uzun bo'lsa HTML tag'lar
+// olib tashlanadi (yopilmagan tag xatosini oldini olish uchun) va qisqartiriladi.
+func safeMsgText(text string) (msgText, parseMode string) {
 	runes := []rune(text)
 	if len(runes) <= tgMaxText {
-		msgText = text
-		parseMode = "HTML"
-	} else {
-		// Strip HTML then truncate — prevents unclosed tag errors
-		plain := stripHTML(text)
-		pr := []rune(plain)
-		if len(pr) > tgMaxText-1 {
-			msgText = string(pr[:tgMaxText-1]) + "…"
-		} else {
-			msgText = plain
-		}
-		parseMode = ""
+		return text, "HTML"
 	}
+	plain := []rune(stripHTML(text))
+	if len(plain) > tgMaxText-1 {
+		return string(plain[:tgMaxText-1]) + "…", ""
+	}
+	return string(plain), ""
+}
+
+func send(bot *tgbotapi.BotAPI, chatID int64, text string) {
+	t, pm := safeMsgText(text)
+	msg := tgbotapi.NewMessage(chatID, t)
+	msg.ParseMode = pm
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("send error (chat=%d): %v", chatID, err)
+	}
+}
+
+// sendWithKeyboard — klaviatura bilan xabar
+func sendWithKeyboard(bot *tgbotapi.BotAPI, chatID int64, text string, kb interface{}) {
+	msgText, parseMode := safeMsgText(text)
 	msg := tgbotapi.NewMessage(chatID, msgText)
 	msg.ParseMode = parseMode
 	switch k := kb.(type) {
@@ -229,8 +229,9 @@ func deleteMessage(bot *tgbotapi.BotAPI, chatID int64, msgID int) {
 
 // sendAndGetMsgID — xabar yuboradi va qaytarilgan message ID ni beradi
 func sendAndGetMsgID(bot *tgbotapi.BotAPI, chatID int64, text string, kb tgbotapi.InlineKeyboardMarkup) int {
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = "HTML"
+	t, pm := safeMsgText(text)
+	msg := tgbotapi.NewMessage(chatID, t)
+	msg.ParseMode = pm
 	msg.ReplyMarkup = kb
 	m, err := bot.Send(msg)
 	if err != nil {
@@ -242,13 +243,14 @@ func sendAndGetMsgID(bot *tgbotapi.BotAPI, chatID int64, text string, kb tgbotap
 
 // editMessage — inline xabarni tahrirlaydi
 func editMessage(bot *tgbotapi.BotAPI, chatID int64, msgID int, text string, kb *tgbotapi.InlineKeyboardMarkup) {
-	edit := tgbotapi.NewEditMessageText(chatID, msgID, text)
-	edit.ParseMode = "HTML"
+	t, pm := safeMsgText(text)
+	edit := tgbotapi.NewEditMessageText(chatID, msgID, t)
+	edit.ParseMode = pm
 	if kb != nil {
 		edit.ReplyMarkup = kb
 	}
 	if _, err := bot.Send(edit); err != nil {
-		log.Printf("editMessage error: %v", err)
+		log.Printf("editMessage error (chat=%d): %v", chatID, err)
 	}
 }
 

@@ -81,8 +81,9 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 		return
 	}
 
-	// Telefon raqami bo'lmasa — barcha amallar bloklanadi
-	if user.Phone == "" {
+	// Telefon raqami bo'lmasa — faqat mijozlar bloklanadi (xodimlar callback bilan
+	// bir xil: telefonsiz ham ishlay oladi, aks holda ular tiqilib qolardi)
+	if user.Phone == "" && !user.IsStaff() {
 		h.requirePhone(bot, chatID)
 		return
 	}
@@ -140,7 +141,8 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 	case "👤 Akkaunt":
 		h.showMyProfile(bot, chatID, user)
 	default:
-		send(bot, chatID, "❓ Noma'lum buyruq. Pastdagi tugmalardan foydalaning.")
+		// Har doim menyu tugmalarini qayta ko'rsatamiz — foydalanuvchi tiqilib qolmaydi
+		sendWithKeyboard(bot, chatID, "🤔 Tushunmadim. Quyidagi menyudan tanlang 👇", mainMenuKeyboard(user))
 	}
 }
 
