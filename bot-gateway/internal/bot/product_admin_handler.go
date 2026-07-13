@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"bot-gateway/internal/client"
+	"bot-gateway/internal/config"
 	"bot-gateway/internal/models"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -218,6 +219,106 @@ func (h *Handler) downloadAndUploadPhoto(bot *tgbotapi.BotAPI, fileID string) (s
 		return "", err
 	}
 	return h.productSvc.UploadImage(data, "photo.jpg")
+}
+
+// ===================== DO'KON — MIJOZLAR UCHUN =====================
+
+// showClientShop — mijozga sotuvdagi mahsulotlar ro'yxatini ko'rsatadi.
+func (h *Handler) showClientShop(bot *tgbotapi.BotAPI, chatID int64) {
+	if h.productSvc == nil {
+		send(bot, chatID, "🛒 Do'kon vaqtincha ishlamayapti. Keyinroq urinib ko'ring.")
+		return
+	}
+	list, err := h.productSvc.List()
+	if err != nil {
+		send(bot, chatID, "❌ Mahsulotlarni yuklab bo'lmadi. Keyinroq urinib ko'ring.")
+		return
+	}
+
+	var rows [][]tgbotapi.InlineKeyboardButton
+	count := 0
+	for _, p := range list {
+		if !p.InStock {
+			continue
+		}
+		count++
+		label := fmt.Sprintf("%s %s", p.Emoji, trim(p.Name, 26))
+		if p.Price > 0 {
+			label = fmt.Sprintf("%s %s · %s so'm", p.Emoji, trim(p.Name, 20), fmtSum(p.Price))
+		}
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(label, fmt.Sprintf("shop_item:%d", p.ID)),
+		))
+	}
+	if count == 0 {
+		send(bot, chatID, "🛒 <b>Do'kon</b>\n\nHozircha mahsulotlar yo'q — tez orada yangilari qo'shiladi! 🎱")
+		return
+	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Yopish", "client_menu_close"),
+	))
+	kb := tgbotapi.NewInlineKeyboardMarkup(rows...)
+	sendWithKeyboard(bot, chatID,
+		"🛒 <b>Billiard King — Do'kon</b>\n\nProfessional billiard uskunalari.\nMahsulotni ko'rish uchun tanlang 👇", kb)
+}
+
+// cbShopItem — mahsulot tafsiloti (rasmi bo'lsa rasm bilan).
+func (h *Handler) cbShopItem(bot *tgbotapi.BotAPI, chatID int64, msgID int, idStr string) {
+	id := mustParseInt64(idStr)
+	list, err := h.productSvc.List()
+	if err != nil {
+		send(bot, chatID, "❌ Xatolik. Keyinroq urinib ko'ring.")
+		return
+	}
+	var p *client.Product
+	for _, x := range list {
+		if x.ID == id && x.InStock {
+			p = x
+			break
+		}
+	}
+	if p == nil {
+		send(bot, chatID, "❌ Mahsulot topilmadi yoki sotuvda emas.")
+		return
+	}
+
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("%s <b>%s</b>\n", p.Emoji, esc(p.Name)))
+	if p.Category != "" {
+		b.WriteString(fmt.Sprintf("🏷 %s\n", esc(p.Category)))
+	}
+	if p.Description != "" {
+		b.WriteString(fmt.Sprintf("\n%s\n", esc(p.Description)))
+	}
+	if p.Price > 0 {
+		b.WriteString(fmt.Sprintf("\n💰 Narx: <b>%s so'm</b>\n", fmtSum(p.Price)))
+	}
+	b.WriteString("\n🛍 Buyurtma berish uchun tugmani bosing — admin siz bilan bog'lanadi.")
+
+	su := strings.TrimPrefix(config.AppConfig.SupportUsername, "@")
+	kb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL("🛍 Buyurtma berish", "https://t.me/"+su),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔙 Do'kon", "shop_list"),
+		),
+	)
+
+	// Rasmi bo'lsa — sayt orqali rasm bilan yuboramiz
+	base := strings.TrimRight(config.AppConfig.TVBaseURL, "/")
+	if p.ImageURL != "" && strings.HasPrefix(base, "http") {
+		photo := tgbotapi.NewPhoto(chatID, tgbotapi.FileURL(base+p.ImageURL))
+		photo.Caption = b.String()
+		photo.ParseMode = "HTML"
+		photo.ReplyMarkup = kb
+		if _, err := bot.Send(photo); err == nil {
+			deleteMessage(bot, chatID, msgID)
+			return
+		}
+		// Rasm yuborilmasa — matn ko'rinishiga tushamiz
+	}
+	editMessage(bot, chatID, msgID, b.String(), &kb)
 }
 
 // ── helpers ──

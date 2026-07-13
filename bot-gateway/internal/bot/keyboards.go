@@ -32,7 +32,7 @@ func mainMenuKeyboard(user *models.User) replyKeyboard {
 	default: // client
 		rows = [][]replyBtn{
 			{btn("🎬 Kliplar"), btn("🏆 Turnirlar")},
-			{btn("👤 Akkaunt")},
+			{btn("🛒 Do'kon"), btn("👤 Akkaunt")},
 		}
 	}
 

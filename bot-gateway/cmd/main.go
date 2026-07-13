@@ -47,6 +47,16 @@ func main() {
 
 	log.Printf("🤖 Bot @%s ishga tushdi", tg.Self.UserName)
 
+	// Telegram "Menu" tugmasida ko'rinadigan buyruqlar ro'yxati
+	cmdCfg := tgbotapi.NewSetMyCommands(
+		tgbotapi.BotCommand{Command: "start", Description: "🏠 Bosh menyu"},
+		tgbotapi.BotCommand{Command: "help", Description: "ℹ️ Yordam"},
+		tgbotapi.BotCommand{Command: "cancel", Description: "❌ Amalni bekor qilish"},
+	)
+	if _, err := tg.Request(cmdCfg); err != nil {
+		log.Printf("setMyCommands xato: %v", err)
+	}
+
 	// Long polling
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60

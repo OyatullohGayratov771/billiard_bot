@@ -156,7 +156,11 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 			h.openClientSubmenu(bot, chatID, tgID, "🏆 Turnirlar", tournamentClientSubmenu())
 		}
 	case "🛒 Do'kon":
-		h.showProductMenu(bot, chatID, user)
+		if user.Role == models.RoleAdmin || user.Role == models.RoleSuperadmin {
+			h.showProductMenu(bot, chatID, user) // boshqaruv
+		} else {
+			h.showClientShop(bot, chatID) // mijoz ko'rinishi
+		}
 	case "👥 Xodimlar":
 		h.showStaffList(bot, chatID, user)
 	case "⚙️ Sozlamalar":
@@ -344,6 +348,13 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 	case "clip_menu_my":
 		deleteMessage(bot, chatID, msgID)
 		h.showMyClips(bot, chatID, tgID)
+
+	// ── DO'KON (mijoz) ──
+	case "shop_item":
+		h.cbShopItem(bot, chatID, msgID, arg1)
+	case "shop_list":
+		deleteMessage(bot, chatID, msgID)
+		h.showClientShop(bot, chatID)
 
 	// ── DO'KON (admin) ──
 	case "prod_add":

@@ -39,7 +39,10 @@ func (h *Handler) requirePhone(bot *tgbotapi.BotAPI, chatID int64) {
 	kb.ResizeKeyboard = true
 	kb.OneTimeKeyboard = true
 	sendWithKeyboard(bot, chatID,
-		"📱 Davom etish uchun telefon raqamingizni ulashing:", kb)
+		"📱 <b>Deyarli tayyor!</b>\n\n"+
+			"Klip buyurtma qilish va turnirlarga yozilish uchun telefon raqamingiz kerak.\n"+
+			"<i>Raqam faqat adminlar siz bilan bog'lanishi uchun ishlatiladi.</i>\n\n"+
+			"Quyidagi tugmani bosing 👇", kb)
 }
 
 func (h *Handler) cmdStart(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
@@ -848,6 +851,7 @@ func (h *Handler) cmdHelp(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *mod
 			"📋 <b>Mening kliplar</b> — Buyurtmalaringiz holati\n\n" +
 			"🏆 <b>Turnirlar</b> — Faol turnirlar ro'yxati\n" +
 			"🥇 <b>Mening turnirlar</b> — Qatnashgan turnirlarim\n\n" +
+			"🛒 <b>Do'kon</b> — Billiard uskunalari, buyurtma berish\n" +
 			"👤 <b>Akkaunt</b> — Profil va aloqa ma'lumotlari\n\n" +
 			"📌 <b>Buyruqlar:</b>\n" +
 			"/start — Bosh menyu\n" +
