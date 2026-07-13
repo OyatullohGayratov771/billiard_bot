@@ -123,8 +123,8 @@ func clipDateKeyboard() tgbotapi.InlineKeyboardMarkup {
 func clipTimeSpinnerKeyboard(hour, minute int) tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("soat", "clip_noop"),
-			tgbotapi.NewInlineKeyboardButtonData("daqiqa", "clip_noop"),
+			tgbotapi.NewInlineKeyboardButtonData("soat (±1)", "clip_noop"),
+			tgbotapi.NewInlineKeyboardButtonData("daqiqa (±5)", "clip_noop"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("▲", "clip_time_adj:+h"),
@@ -356,6 +356,9 @@ func clipClientSubmenu() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🎬 Klip so'rash", "clip_menu_request"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("📋 Mening kliplarim", "clip_menu_my"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🔙 Yopish", "client_menu_close"),

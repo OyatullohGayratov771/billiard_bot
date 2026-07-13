@@ -130,9 +130,10 @@ func (h *Handler) cbClipTimeAdjust(bot *tgbotapi.BotAPI, chatID int64, msgID int
 	case "-h":
 		hour = (hour - 1 + 24) % 24
 	case "+m":
-		minute = (minute + 1) % 60
+		// 5 daqiqalik qadam — kam bosish, tez tanlash
+		minute = (minute + 5) % 60
 	case "-m":
-		minute = (minute - 1 + 60) % 60
+		minute = (minute - 5 + 60) % 60
 	}
 
 	h.states.SetData(tgID, "cur_hour", hour)
@@ -188,11 +189,29 @@ func (h *Handler) cbClipPayConfirm(bot *tgbotapi.BotAPI, chatID int64, msgID int
 		payDetails = "\n<i>To'lov rekvizitlari uchun admin bilan bog'laning</i>"
 	}
 
+	// Buyurtma xulosasi — mijoz nima uchun to'layotganini ko'rib turadi
+	startStr, _ := h.states.GetString(tgID, "start_time")
+	endStr, _ := h.states.GetString(tgID, "end_time")
+	summary := ""
+	if startStr != "" && endStr != "" {
+		endClock := endStr
+		if len(endStr) >= 5 {
+			endClock = endStr[len(endStr)-5:] // faqat soat qismi
+		}
+		summary = fmt.Sprintf("\n📅 Klip: <b>%s – %s</b>\n", startStr, endClock)
+	}
+
+	kb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("❌ Bekor qilish", "clip_cancel"),
+		),
+	)
 	editMessage(bot, chatID, msgID,
-		"💳 <b>To'lov</b>\n\n"+
-			"Click yoki Payme orqali <b>5,000 so'm</b> to'lang:"+
+		"💳 <b>To'lov — oxirgi qadam!</b>\n"+
+			summary+
+			"\nClick yoki Payme orqali <b>5,000 so'm</b> to'lang:"+
 			payDetails+
-			"\n\n📸 To'lovdan so'ng <b>screenshot rasmini yuboring</b>", nil)
+			"\n\n📸 To'lovdan so'ng shu chatga <b>screenshot rasmini yuboring</b> — so'rovingiz darhol adminga boradi.", &kb)
 }
 
 // cbClipSelectDuration — davomiylik tanlangandan keyin tasdiqlash ko'rsatadi
@@ -246,16 +265,19 @@ func (h *Handler) cbClipSelectDuration(bot *tgbotapi.BotAPI, chatID int64, msgID
 	}
 
 	text := fmt.Sprintf(
-		"🎬 <b>Klip so'rov tasdiqlash</b>\n"+
-			"✅ ✅ ✅ ✅ ✅\n\n"+
+		"🎬 <b>Klip So'rash</b>\n"+
+			clipProgress(6)+"\n\n"+
+			"Hammasi tayyor! Tekshirib tasdiqlang:\n"+
+			"━━━━━━━━━━━━━━━━━\n"+
 			"🏢 Filial: <b>%s</b>%s\n"+
 			"🎱 Stol: <b>%d</b>\n"+
 			"🕐 Boshlanish: <b>%s</b>\n"+
 			"🕑 Tugash: <b>%s</b>\n"+
 			"⏱ Davomiylik: <b>%d daqiqa</b>\n"+
-			"💰 Narx: <b>5,000 so'm</b>\n\n"+
+			"💰 Narx: <b>5,000 so'm</b>\n"+
+			"━━━━━━━━━━━━━━━━━\n\n"+
 			"Tasdiqlaysizmi?",
-		branchName, branchAddr, tableNum,
+		esc(branchName), esc(branchAddr), tableNum,
 		startTime.Format("02.01.2006 15:04"),
 		endTime.Format("15:04"),
 		durMin,
@@ -270,15 +292,18 @@ func (h *Handler) cbClipBack(bot *tgbotapi.BotAPI, chatID int64, msgID int, tgID
 	case "branch":
 		branches, _ := h.tableSvc.GetBranches()
 		kb := clipBranchKeyboard(branches)
-		editMessage(bot, chatID, msgID, "🎬 <b>Klip So'rash</b>\n\nQaysi filialda o'ynagansiz?", &kb)
+		editMessage(bot, chatID, msgID,
+			"🎬 <b>Klip So'rash</b>\n"+clipProgress(1)+"\n\nQaysi filialda o'ynagansiz?", &kb)
 	case "table":
 		branchID, _ := h.states.GetInt64(tgID, "branch_id")
 		tables, _ := h.tableSvc.GetBranchTables(branchID)
 		kb := clipTablesKeyboard(tables, branchID)
-		editMessage(bot, chatID, msgID, "🎱 Qaysi stolda o'ynagansiz?", &kb)
+		editMessage(bot, chatID, msgID,
+			"🎬 <b>Klip So'rash</b>\n"+clipProgress(2)+"\n\n🎱 Qaysi stolda o'ynagansiz?", &kb)
 	case "date":
 		kb := clipDateKeyboard()
-		editMessage(bot, chatID, msgID, "📅 <b>Qaysi kuni?</b>", &kb)
+		editMessage(bot, chatID, msgID,
+			"🎬 <b>Klip So'rash</b>\n"+clipProgress(3)+"\n\n📅 Klip olmoqchi bo'lgan kunni tanlang:", &kb)
 	case "time":
 		dateStr, _ := h.states.GetString(tgID, "date")
 		hourVal, _ := h.states.GetData(tgID, "cur_hour")
@@ -337,7 +362,10 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 	// --- Klip to'lov: screenshot ---
 	case StateClipPayment:
 		if msg.Photo == nil || len(msg.Photo) == 0 {
-			send(bot, chatID, "📸 Iltimos, to'lov screenshotini rasm sifatida yuboring.")
+			send(bot, chatID,
+				"📸 Iltimos, to'lov screenshotini <b>rasm sifatida</b> yuboring.\n\n"+
+					"<i>💡 Fayl emas, oddiy rasm qilib yuboring (galereyadan tanlab).\n"+
+					"Bekor qilish uchun /cancel</i>")
 			return
 		}
 
@@ -379,7 +407,12 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 		h.states.Clear(tgID)
 
 		durMin := int(cr.EndTime.Sub(cr.StartTime).Minutes())
-		send(bot, chatID, fmt.Sprintf(
+		okKb := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("📋 Mening kliplarim", "clip_menu_my"),
+			),
+		)
+		sendWithKeyboard(bot, chatID, fmt.Sprintf(
 			"✅ <b>So'rovingiz qabul qilindi!</b>\n\n"+
 				"━━━━━━━━━━━━━━━━━\n"+
 				"🏢 %s  •  🎱 %d-stol\n"+
@@ -389,10 +422,10 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 				"📸 To'lov screenshoti qabul qilindi\n"+
 				"⏳ Admin tekshirib, klipingizni tayyorlaydi\n\n"+
 				"📲 <i>Klip tayyor bo'lgach, shu yerga yuboriladi!</i>",
-			cr.BranchName, cr.TableNum,
+			esc(cr.BranchName), cr.TableNum,
 			cr.StartTime.In(localTZ).Format("15:04"), cr.EndTime.In(localTZ).Format("15:04"), durMin,
 			cr.StartTime.In(localTZ).Format("02.01.2006"),
-		))
+		), okKb)
 
 		// Adminlarga xabar (screenshot bilan)
 		h.notifyAdminsNewClip(bot, cr, fileID)
@@ -475,7 +508,13 @@ func (h *Handler) showMyClips(bot *tgbotapi.BotAPI, chatID int64, tgID int64) {
 	}
 
 	if len(clips) == 0 {
-		send(bot, chatID, "📋 Sizda hali buyurtmalar yo'q.\n\n🎬 Klip so'rash tugmasini bosing.")
+		emptyKb := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🎬 Klip so'rash", "clip_menu_request"),
+			),
+		)
+		sendWithKeyboard(bot, chatID,
+			"📋 Sizda hali buyurtmalar yo'q.\n\nO'yiningizning eng zo'r lahzalarini klip qilib oling! 👇", emptyKb)
 		return
 	}
 
@@ -486,11 +525,11 @@ func (h *Handler) showMyClips(bot *tgbotapi.BotAPI, chatID int64, tgID int64) {
 	for _, c := range clips {
 		noteStr := ""
 		if c.Notes != "" && (c.Status == models.ClipStatusFailed || c.Status == models.ClipStatusRefunded) {
-			noteStr = "\n   📝 <i>" + c.Notes + "</i>"
+			noteStr = "\n   📝 <i>" + esc(c.Notes) + "</i>"
 		}
 		sb.WriteString(fmt.Sprintf(
 			"%s %s  %d-stol\n   🕐 %s – %s%s\n\n",
-			statusText(c.Status), c.BranchName, c.TableNum,
+			statusText(c.Status), esc(c.BranchName), c.TableNum,
 			c.StartTime.In(localTZ).Format("02.01.2006 15:04"),
 			c.EndTime.In(localTZ).Format("15:04"),
 			noteStr,
@@ -518,7 +557,7 @@ func (h *Handler) cbShowMyClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID i
 
 	noteStr := ""
 	if cr.Notes != "" {
-		noteStr = fmt.Sprintf("\n\n📝 <b>Izoh:</b> <i>%s</i>", cr.Notes)
+		noteStr = fmt.Sprintf("\n\n📝 <b>Izoh:</b> <i>%s</i>", esc(cr.Notes))
 	}
 
 	text := fmt.Sprintf(
@@ -527,7 +566,7 @@ func (h *Handler) cbShowMyClipDetail(bot *tgbotapi.BotAPI, chatID int64, msgID i
 			"🎱 Stol: %d\n"+
 			"🕐 Vaqt: %s – %s\n"+
 			"📊 Holat: <b>%s</b>%s",
-		cr.BranchName, cr.TableNum,
+		esc(cr.BranchName), cr.TableNum,
 		cr.StartTime.In(localTZ).Format("02.01.2006 15:04"),
 		cr.EndTime.In(localTZ).Format("15:04"),
 		statusText(cr.Status), noteStr,

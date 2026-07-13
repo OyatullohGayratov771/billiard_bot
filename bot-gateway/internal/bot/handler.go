@@ -225,7 +225,12 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbClipPayConfirm(bot, chatID, msgID, tgID)
 	case "clip_cancel":
 		h.states.Clear(tgID)
-		editMessage(bot, chatID, msgID, "❌ Klip so'rash bekor qilindi.", nil)
+		cancelKb := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🎬 Qayta boshlash", "clip_menu_request"),
+			),
+		)
+		editMessage(bot, chatID, msgID, "❌ Klip so'rash bekor qilindi.\n\nXohlasangiz qaytadan boshlashingiz mumkin 👇", &cancelKb)
 	case "admin_confirm_pay":
 		h.cbAdminConfirmPayment(bot, chatID, msgID, user, arg1)
 	case "admin_clip_done":
