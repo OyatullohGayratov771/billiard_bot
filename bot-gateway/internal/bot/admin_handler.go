@@ -848,7 +848,6 @@ func (h *Handler) cmdHelp(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *mod
 			"   └ Filial → Stol → Sana → Vaqt → Davomiylik\n" +
 			"   └ Tasdiqlang → To'lov screenshotini yuboring\n" +
 			"   └ Admin tasdiqlasa klipingiz yuboriladi\n\n" +
-			"📋 <b>Mening kliplar</b> — Buyurtmalaringiz holati\n\n" +
 			"🏆 <b>Turnirlar</b> — Faol turnirlar ro'yxati\n" +
 			"🥇 <b>Mening turnirlar</b> — Qatnashgan turnirlarim\n\n" +
 			"🛒 <b>Do'kon</b> — Billiard uskunalari, buyurtma berish\n" +

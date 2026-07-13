@@ -412,12 +412,7 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 		h.states.Clear(tgID)
 
 		durMin := int(cr.EndTime.Sub(cr.StartTime).Minutes())
-		okKb := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("📋 Mening kliplarim", "clip_menu_my"),
-			),
-		)
-		sendWithKeyboard(bot, chatID, fmt.Sprintf(
+		send(bot, chatID, fmt.Sprintf(
 			"✅ <b>So'rovingiz qabul qilindi!</b>\n\n"+
 				"━━━━━━━━━━━━━━━━━\n"+
 				"🏢 %s  •  🎱 %d-stol\n"+
@@ -430,7 +425,7 @@ func (h *Handler) handleStateInput(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, 
 			esc(cr.BranchName), cr.TableNum,
 			cr.StartTime.In(localTZ).Format("15:04"), cr.EndTime.In(localTZ).Format("15:04"), durMin,
 			cr.StartTime.In(localTZ).Format("02.01.2006"),
-		), okKb)
+		))
 
 		// Adminlarga xabar (screenshot bilan)
 		h.notifyAdminsNewClip(bot, cr, fileID)
