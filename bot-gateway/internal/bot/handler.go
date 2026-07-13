@@ -46,6 +46,10 @@ func NewHandler(
 func (h *Handler) Handle(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	tgID, _, _, _ := getUserFromUpdate(update)
 	if tgID != 0 && h.limiter.isBlocked(tgID) {
+		// Callback bo'lsa javob beramiz — aks holda tugmada spinner osilib qoladi
+		if update.CallbackQuery != nil {
+			answerCallback(bot, update.CallbackQuery.ID, "⏳ Juda tez! Biroz kutib qayta urining.")
+		}
 		return
 	}
 
@@ -70,6 +74,12 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 		return
 	}
 
+	// Bloklangan foydalanuvchi — callback'lardagi kabi xabarlar ham to'xtatiladi
+	if !user.IsActive {
+		send(bot, chatID, "⛔ Akkauntingiz bloklangan. Admin bilan bog'laning.")
+		return
+	}
+
 	// Kontakt ulashganda telefon raqamini saqlash
 	if msg.Contact != nil && msg.Contact.UserID == tgID {
 		phone := msg.Contact.PhoneNumber
@@ -90,8 +100,21 @@ func (h *Handler) handleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 
 	state := h.states.Get(tgID)
 	if state.State != StateIdle {
-		h.handleStateInput(bot, msg, user, state)
-		return
+		// Global qochish yo'llari: oqim o'rtasida /cancel, /start yoki menyu tugmasi
+		// bosilsa foydalanuvchi hech qachon tiqilib qolmasligi kerak.
+		txt := strings.TrimSpace(msg.Text)
+		switch {
+		case txt == "/cancel":
+			h.states.Clear(tgID)
+			sendWithKeyboard(bot, chatID, "✅ Bekor qilindi.", mainMenuKeyboard(user))
+			return
+		case txt == "/start" || isMainMenuButton(txt):
+			// Holatni tashlab, quyidagi normal marshrutga tushiramiz
+			h.states.Clear(tgID)
+		default:
+			h.handleStateInput(bot, msg, user, state)
+			return
+		}
 	}
 
 	if msg.IsCommand() {

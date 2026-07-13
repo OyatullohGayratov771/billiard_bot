@@ -16,7 +16,9 @@
       "Bash(docker compose:*)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(go build *)",
+      "Bash(go vet *)"
     ]
   }
 }

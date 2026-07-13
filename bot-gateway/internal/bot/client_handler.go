@@ -626,8 +626,8 @@ func (h *Handler) notifyAdminsNewClip(bot *tgbotapi.BotAPI, cr *models.ClipReque
 			"🕐 %s – %s  (%d daq)\n"+
 			"📅 %s",
 		cr.ID,
-		cr.ClientName, clientPhone,
-		cr.BranchName, cr.TableNum,
+		esc(cr.ClientName), clientPhone,
+		esc(cr.BranchName), cr.TableNum,
 		cr.StartTime.In(localTZ).Format("15:04"), cr.EndTime.In(localTZ).Format("15:04"), durMin,
 		cr.StartTime.In(localTZ).Format("02.01.2006"),
 	)

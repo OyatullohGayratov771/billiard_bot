@@ -198,7 +198,7 @@ func (h *Handler) finishProductCreate(bot *tgbotapi.BotAPI, chatID, tgID int64, 
 		sendWithKeyboard(bot, chatID, "❌ Saqlashda xatolik: "+err.Error(), mainMenuKeyboard(user))
 		return
 	}
-	sendWithKeyboard(bot, chatID, fmt.Sprintf("✅ <b>%s</b> qo'shildi!\nMijozlar uni saytda va botda ko'radi.", name), mainMenuKeyboard(user))
+	sendWithKeyboard(bot, chatID, fmt.Sprintf("✅ <b>%s</b> qo'shildi!\nMijozlar uni saytda va botda ko'radi.", esc(name)), mainMenuKeyboard(user))
 	h.showProductMenu(bot, chatID, user)
 }
 

@@ -456,7 +456,7 @@ func (h *Handler) notifyBracketCreated(bot *tgbotapi.BotAPI, trnID int64, matche
 		}
 		send(bot, tgID, fmt.Sprintf(
 			"⚡ <b>%s</b> turniri setkasi yaratildi!\n\nSizning birinchi o'yiningiz:\n🆚 Raqib: <b>%s</b>%s\n\nOmad! 🍀",
-			trnName, oppName, tableStr))
+			esc(trnName), esc(oppName), tableStr))
 	}
 
 	for _, m := range matches {
@@ -649,6 +649,10 @@ func (h *Handler) cbAdminTrnWinner(bot *tgbotapi.BotAPI, chatID int64, msgID int
 	if loseName == "" {
 		loseName = "raqib"
 	}
+	// HTML himoya — nomlarda <, >, & bo'lsa xabar rad etilmasin
+	trnName = esc(trnName)
+	winName = esc(winName)
+	loseName = esc(loseName)
 
 	// Keyingi o'yinda berilgan o'yinchining raqibi (agar ma'lum bo'lsa)
 	nextOpp := func(nmID, myTg int64) string {
@@ -672,7 +676,7 @@ func (h *Handler) cbAdminTrnWinner(bot *tgbotapi.BotAPI, chatID int64, msgID int
 		if finished {
 			tail = "\n\n👑 <b>Siz TURNIR CHEMPIONISIZ!</b> 🎉🏆"
 		} else if winnerNextID > 0 {
-			if opp := nextOpp(winnerNextID, winnerTgID); opp != "" {
+			if opp := esc(nextOpp(winnerNextID, winnerTgID)); opp != "" {
 				tail = fmt.Sprintf("\n\n⏭ Keyingi o'yin: <b>%s</b> bilan. Tayyorlaning!", opp)
 			} else {
 				tail = "\n\n⏭ Keyingi bosqichga o'tdingiz! Raqibingiz aniqlanmoqda…"
@@ -706,10 +710,10 @@ func (h *Handler) cbAdminTrnWinner(bot *tgbotapi.BotAPI, chatID int64, msgID int
 					continue
 				}
 				if *m.Player1TgID != justAdvancedTg && *m.Player1TgID > 0 {
-					send(bot, *m.Player1TgID, fmt.Sprintf("🎯 <b>%s</b> turnirida raqibingiz aniqlandi: <b>%s</b>. Tayyorlaning!", trnName, m.Player2Name))
+					send(bot, *m.Player1TgID, fmt.Sprintf("🎯 <b>%s</b> turnirida raqibingiz aniqlandi: <b>%s</b>. Tayyorlaning!", trnName, esc(m.Player2Name)))
 				}
 				if *m.Player2TgID != justAdvancedTg && *m.Player2TgID > 0 {
-					send(bot, *m.Player2TgID, fmt.Sprintf("🎯 <b>%s</b> turnirida raqibingiz aniqlandi: <b>%s</b>. Tayyorlaning!", trnName, m.Player1Name))
+					send(bot, *m.Player2TgID, fmt.Sprintf("🎯 <b>%s</b> turnirida raqibingiz aniqlandi: <b>%s</b>. Tayyorlaning!", trnName, esc(m.Player1Name)))
 				}
 				break
 			}
@@ -1198,25 +1202,28 @@ func formatBracket(matches []*models.TournamentMatch) string {
 }
 
 func formatMatchLine(m *models.TournamentMatch) string {
+	// O'yinchi nomlari erkin matn — HTML uchun himoyalanadi, aks holda
+	// nomida <, >, & bo'lgan bitta o'yinchi butun bracket xabarini buzadi.
+	p1, p2 := esc(m.Player1Name), esc(m.Player2Name)
 	switch m.Status {
 	case models.MatchStatusBye:
-		name := m.Player1Name
+		name := p1
 		if name == "" {
-			name = m.Player2Name
+			name = p2
 		}
 		return fmt.Sprintf("  • %s → keyingi bosqich\n", name)
 	case models.MatchStatusVoid:
 		return fmt.Sprintf("  • O'yin %d (bo'sh)\n", m.MatchNum)
 	case models.MatchStatusDone:
-		return fmt.Sprintf("  • %s vs %s → 🏆 %s\n", m.Player1Name, m.Player2Name, m.WinnerName)
+		return fmt.Sprintf("  • %s vs %s → 🏆 %s\n", p1, p2, esc(m.WinnerName))
 	case models.MatchStatusInProgress:
 		tableStr := ""
 		if m.TableNum > 0 {
 			tableStr = fmt.Sprintf(" [%d-stol]", m.TableNum)
 		}
-		return fmt.Sprintf("  🟠 %s vs %s%s (jarayonda)\n", m.Player1Name, m.Player2Name, tableStr)
+		return fmt.Sprintf("  🟠 %s vs %s%s (jarayonda)\n", p1, p2, tableStr)
 	case models.MatchStatusReady:
-		return fmt.Sprintf("  ⚡ %s vs %s\n", m.Player1Name, m.Player2Name)
+		return fmt.Sprintf("  ⚡ %s vs %s\n", p1, p2)
 	default:
 		return fmt.Sprintf("  • O'yin %d (kutilmoqda)\n", m.MatchNum)
 	}

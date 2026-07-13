@@ -119,6 +119,15 @@ func (rl *rateLimiter) cleanup() {
 	}
 }
 
+// esc — HTML parse_mode uchun foydalanuvchi kiritgan matnni himoyalaydi.
+// Ism/nomda <, >, & bo'lsa Telegram butun xabarni rad etadi.
+func esc(s string) string {
+	s = strings.ReplaceAll(s, "&", "&amp;")
+	s = strings.ReplaceAll(s, "<", "&lt;")
+	s = strings.ReplaceAll(s, ">", "&gt;")
+	return s
+}
+
 // safeText — matn uzunligini cheklaydi (Unicode rune bo'yicha)
 func safeText(s string, maxRunes int) string {
 	s = strings.TrimSpace(s)

@@ -39,6 +39,15 @@ func mainMenuKeyboard(user *models.User) replyKeyboard {
 	return replyKeyboard{Keyboard: rows, ResizeKeyboard: true}
 }
 
+// isMainMenuButton — matn asosiy menyu tugmalaridan birimi? (holatdan qochish uchun)
+func isMainMenuButton(s string) bool {
+	switch s {
+	case "🎬 Kliplar", "🏆 Turnirlar", "🛒 Do'kon", "👥 Xodimlar", "⚙️ Sozlamalar", "👤 Akkaunt":
+		return true
+	}
+	return false
+}
+
 func btn(text string) replyBtn {
 	return replyBtn{Text: text}
 }

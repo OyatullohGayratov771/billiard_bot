@@ -67,8 +67,8 @@ func (h *Handler) cbClientTrnDetail(bot *tgbotapi.BotAPI, chatID int64, msgID in
 			"👥 O'rinlar: <b>%d / %d</b>\n"+
 			"🎮 Tur: %s\n"+
 			"📊 Holat: %s",
-		t.Name, lockIcon,
-		t.BranchName,
+		esc(t.Name), lockIcon,
+		esc(t.BranchName),
 		tableInfo,
 		t.ScheduledAt.In(localTZ).Format("02.01.2006 15:04"),
 		t.ApprovedCount, t.MaxPlayers,
@@ -208,7 +208,7 @@ func (h *Handler) finishTrnRegister(bot *tgbotapi.BotAPI, chatID int64, msgID in
 			"%s\n"+
 			"🆔 <code>%d</code>\n\n"+
 			"Tasdiqlash yoki rad etishingiz mumkin:",
-		trnName, fullName, usernameInfo, phoneInfo, user.TelegramID,
+		esc(trnName), esc(fullName), usernameInfo, phoneInfo, user.TelegramID,
 	)
 	adminKb := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -235,7 +235,7 @@ func (h *Handler) finishTrnRegister(bot *tgbotapi.BotAPI, chatID int64, msgID in
 			"🏆 <b>%s</b>\n\n"+
 			"⏳ Admin so'rovingizni ko'rib chiqmoqda.\n"+
 			"Qaror haqida sizga darhol xabar beriladi. Sabr qiling! 🎱",
-		trnName,
+		esc(trnName),
 	)
 	kb := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
