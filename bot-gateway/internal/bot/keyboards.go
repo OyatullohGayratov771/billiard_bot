@@ -119,24 +119,23 @@ func clipDateKeyboard() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-// clipTimeSpinnerKeyboard — soat:daqiqa spinner (▲/▼ tugmalar)
+// clipTimeSpinnerKeyboard — soat:daqiqa spinner.
+// Daqiqa uchun ±5 (tez o'tish) va ±1 (aniq tanlash) tugmalari yonma-yon —
+// 22 kabi istalgan daqiqani oson tanlash mumkin.
 func clipTimeSpinnerKeyboard(hour, minute int) tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("soat (±1)", "clip_noop"),
-			tgbotapi.NewInlineKeyboardButtonData("daqiqa (±5)", "clip_noop"),
+			tgbotapi.NewInlineKeyboardButtonData("▲ soat", "clip_time_adj:+h"),
+			tgbotapi.NewInlineKeyboardButtonData("+5 daq", "clip_time_adj:+m5"),
+			tgbotapi.NewInlineKeyboardButtonData("+1 daq", "clip_time_adj:+m1"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("▲", "clip_time_adj:+h"),
-			tgbotapi.NewInlineKeyboardButtonData("▲", "clip_time_adj:+m"),
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("🕐  %02d : %02d", hour, minute), "clip_noop"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("  %02d  ", hour), "clip_noop"),
-			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("  %02d  ", minute), "clip_noop"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("▼", "clip_time_adj:-h"),
-			tgbotapi.NewInlineKeyboardButtonData("▼", "clip_time_adj:-m"),
+			tgbotapi.NewInlineKeyboardButtonData("▼ soat", "clip_time_adj:-h"),
+			tgbotapi.NewInlineKeyboardButtonData("-5 daq", "clip_time_adj:-m5"),
+			tgbotapi.NewInlineKeyboardButtonData("-1 daq", "clip_time_adj:-m1"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("✅ Tasdiqlash", "clip_time_ok"),

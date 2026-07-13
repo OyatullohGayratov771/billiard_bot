@@ -129,11 +129,16 @@ func (h *Handler) cbClipTimeAdjust(bot *tgbotapi.BotAPI, chatID int64, msgID int
 		hour = (hour + 1) % 24
 	case "-h":
 		hour = (hour - 1 + 24) % 24
-	case "+m":
-		// 5 daqiqalik qadam — kam bosish, tez tanlash
+	case "+m5":
+		// Tez o'tish — 5 daqiqalik qadam
 		minute = (minute + 5) % 60
-	case "-m":
+	case "-m5":
 		minute = (minute - 5 + 60) % 60
+	case "+m1", "+m":
+		// Aniq tanlash — 1 daqiqalik qadam ("+m" — eski xabarlardagi tugma)
+		minute = (minute + 1) % 60
+	case "-m1", "-m":
+		minute = (minute - 1 + 60) % 60
 	}
 
 	h.states.SetData(tgID, "cur_hour", hour)
