@@ -52,7 +52,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /live/assets/hls.min.js", h.serveAsset(hlsJS, "application/javascript; charset=utf-8"))
 	mux.HandleFunc("GET /live/assets/player.js", h.serveAsset(playerJS, "application/javascript; charset=utf-8"))
 	mux.HandleFunc("GET /live/table/{table_id}", h.tablePage)
-	mux.HandleFunc("GET /live/{branch_id}/active", h.activeForBranch)
+	mux.HandleFunc("GET /live/active/{branch_id}", h.activeForBranch)
 	mux.HandleFunc("GET /live/{branch_id}", h.livePage)
 }
 

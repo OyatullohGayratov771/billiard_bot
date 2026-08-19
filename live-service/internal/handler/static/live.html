@@ -85,7 +85,7 @@ function attach(tableId, tableNum) {
 async function refresh() {
   let active = [];
   try {
-    const r = await fetch('/live/' + BRANCH_ID + '/active');
+    const r = await fetch('/live/active/' + BRANCH_ID);
     if (r.ok) active = await r.json() || [];
   } catch (_) {}
 
