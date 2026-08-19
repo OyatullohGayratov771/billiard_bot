@@ -4,6 +4,8 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -53,6 +55,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /live/assets/player.js", h.serveAsset(playerJS, "application/javascript; charset=utf-8"))
 	mux.HandleFunc("GET /live/table/{table_id}", h.tablePage)
 	mux.HandleFunc("GET /live/active/{branch_id}", h.activeForBranch)
+	mux.HandleFunc("POST /live/clientlog", h.clientLog)
 	mux.HandleFunc("GET /live/{branch_id}", h.livePage)
 }
 
@@ -205,6 +208,14 @@ func (h *Handler) tablePage(w http.ResponseWriter, r *http.Request) {
 	page = strings.ReplaceAll(page, "{{BRANCH_NAME}}", branchName)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(page))
+}
+
+// clientLog — brauzerdan diagnostika ma'lumotini qabul qiladi va log'ga yozadi
+// (mobil qurilmalarda video ishlamasa, sababini ko'rish uchun).
+func (h *Handler) clientLog(w http.ResponseWriter, r *http.Request) {
+	body, _ := io.ReadAll(io.LimitReader(r.Body, 4096))
+	log.Printf("📱 [live-client] %s", string(body))
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // serveAsset — statik JS fayllarni o'zimizdan tarqatish uchun (uchinchi tomon
