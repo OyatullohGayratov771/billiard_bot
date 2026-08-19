@@ -201,10 +201,13 @@ services:
       LIVE_SERVICE_PORT: "8087"
       INTERNAL_TOKEN: "${INTERNAL_TOKEN}"
       HLS_DIR: "/app/hls"
+      RECORDINGS_DIR: "/app/recordings"
       WEB_BASE_URL: "${TV_BASE_URL:-https://billiardking.uz}"
       TZ: Asia/Tashkent
     expose:
       - "8087"
+    volumes:
+      - live_recordings:/app/recordings
     security_opt:
       - no-new-privileges:true
     logging:
@@ -339,6 +342,7 @@ volumes:
   pgdata:
   clips_data:
   uploads_data:
+  live_recordings:
 
 networks:
   reverse-proxy:

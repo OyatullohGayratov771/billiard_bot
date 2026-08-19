@@ -19,6 +19,8 @@ type Handler struct {
 	productSvc    *client.ProductClient
 	liveSvc       *client.LiveClient
 
+	liveRecordingChannel string
+
 	states    *StateManager
 	userCache *UserCache
 	limiter   *rateLimiter
@@ -31,17 +33,19 @@ func NewHandler(
 	tournamentSvc TournamentService,
 	productSvc *client.ProductClient,
 	liveSvc *client.LiveClient,
+	liveRecordingChannel string,
 ) *Handler {
 	return &Handler{
-		userSvc:       userSvc,
-		tableSvc:      tableSvc,
-		clipSvc:       clipSvc,
-		tournamentSvc: tournamentSvc,
-		productSvc:    productSvc,
-		liveSvc:       liveSvc,
-		states:        NewStateManager(),
-		userCache:     newUserCache(),
-		limiter:       newRateLimiter(),
+		userSvc:              userSvc,
+		tableSvc:             tableSvc,
+		clipSvc:              clipSvc,
+		tournamentSvc:        tournamentSvc,
+		productSvc:           productSvc,
+		liveSvc:              liveSvc,
+		liveRecordingChannel: liveRecordingChannel,
+		states:               NewStateManager(),
+		userCache:            newUserCache(),
+		limiter:              newRateLimiter(),
 	}
 }
 

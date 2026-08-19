@@ -38,7 +38,7 @@ func main() {
 	liveClient := client.NewLiveClient(cfg.LiveServiceURL, httpClient, cfg.InternalToken)
 
 	// Handler
-	handler := bot.NewHandler(userClient, tableClient, clipClient, tournamentClient, productClient, liveClient)
+	handler := bot.NewHandler(userClient, tableClient, clipClient, tournamentClient, productClient, liveClient, cfg.LiveRecordingChannel)
 
 	// Telegram bot
 	tg, err := tgbotapi.NewBotAPI(cfg.TelegramToken)

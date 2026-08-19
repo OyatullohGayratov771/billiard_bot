@@ -15,5 +15,5 @@ ENV TZ=Asia/Tashkent
 WORKDIR /app
 COPY --from=builder /app/live-service .
 
-RUN mkdir -p /app/hls
+RUN mkdir -p /app/hls /app/recordings
 CMD ["./live-service"]

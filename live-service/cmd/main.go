@@ -26,7 +26,7 @@ func main() {
 
 	branchRepo := repository.NewBranchRepo(database)
 	tableRepo := repository.NewTableRepo(database)
-	mgr := streamer.New(cfg.HLSDir)
+	mgr := streamer.New(cfg.HLSDir, cfg.RecordingsDir)
 
 	h := handler.New(branchRepo, tableRepo, mgr, cfg.InternalToken, cfg.BaseURL)
 	mux := http.NewServeMux()

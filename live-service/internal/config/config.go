@@ -12,6 +12,7 @@ type Config struct {
 	Port          string
 	InternalToken string
 	HLSDir        string
+	RecordingsDir string
 	BaseURL       string
 }
 
@@ -24,6 +25,7 @@ func LoadConfig() {
 		Port:          getEnv("LIVE_SERVICE_PORT", "8087"),
 		InternalToken: getEnv("INTERNAL_TOKEN", ""),
 		HLSDir:        getEnv("HLS_DIR", "/app/hls"),
+		RecordingsDir: getEnv("RECORDINGS_DIR", "/app/recordings"),
 		BaseURL:       getEnv("WEB_BASE_URL", "https://billiardking.uz"),
 	}
 	log.Println("✅ live-service config yuklandi")

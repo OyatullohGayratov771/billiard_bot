@@ -48,6 +48,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /streams/{table_id}/start", h.internal(h.startStream))
 	mux.HandleFunc("POST /streams/{table_id}/stop", h.internal(h.stopStream))
 	mux.HandleFunc("GET /streams", h.internal(h.listStreams))
+	mux.HandleFunc("GET /recordings/{table_id}/status", h.internal(h.recordingStatus))
+	mux.HandleFunc("GET /recordings/{table_id}/download", h.internal(h.recordingDownload))
+	mux.HandleFunc("DELETE /recordings/{table_id}", h.internal(h.recordingDelete))
 
 	// Public — kirish shart emas (tomoshabinlar uchun)
 	mux.HandleFunc("GET /hls/{table_id}/{file...}", h.serveHLS)
@@ -117,6 +120,54 @@ func (h *Handler) stopStream(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) listStreams(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, h.mgr.ActiveTableIDs())
+}
+
+// recordingStatus — Stop()dan keyin yozuv (kanalga yuborish uchun) tayyor bo'lganini so'raydi.
+func (h *Handler) recordingStatus(w http.ResponseWriter, r *http.Request) {
+	tableID, err := strconv.ParseInt(r.PathValue("table_id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	ready, filename, jobErr, exists := h.mgr.RecordingStatus(tableID)
+	if !exists {
+		writeErr(w, 404, "topilmadi")
+		return
+	}
+	resp := map[string]any{"ready": ready}
+	if jobErr != nil {
+		resp["error"] = jobErr.Error()
+	} else if filename != "" {
+		resp["filename"] = filename
+	}
+	writeJSON(w, 200, resp)
+}
+
+// recordingDownload — tayyor bo'lgan yozuv faylini beradi (bot-gateway Telegram'ga yuborish uchun yuklab oladi).
+func (h *Handler) recordingDownload(w http.ResponseWriter, r *http.Request) {
+	tableID, err := strconv.ParseInt(r.PathValue("table_id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	ready, filename, jobErr, exists := h.mgr.RecordingStatus(tableID)
+	if !exists || !ready || jobErr != nil || filename == "" {
+		writeErr(w, 404, "yozuv tayyor emas")
+		return
+	}
+	w.Header().Set("Content-Type", "video/mp4")
+	http.ServeFile(w, r, h.mgr.RecordingPath(filename))
+}
+
+// recordingDelete — Telegram'ga muvaffaqiyatli yuborilgach yozuvni tozalaydi.
+func (h *Handler) recordingDelete(w http.ResponseWriter, r *http.Request) {
+	tableID, err := strconv.ParseInt(r.PathValue("table_id"), 10, 64)
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	h.mgr.ClearRecording(tableID)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) serveHLS(w http.ResponseWriter, r *http.Request) {

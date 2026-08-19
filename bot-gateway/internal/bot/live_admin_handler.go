@@ -2,7 +2,11 @@ package bot
 
 import (
 	"fmt"
+	"log"
+	"runtime/debug"
+	"time"
 
+	"bot-gateway/internal/client"
 	"bot-gateway/internal/models"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -94,7 +98,10 @@ func (h *Handler) cbLiveToggle(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 		if err := h.liveSvc.Stop(tableID); err != nil {
 			send(bot, chatID, fmt.Sprintf("❌ To'xtatib bo'lmadi: %v", err))
 		} else {
-			send(bot, chatID, fmt.Sprintf("⏹ <b>%d-stol</b> live'i to'xtatildi.", table.TableNum))
+			send(bot, chatID, fmt.Sprintf(
+				"⏹ <b>%d-stol</b> live'i to'xtatildi.\n\n<i>Yozuv tayyorlanmoqda, tayyor bo'lgach %s kanaliga avtomatik yuboriladi...</i>",
+				table.TableNum, h.liveRecordingChannel))
+			go h.finishRecordingUpload(bot, chatID, tableID, table.TableNum, table.BranchID)
 		}
 	} else {
 		res, err := h.liveSvc.Start(tableID)
@@ -110,4 +117,71 @@ func (h *Handler) cbLiveToggle(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 		}
 	}
 	h.cbLiveBranch(bot, chatID, msgID, user, fmt.Sprintf("%d", table.BranchID))
+}
+
+// finishRecordingUpload — live to'xtagach fon jarayonida ishlaydi: yozuv
+// tayyor bo'lishini kutadi (live-service uni birlashtirib, kerak bo'lsa
+// siqadi), so'ng Telegram kanaliga yuboradi va serverdagi nusxani tozalaydi.
+func (h *Handler) finishRecordingUpload(bot *tgbotapi.BotAPI, chatID, tableID int64, tableNum int, branchID int64) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("⚠️ panic recovered (finishRecordingUpload): %v\n%s", r, debug.Stack())
+		}
+	}()
+
+	const maxWait = 5 * time.Minute
+	const pollInterval = 4 * time.Second
+	deadline := time.Now().Add(maxWait)
+
+	var status *client.RecordingStatus
+	for time.Now().Before(deadline) {
+		s, err := h.liveSvc.RecordingStatus(tableID)
+		if err == nil && s.Exists && s.Ready {
+			status = s
+			break
+		}
+		time.Sleep(pollInterval)
+	}
+
+	if status == nil {
+		send(bot, chatID, fmt.Sprintf("⚠️ %d-stol yozuvi tayyorlanishi juda uzoq davom etdi, kanalga yuborilmadi.", tableNum))
+		return
+	}
+	if status.Error != "" {
+		send(bot, chatID, fmt.Sprintf("⚠️ %d-stol yozuvini tayyorlashda xato: %s", tableNum, status.Error))
+		_ = h.liveSvc.DeleteRecording(tableID)
+		return
+	}
+
+	data, err := h.liveSvc.DownloadRecording(tableID)
+	if err != nil || len(data) == 0 {
+		send(bot, chatID, fmt.Sprintf("⚠️ %d-stol yozuvini yuklab bo'lmadi.", tableNum))
+		return
+	}
+
+	branchName := ""
+	if branch, err := h.tableSvc.GetBranchByID(branchID); err == nil {
+		branchName = branch.Name
+	}
+	caption := fmt.Sprintf("🎱 <b>%d-stol</b>", tableNum)
+	if branchName != "" {
+		caption += " — " + esc(branchName)
+	}
+	caption += "\n📅 " + time.Now().Format("02.01.2006 15:04")
+
+	video := tgbotapi.VideoConfig{
+		BaseFile: tgbotapi.BaseFile{
+			BaseChat: tgbotapi.BaseChat{ChannelUsername: h.liveRecordingChannel},
+			File:     tgbotapi.FileBytes{Name: fmt.Sprintf("stol_%d_%d.mp4", tableNum, time.Now().Unix()), Bytes: data},
+		},
+		Caption:   caption,
+		ParseMode: "HTML",
+	}
+
+	if _, err := bot.Send(video); err != nil {
+		send(bot, chatID, fmt.Sprintf("⚠️ %d-stol yozuvini kanalga yuborib bo'lmadi: %v", tableNum, err))
+		return
+	}
+	_ = h.liveSvc.DeleteRecording(tableID)
+	send(bot, chatID, fmt.Sprintf("✅ %d-stol yozuvi %s kanaliga yuborildi.", tableNum, h.liveRecordingChannel))
 }
