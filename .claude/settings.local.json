@@ -32,7 +32,11 @@
       "Bash(curl -s -m 2 http://localhost:8087/health)",
       "Bash(break)",
       "Bash(kill %1)",
-      "Bash(pkill -f livesvc.exe)"
+      "Bash(pkill -f livesvc.exe)",
+      "Bash(curl -sL -o /tmp/hls_check.min.js \"https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js\" --max-time 15)",
+      "Read(//tmp/**)",
+      "Bash(curl -sL -o \"/c/Users/Oyatulloh/Projects/billiard_bot/live-service/internal/handler/static/hls.min.js\" \"https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js\" --max-time 20)",
+      "Bash(grep -i -E \"\\\\.js$|static|min\\\\.js\")"
     ]
   }
 }
