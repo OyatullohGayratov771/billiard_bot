@@ -301,10 +301,14 @@ func cleanDir(dir string) {
 }
 
 // runFFmpegHLS — RTSP oqimini bir vaqtning o'zida ikki joyga yo'naltiradi:
-// 1) HLS (index.m3u8 + seg_*.ts) — jonli tomosha uchun.
-// 2) fragmentlangan MP4 — arxiv yozuvi uchun (jarayon kutilmaganda
-//    o'chirilsa ham fayl buzilmasin deb "frag_keyframe+empty_moov" ishlatiladi).
-// Ikkalasi ham "-c:v copy" — qayta kodlash yo'q, protsessorga juda yengil.
+// 1) HLS (index.m3u8 + seg_*.ts) — jonli tomosha uchun. Kameraning xom
+//    oqimi (odatda bir necha Mbit/s) mobil tarmoqlarda sekin/ishonchsiz
+//    yuklanardi — shuning uchun past bitreytda (480p, ~600kbps) qayta
+//    kodlanadi. Bu protsessorga biroz yuk qo'shadi, lekin kadr statik
+//    stol ko'rinishi uchun yetarlicha yengil.
+// 2) fragmentlangan MP4 — arxiv yozuvi uchun, asl sifatda ("-c:v copy",
+//    qayta kodlashsiz). Jarayon kutilmaganda o'chirilsa ham fayl
+//    buzilmasin deb "frag_keyframe+empty_moov" ishlatiladi.
 // Audio olib tashlanadi (-an) — kamerada mavjud bo'lmasligi/mos kelmasligi
 // mumkin, video yetarli.
 func runFFmpegHLS(ctx context.Context, rtspURL, dir, recPath string) error {
@@ -314,7 +318,15 @@ func runFFmpegHLS(ctx context.Context, rtspURL, dir, recPath string) error {
 		"-timeout", "15000000",
 		"-i", rtspURL,
 		"-an",
-		"-c:v", "copy",
+		"-c:v", "libx264",
+		"-preset", "veryfast",
+		"-tune", "zerolatency",
+		"-b:v", "600k",
+		"-maxrate", "700k",
+		"-bufsize", "1400k",
+		"-vf", "scale=-2:480",
+		"-sc_threshold", "0",
+		"-force_key_frames", "expr:gte(t,n_forced*2)",
 		"-f", "hls",
 		"-hls_time", "4",
 		"-hls_list_size", "5",
