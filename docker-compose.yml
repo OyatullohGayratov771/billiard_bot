@@ -185,6 +185,39 @@ services:
       timeout: 3s
       retries: 10
 
+  live-service:
+    build:
+      context: ./live-service
+      dockerfile: Dockerfile
+    container_name: billiard_live_service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_DSN: "host=postgres port=5432 user=${DB_USER:-postgres} password=${DB_PASSWORD:-postgres} dbname=${DB_NAME:-billiard_bot} sslmode=disable"
+      LIVE_SERVICE_PORT: "8087"
+      INTERNAL_TOKEN: "${INTERNAL_TOKEN}"
+      HLS_DIR: "/app/hls"
+      WEB_BASE_URL: "${TV_BASE_URL:-https://billiardking.uz}"
+      TZ: Asia/Tashkent
+    expose:
+      - "8087"
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8087/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   web-service:
     build:
       context: ./web-service
@@ -246,6 +279,8 @@ services:
         condition: service_healthy
       shop-service:
         condition: service_healthy
+      live-service:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -255,6 +290,7 @@ services:
       TOURNAMENT_SERVICE_URL: "http://tournament-service:8084"
       WEB_SERVICE_URL: "http://web-service:8085"
       SHOP_SERVICE_URL: "http://shop-service:8086"
+      LIVE_SERVICE_URL: "http://live-service:8087"
       TV_BASE_URL: "${TV_BASE_URL:-}"
       INTERNAL_TOKEN: "${INTERNAL_TOKEN}"
       TZ: Asia/Tashkent
@@ -284,6 +320,8 @@ services:
       tournament-service:
         condition: service_healthy
       shop-service:
+        condition: service_healthy
+      live-service:
         condition: service_healthy
     security_opt:
       - no-new-privileges:true

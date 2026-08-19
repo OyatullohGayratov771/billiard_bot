@@ -20,6 +20,7 @@ type Config struct {
 	TournamentServiceURL string
 	WebServiceURL        string
 	ShopServiceURL       string
+	LiveServiceURL       string
 	TVBaseURL            string
 	InternalToken        string
 	PaymentCard          string
@@ -43,6 +44,7 @@ func LoadConfig() {
 		TournamentServiceURL: getEnv("TOURNAMENT_SERVICE_URL", "http://tournament-service:8084"),
 		WebServiceURL:        getEnv("WEB_SERVICE_URL", "http://web-service:8085"),
 		ShopServiceURL:       getEnv("SHOP_SERVICE_URL", "http://shop-service:8086"),
+		LiveServiceURL:       getEnv("LIVE_SERVICE_URL", "http://live-service:8087"),
 		TVBaseURL:            getEnv("TV_BASE_URL", ""),
 		InternalToken:        getEnv("INTERNAL_TOKEN", ""),
 		PaymentCard:          getEnv("PAYMENT_CARD", ""),

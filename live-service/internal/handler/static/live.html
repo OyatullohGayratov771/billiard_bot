@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<title>🔴 Jonli — {{BRANCH_NAME}}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+:root{
+  --gold:#D4AF37;--gold-l:#F0D878;--gold-glow:rgba(212,175,55,.32);
+  --bg:#0A0A0A;--card:#131313;--card2:#1A1A1A;
+  --border:rgba(212,175,55,.15);--border2:rgba(212,175,55,.07);
+  --text:#F2F2F2;--text2:#888;--text3:#444;--red:#E74C3C;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif}
+
+.hdr{position:sticky;top:0;z-index:10;background:rgba(8,8,8,.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--border2);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hdr h1{font-size:1.1rem;font-weight:900;letter-spacing:-.3px}
+.hdr .sub{font-size:.66rem;color:var(--text2);margin-top:2px;letter-spacing:.5px;text-transform:uppercase}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:.62rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.35);color:var(--red);padding:6px 12px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;padding:18px;max-width:1400px;margin:0 auto}
+.tile{background:var(--card);border:1px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.tile video{width:100%;aspect-ratio:16/9;background:#000;display:block;object-fit:contain}
+.tile .lbl{padding:10px 14px;font-size:.84rem;font-weight:800;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border2)}
+.tile .lbl .dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite;flex-shrink:0}
+
+.empty{grid-column:1/-1;padding:80px 20px;text-align:center;color:var(--text3)}
+.empty .big{font-size:2.8rem;opacity:.4;margin-bottom:14px}
+.empty p{font-size:.85rem;line-height:1.9}
+
+footer{text-align:center;padding:20px;font-size:.62rem;color:var(--text3);letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <h1>🎱 {{BRANCH_NAME}}</h1>
+    <div class="sub">Jonli efir</div>
+  </div>
+  <div class="live-badge"><span class="live-dot"></span> <span id="cnt">0</span> ta stol jonli</div>
+</div>
+
+<div class="grid" id="grid">
+  <div class="empty" id="empty">
+    <div class="big">📡</div>
+    <p>Hozircha jonli efir yo'q.<br>O'yin boshlanganda shu yerda avtomatik ko'rinadi.</p>
+  </div>
+</div>
+
+<footer>🎱 Billiard King</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<script>
+const BRANCH_ID = '{{BRANCH_ID}}';
+const players = {}; // table_id -> {destroy()}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function attach(tableId, tableNum) {
+  const tile = document.createElement('div');
+  tile.className = 'tile';
+  tile.id = 'tile-' + tableId;
+  tile.innerHTML = '<video muted autoplay playsinline></video>' +
+    '<div class="lbl"><span class="dot"></span> ' + esc(tableNum) + '-stol</div>';
+  document.getElementById('grid').appendChild(tile);
+
+  const video = tile.querySelector('video');
+  const src = '/hls/' + tableId + '/index.m3u8';
+
+  if (window.Hls && Hls.isSupported()) {
+    const hls = new Hls({ liveSyncDurationCount: 3, maxBufferLength: 8 });
+    hls.loadSource(src);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+    hls.on(Hls.Events.ERROR, (_evt, data) => {
+      if (!data.fatal) return;
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+        setTimeout(() => hls.startLoad(), 2000); // stream endi boshlanmoqda bo'lishi mumkin
+      } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        hls.recoverMediaError();
+      }
+    });
+    players[tableId] = { destroy() { hls.destroy(); } };
+  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = src; // Safari — HLS tabiiy qo'llab-quvvatlanadi
+    video.play().catch(() => {});
+    players[tableId] = { destroy() { video.src = ''; } };
+  }
+}
+
+async function refresh() {
+  let active = [];
+  try {
+    const r = await fetch('/live/' + BRANCH_ID + '/active');
+    if (r.ok) active = await r.json() || [];
+  } catch (_) {}
+
+  document.getElementById('cnt').textContent = active.length;
+  document.getElementById('empty').style.display = active.length ? 'none' : '';
+
+  const activeIds = new Set(active.map(a => a.table_id));
+
+  for (const id in players) {
+    if (!activeIds.has(Number(id))) {
+      players[id].destroy();
+      delete players[id];
+      const el = document.getElementById('tile-' + id);
+      if (el) el.remove();
+    }
+  }
+  for (const a of active) {
+    if (!players[a.table_id]) attach(a.table_id, a.table_num);
+  }
+}
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

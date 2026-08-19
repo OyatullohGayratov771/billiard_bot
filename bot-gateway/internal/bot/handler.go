@@ -17,6 +17,7 @@ type Handler struct {
 	clipSvc       ClipService
 	tournamentSvc TournamentService
 	productSvc    *client.ProductClient
+	liveSvc       *client.LiveClient
 
 	states    *StateManager
 	userCache *UserCache
@@ -29,6 +30,7 @@ func NewHandler(
 	clipSvc ClipService,
 	tournamentSvc TournamentService,
 	productSvc *client.ProductClient,
+	liveSvc *client.LiveClient,
 ) *Handler {
 	return &Handler{
 		userSvc:       userSvc,
@@ -36,6 +38,7 @@ func NewHandler(
 		clipSvc:       clipSvc,
 		tournamentSvc: tournamentSvc,
 		productSvc:    productSvc,
+		liveSvc:       liveSvc,
 		states:        NewStateManager(),
 		userCache:     newUserCache(),
 		limiter:       newRateLimiter(),
@@ -276,6 +279,12 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, cb *tgbotapi.CallbackQuer
 		h.cbRTSPTable(bot, chatID, tgID, arg1)
 	case "settings_back":
 		h.showSettings(bot, chatID, user)
+	case "live_menu":
+		h.cbLiveMenu(bot, chatID, msgID, user)
+	case "live_branch":
+		h.cbLiveBranch(bot, chatID, msgID, user, arg1)
+	case "live_toggle":
+		h.cbLiveToggle(bot, chatID, msgID, user, arg1)
 
 	case "add_staff":
 		if !h.requireRole(bot, chatID, user, models.RoleSuperadmin) {

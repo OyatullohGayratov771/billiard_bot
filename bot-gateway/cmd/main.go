@@ -35,9 +35,10 @@ func main() {
 	clipClient := client.NewClipClient(cfg.ClipServiceURL, httpClient)
 	tournamentClient := client.NewTournamentClient(cfg.TournamentServiceURL, httpClient, cfg.InternalToken)
 	productClient := client.NewProductClient(cfg.ShopServiceURL, httpClient, cfg.InternalToken)
+	liveClient := client.NewLiveClient(cfg.LiveServiceURL, httpClient, cfg.InternalToken)
 
 	// Handler
-	handler := bot.NewHandler(userClient, tableClient, clipClient, tournamentClient, productClient)
+	handler := bot.NewHandler(userClient, tableClient, clipClient, tournamentClient, productClient, liveClient)
 
 	// Telegram bot
 	tg, err := tgbotapi.NewBotAPI(cfg.TelegramToken)

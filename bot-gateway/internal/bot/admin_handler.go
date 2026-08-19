@@ -547,6 +547,9 @@ func (h *Handler) showSettings(bot *tgbotapi.BotAPI, chatID int64, user *models.
 	}
 
 	var rows [][]tgbotapi.InlineKeyboardButton
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("📡 Jonli efir (Live)", "live_menu"),
+	))
 	for _, b := range branches {
 		nvrStatus := "❌"
 		if b.NVRHost != "" {
@@ -570,6 +573,7 @@ func (h *Handler) showSettings(bot *tgbotapi.BotAPI, chatID int64, user *models.
 	kb := tgbotapi.NewInlineKeyboardMarkup(rows...)
 	sendWithKeyboard(bot, chatID,
 		"⚙️ <b>Sozlamalar</b>\n\n"+
+			"📡 <b>Jonli efir</b> — stolni tomoshabinlar uchun live efirga chiqarish\n"+
 			"🔌 <b>NVR</b> — branch darajasida (eski usul)\n"+
 			"📹 <b>Stol RTSP</b> — har bir stol uchun alohida URL", kb)
 }

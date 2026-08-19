@@ -18,7 +18,21 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(go build *)",
-      "Bash(go vet *)"
+      "Bash(go vet *)",
+      "Bash(grep -n \"embed\\\\|ServeFile\\\\|tv_bracket.html\\\\|//go:embed\" tournament-service/internal/handler/handler.go)",
+      "Bash(go mod *)",
+      "Bash(docker compose *)",
+      "Bash(docker rm *)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run --rm --name bk_nginx_synchk -v __TRACKED_VAR__/nginx/nginx.conf:/etc/nginx/nginx.conf:ro nginx:alpine nginx -t)",
+      "Bash(mkdir -p /tmp/fakecert)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run --rm -v /tmp/fakecert:/out alpine/openssl req -x509 -newkey rsa:2048 -keyout /out/privkey.pem -out /out/fullchain.pem -days 1 -nodes -subj \"/CN=test\")",
+      "Bash(MSYS_NO_PATHCONV=1 docker run --rm --name bk_nginx_synchk2 -v __TRACKED_VAR__/nginx/nginx.conf:/etc/nginx/nginx.conf:ro -v /tmp/fakecert:/etc/letsencrypt/live/billiardking.uz:ro nginx:alpine nginx -t)",
+      "Bash(mkdir -p bin/hls)",
+      "Bash(DATABASE_DSN='host=localhost port=5432 user=postgres password=postgres dbname=billiard_bot sslmode=disable' LIVE_SERVICE_PORT=8087 INTERNAL_TOKEN=devtoken HLS_DIR=__TRACKED_VAR__/../bin/hls WEB_BASE_URL=https://billiardking.uz ../bin/livesvc.exe)",
+      "Bash(curl -s -m 2 http://localhost:8087/health)",
+      "Bash(break)",
+      "Bash(kill %1)",
+      "Bash(pkill -f livesvc.exe)"
     ]
   }
 }
