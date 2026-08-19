@@ -36,7 +36,10 @@
       "Bash(curl -sL -o /tmp/hls_check.min.js \"https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js\" --max-time 15)",
       "Read(//tmp/**)",
       "Bash(curl -sL -o \"/c/Users/Oyatulloh/Projects/billiard_bot/live-service/internal/handler/static/hls.min.js\" \"https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js\" --max-time 20)",
-      "Bash(grep -i -E \"\\\\.js$|static|min\\\\.js\")"
+      "Bash(grep -i -E \"\\\\.js$|static|min\\\\.js\")",
+      "Bash(mkdir -p \"/c/Users/Oyatulloh/Projects/billiard_bot/live-service/cmd/routecheck\")",
+      "Bash(cp \"C:/Users/OYATUL~1/AppData/Local/Temp/claude/c--Users-Oyatulloh-Projects-billiard-bot/c6b71de7-0a46-4b48-b225-94c37a27a8c1/scratchpad/route_check/main.go\" \"/c/Users/Oyatulloh/Projects/billiard_bot/live-service/cmd/routecheck/main.go\")",
+      "Bash(go run *)"
     ]
   }
 }
