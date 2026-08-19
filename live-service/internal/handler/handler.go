@@ -16,6 +16,15 @@ import (
 //go:embed static/live.html
 var liveHTML string
 
+//go:embed static/live_table.html
+var liveTableHTML string
+
+//go:embed static/hls.min.js
+var hlsJS []byte
+
+//go:embed static/player.js
+var playerJS []byte
+
 var errNoCamera = errors.New("stol uchun kamera manzili sozlanmagan")
 
 type Handler struct {
@@ -40,6 +49,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 
 	// Public — kirish shart emas (tomoshabinlar uchun)
 	mux.HandleFunc("GET /hls/{table_id}/{file...}", h.serveHLS)
+	mux.HandleFunc("GET /live/assets/hls.min.js", h.serveAsset(hlsJS, "application/javascript; charset=utf-8"))
+	mux.HandleFunc("GET /live/assets/player.js", h.serveAsset(playerJS, "application/javascript; charset=utf-8"))
+	mux.HandleFunc("GET /live/table/{table_id}", h.tablePage)
 	mux.HandleFunc("GET /live/{branch_id}/active", h.activeForBranch)
 	mux.HandleFunc("GET /live/{branch_id}", h.livePage)
 }
@@ -85,7 +97,7 @@ func (h *Handler) startStream(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, 200, map[string]any{
 		"status":    "ok",
-		"live_url":  h.baseURL + "/live/" + strconv.FormatInt(table.BranchID, 10),
+		"live_url":  h.baseURL + "/live/table/" + strconv.FormatInt(tableID, 10),
 		"table_num": table.TableNum,
 	})
 }
@@ -170,6 +182,41 @@ func (h *Handler) livePage(w http.ResponseWriter, r *http.Request) {
 	page = strings.ReplaceAll(page, "{{BRANCH_NAME}}", branch.Name)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(page))
+}
+
+// tablePage — bitta stolning shaxsiy jonli efir sahifasi (o'zining alohida URL'i bilan).
+func (h *Handler) tablePage(w http.ResponseWriter, r *http.Request) {
+	tableID, err := strconv.ParseInt(r.PathValue("table_id"), 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	table, err := h.tableRepo.GetByID(tableID)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	branchName := ""
+	if branch, err := h.branchRepo.GetByID(table.BranchID); err == nil {
+		branchName = branch.Name
+	}
+	page := strings.ReplaceAll(liveTableHTML, "{{TABLE_ID}}", strconv.FormatInt(tableID, 10))
+	page = strings.ReplaceAll(page, "{{TABLE_NUM}}", strconv.Itoa(table.TableNum))
+	page = strings.ReplaceAll(page, "{{BRANCH_NAME}}", branchName)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = w.Write([]byte(page))
+}
+
+// serveAsset — statik JS fayllarni o'zimizdan tarqatish uchun (uchinchi tomon
+// CDN'ga bog'liq bo'lmaslik uchun — ba'zi mobil tarmoqlar/operatorlar CDN'larni
+// bloklaydi yoki sekinlashtiradi, natijada video yuklanmay qora ekran qolib
+// ketishi mumkin edi).
+func (h *Handler) serveAsset(data []byte, contentType string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", contentType)
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+		_, _ = w.Write(data)
+	}
 }
 
 // resolveRTSPURL — NVR+kanal (Hikvision) yo'lini afzal ko'radi, bo'lmasa

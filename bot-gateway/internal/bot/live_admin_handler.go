@@ -105,8 +105,7 @@ func (h *Handler) cbLiveToggle(bot *tgbotapi.BotAPI, chatID int64, msgID int, us
 		} else {
 			send(bot, chatID, fmt.Sprintf(
 				"🔴 <b>%d-stol jonli efirga chiqdi!</b>\n\n"+
-					"Tomoshabinlar shu havoladan ko'rishlari mumkin (login shart emas):\n%s\n\n"+
-					"<i>Shu filialning barcha jonli stollari bitta sahifada ko'rinadi.</i>",
+					"Tomoshabinlar shu havoladan ko'rishlari mumkin (login shart emas):\n%s",
 				table.TableNum, res.LiveURL))
 		}
 	}
