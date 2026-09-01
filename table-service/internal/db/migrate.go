@@ -143,7 +143,7 @@ func SeedBranches(db *sql.DB) error {
 		{
 			name:    "Toshmi",
 			address: "Toshkent, Toshmi",
-			nvrIP:    "192.168.0.104",
+			nvrIP:    "192.168.0.102",
 			nvrPort:  554,
 			nvrUser:  "admin",
 			nvrPass:  "MuzaffaR7797",
